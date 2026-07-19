@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Algo Rota</title>
     
-    <!-- Tailwind CSS (Tasarım için) -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-      // Tailwind Karanlık Mod (Dark Mode) yapılandırması
       tailwind.config = {
         darkMode: 'class',
       }
@@ -17,11 +16,7 @@
     <!-- React Kütüphaneleri -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    
-    <!-- Babel (Tarayıcının React JSX kodunu anlaması için çevirici) -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-    <!-- Konfeti Kütüphanesi (Kutlamalar için) -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
     <!-- Google Fontları -->
@@ -29,7 +24,10 @@
     
     <!-- Özel CSS Stillerimiz -->
     <style>
-        body { font-family: 'Courier Prime', Courier, monospace; }
+        body { 
+            font-family: 'Courier Prime', Courier, monospace; 
+            -webkit-tap-highlight-color: transparent; /* Mobilde mavi tıklama efektini gizle */
+        }
         
         @keyframes errorShake {
           0%, 100% { transform: translateX(0); }
@@ -38,28 +36,28 @@
         }
         .error-shake { animation: errorShake 0.25s ease-in-out; }
         
-        /* Gizli Scrollbar - Temiz görünüm için */
         ::-webkit-scrollbar { width: 0px; background: transparent; }
         
-        /* Ana Sayfa Noktalı Arka Plan (Aydınlık Mod) */
         .bg-dots {
             background-image: radial-gradient(#cbd5e1 2px, transparent 2px);
             background-size: 32px 32px;
         }
-        /* Ana Sayfa Noktalı Arka Plan (Karanlık Mod) */
         .dark .bg-dots {
             background-image: radial-gradient(#334155 2px, transparent 2px);
+        }
+
+        /* Dokunmatik D-Pad için seçimi engelleme */
+        button {
+            touch-action: manipulation;
         }
     </style>
 </head>
 <body class="bg-[#f8f9fa] dark:bg-[#0f172a] transition-colors duration-300">
     <div id="root"></div>
 
-    <!-- React ve Oyun Kodumuz Başlıyor -->
     <script type="text/babel">
         const { useState, useEffect, useMemo, useCallback, useRef } = React;
 
-        // --- BASİT SES MOTORU (Web Audio API) ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         const playSound = (type, isEnabled) => {
             if (!isEnabled) return;
@@ -99,7 +97,6 @@
             }
         };
 
-        // --- İKON BİLEŞENLERİ (Gömülü SVG'ler) ---
         const ArrowRight = ({size=24, strokeWidth=2, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>;
         const ArrowLeft = ({size=24, strokeWidth=2, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>;
         const ArrowUp = ({size=24, strokeWidth=2, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>;
@@ -114,7 +111,6 @@
         const Volume2 = ({size=24, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>;
         const VolumeX = ({size=24, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" x2="15" y1="9" y2="17"/><line x1="15" x2="23" y1="9" y2="17"/></svg>;
 
-        // --- KODLAMA BİLEŞENLERİ VE ALGORİTMA ÜRETİCİ ---
         const R = { type: 'cmd', key: 'ArrowRight', text: 'sağ' };
         const L = { type: 'cmd', key: 'ArrowLeft', text: 'sol' };
         const U = { type: 'cmd', key: 'ArrowUp', text: 'yukarı' };
@@ -199,19 +195,16 @@
           "ZİRVEDESİN!", "KUSURSUZ!", "YAPAY ZEKA GİBİSİN!"
         ];
 
-        // --- ANA UYGULAMA BİLEŞENİ ---
         function App() {
           const [currentView, setCurrentView] = useState('home');
           const [selectedLevelId, setSelectedLevelId] = useState(1);
           
-          // Tercihler (Local Storage)
           const [unlockedLevel, setUnlockedLevel] = useState(() => parseInt(localStorage.getItem('algoRota_save') || '1', 10));
           const [levelStars, setLevelStars] = useState(() => JSON.parse(localStorage.getItem('algoRota_stars') || '{}'));
           const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('algoRota_theme') === 'dark');
           const [isSoundEnabled, setIsSoundEnabled] = useState(() => localStorage.getItem('algoRota_sound') !== 'false');
-          const [streak, setStreak] = useState(0); // Kusursuz Seri Sistemi
+          const [streak, setStreak] = useState(0);
 
-          // Karanlık Mod Geçişi
           useEffect(() => {
             if (isDarkMode) document.documentElement.classList.add('dark');
             else document.documentElement.classList.remove('dark');
@@ -225,11 +218,9 @@
           };
 
           const handleLevelComplete = (completedId, starsEarned, errorCount) => {
-            // Seri (Streak) Mantığı
             if (errorCount === 0) setStreak(s => s + 1);
             else setStreak(0);
 
-            // Yıldızları kaydet
             setLevelStars(prev => {
               const newStars = { ...prev };
               if (!newStars[completedId] || starsEarned > newStars[completedId]) {
@@ -239,7 +230,6 @@
               return newStars;
             });
 
-            // Seviyeyi aç
             const nextLevel = completedId + 1;
             if (nextLevel > unlockedLevel && nextLevel <= TOTAL_LEVELS) {
               setUnlockedLevel(nextLevel);
@@ -290,10 +280,9 @@
           );
         }
 
-        // --- ANA SAYFA (HARİTA) ---
         function LevelSelectScreen({ unlockedLevel, levelStars, onSelectLevel, onReset, isDarkMode, setIsDarkMode, isSoundEnabled, toggleSound }) {
           const currentLevelRef = useRef(null);
-          const [showResetModal, setShowResetModal] = useState(false); // Yeni Özel Onay Modalı için State
+          const [showResetModal, setShowResetModal] = useState(false);
 
           useEffect(() => {
             if (currentLevelRef.current) {
@@ -328,7 +317,6 @@
                   
                   <div className="flex items-center justify-between w-full md:w-auto">
                     <div className="flex items-center gap-2 sm:gap-4">
-                      {/* ANA SAYFAYA DÖN (EV) BUTONU */}
                       <a href="index.html" className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white dark:bg-slate-800 border-2 border-[#e2e8f0] dark:border-slate-700 hover:border-[#1dd2af] dark:hover:border-[#1dd2af] text-xl sm:text-2xl hover:scale-110 transition-all shadow-sm shrink-0" title="Ana Sayfaya Dön">
                           🏠
                       </a>
@@ -342,7 +330,6 @@
                       </div>
                     </div>
 
-                    {/* Mobil için Ayarlar (Sağ üst) */}
                     <div className="flex md:hidden items-center gap-3">
                        <button onClick={toggleSound} className="text-[#94a8bc] dark:text-slate-400 hover:text-[#1dd2af] transition-colors">{isSoundEnabled ? <Volume2 size={24}/> : <VolumeX size={24}/>}</button>
                        <button onClick={() => setIsDarkMode(!isDarkMode)} className="text-[#94a8bc] dark:text-slate-400 hover:text-[#1dd2af] transition-colors">{isDarkMode ? <Sun size={24}/> : <Moon size={24}/>}</button>
@@ -350,7 +337,6 @@
                   </div>
                   
                   <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
-                    {/* PC için Ayarlar */}
                     <div className="hidden md:flex items-center gap-4 border-r border-[#e2e8f0] dark:border-slate-700 pr-6">
                        <button onClick={toggleSound} className="text-[#94a8bc] dark:text-slate-400 hover:text-[#1dd2af] transition-colors" title="Ses Aç/Kapat">{isSoundEnabled ? <Volume2 size={28}/> : <VolumeX size={28}/>}</button>
                        <button onClick={() => setIsDarkMode(!isDarkMode)} className="text-[#94a8bc] dark:text-slate-400 hover:text-[#1dd2af] transition-colors" title="Tema Değiştir">{isDarkMode ? <Sun size={28}/> : <Moon size={28}/>}</button>
@@ -370,7 +356,7 @@
                 </div>
               </header>
 
-              <div className="flex-1 overflow-y-auto relative z-10 scroll-smooth pb-20">
+              <div className="flex-1 overflow-y-auto relative z-10 scroll-smooth pb-20 touch-pan-y">
                 <div className="relative mx-auto my-10" style={{ width: `${MAP_WIDTH}px`, height: `${TOTAL_HEIGHT}px` }}>
                   
                   <svg className="absolute inset-0 pointer-events-none" width={MAP_WIDTH} height={TOTAL_HEIGHT}>
@@ -395,7 +381,7 @@
                         disabled={!isUnlocked}
                         style={{ position: 'absolute', left: `${x}px`, top: `${y}px`, transform: 'translate(-50%, -50%)' }}
                         className={`
-                          group flex items-center justify-center rounded-full text-xl font-bold transition-all duration-300 z-10 w-16 h-16 shadow-sm relative
+                          group flex items-center justify-center rounded-full text-xl font-bold transition-all duration-300 z-10 w-16 h-16 shadow-sm relative outline-none
                           ${!isUnlocked ? 'bg-[#f8f9fa] dark:bg-[#0f172a] border-4 border-[#e2e8f0] dark:border-slate-800 text-[#94a8bc] dark:text-slate-600 cursor-not-allowed' : ''}
                           ${isCompleted ? 'bg-[#1dd2af] border-4 border-[#1bc1a0] text-white shadow-md shadow-[#1dd2af]/30 hover:scale-105' : ''}
                           ${isCurrent ? 'bg-white dark:bg-slate-900 border-[6px] border-[#1dd2af] text-[#003666] dark:text-white scale-110 shadow-xl shadow-[#1dd2af]/40 hover:scale-125 z-20' : ''}
@@ -409,7 +395,6 @@
                           </div>
                         )}
 
-                        {/* YILDIZLAR (Sadece tamamlanan bölümlerde) */}
                         {isCompleted && (
                           <div className="absolute -bottom-5 flex gap-0.5">
                             {Array.from({length: 3}).map((_, i) => (
@@ -429,12 +414,10 @@
                 </div>
               </div>
 
-              {/* Geliştirici İmzası */}
               <div className="absolute bottom-2 left-1/2 -translate-x-1/2 md:bottom-4 md:left-auto md:right-4 md:translate-x-0 z-50 text-[10px] sm:text-xs font-bold text-[#94a8bc] dark:text-slate-500 bg-white/90 dark:bg-slate-800/90 px-4 py-2 rounded-full backdrop-blur-md border border-[#e2e8f0] dark:border-slate-700 shadow-sm text-center pointer-events-none">
                   Geliştirici: Mehmet Baran İKİOK
               </div>
 
-              {/* SIFIRLAMA ONAY MODALI */}
               {showResetModal && (
                   <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
                       <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center border-2 border-[#e2e8f0] dark:border-slate-700">
@@ -452,7 +435,6 @@
           );
         }
 
-        // --- OYUN EKRANI ---
         function GameScreen({ levelData, onBack, onComplete, onNext, isSoundEnabled, streak }) {
           const [stepIndex, setStepIndex] = useState(0);
           const [hasError, setHasError] = useState(false);
@@ -460,10 +442,9 @@
           const [levelComplete, setLevelComplete] = useState(false);
           const [quote, setQuote] = useState("");
           const [earnedStars, setEarnedStars] = useState(0);
-          const [activeKey, setActiveKey] = useState(null); // Tuş Geri Bildirimi İçin State
+          const [activeKey, setActiveKey] = useState(null); 
           
           const codeContainerRef = useRef(null);
-          const activeLineRef = useRef(null);
 
           useEffect(() => {
             setStepIndex(0);
@@ -544,14 +525,12 @@
             const expectedKey = executionSequence[stepIndex]?.key;
 
             if (key === expectedKey) {
-              // DOĞRU ADIM
               playSound('move', isSoundEnabled);
               const nextStep = stepIndex + 1;
               setStepIndex(nextStep);
               setHasError(false);
               
               if (nextStep >= executionSequence.length) {
-                // SEVİYE TAMAMLANDI
                 playSound('success', isSoundEnabled);
                 
                 let finalStars = 3;
@@ -560,17 +539,15 @@
                 
                 setEarnedStars(finalStars);
 
-                // Konfeti Mantığı (Seri artarsa daha büyük patlama!)
                 if(typeof confetti === 'function') {
-                    const particleCount = (streak + 1) * 50; // Seriye göre konfeti artar
+                    const particleCount = (streak + 1) * 50; 
                     confetti({ particleCount: Math.min(particleCount, 300), spread: 90, origin: { y: 0.6 }, colors: ['#1dd2af', '#003666', '#f8f9fa', '#fbbf24'] });
                 }
                 setQuote(MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]);
                 setLevelComplete(true);
-                onComplete(levelData.id, finalStars, errorCount); // errorCount'u da gönderiyoruz
+                onComplete(levelData.id, finalStars, errorCount); 
               }
             } else {
-              // HATALI ADIM
               playSound('error', isSoundEnabled);
               setErrorCount(prev => prev + 1);
               setHasError(true);
@@ -579,7 +556,6 @@
             }
           }, [stepIndex, executionSequence, levelComplete, onComplete, levelData.id, errorCount, isSoundEnabled, streak]);
 
-          // Klavye Dinleyicisi (Gelişmiş Keydown / Keyup mekanizması)
           useEffect(() => {
             const validKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
             
@@ -594,14 +570,14 @@
 
               if (validKeys.includes(e.key)) {
                 e.preventDefault();
-                setActiveKey(e.key); // Tuşa basıldığını kaydet
+                setActiveKey(e.key); 
                 handleInput(e.key);
               }
             };
             
             const handleKeyUp = (e) => {
                 if (validKeys.includes(e.key)) {
-                    setActiveKey(null); // Tuştan el çekildiğinde efekti kaldır
+                    setActiveKey(null); 
                 }
             }
 
@@ -619,7 +595,7 @@
             <div className={`flex flex-col h-screen ${hasError ? 'error-shake' : ''}`}>
               
               <header className="flex items-center justify-between p-4 sm:px-8 py-4 shrink-0 z-10 border-b border-[#e2e8f0]/50 dark:border-slate-800/80 bg-[#f8f9fa]/50 dark:bg-[#0f172a]/50 backdrop-blur-md">
-                <button onClick={onBack} className="flex items-center gap-2 text-[#94a8bc] dark:text-slate-500 hover:text-[#003666] dark:hover:text-white transition-colors font-bold text-lg">
+                <button onClick={onBack} className="flex items-center gap-2 text-[#94a8bc] dark:text-slate-500 hover:text-[#003666] dark:hover:text-white transition-colors font-bold text-lg outline-none">
                   <ChevronLeft size={28} />
                 </button>
                 <div className="flex flex-col items-center">
@@ -627,7 +603,6 @@
                     <div className="text-xl sm:text-2xl font-bold text-[#94a8bc] dark:text-slate-500 tracking-widest">
                       {levelData.id}
                     </div>
-                    {/* ATEŞLİ SERİ KOMBOSU GÖSTERİMİ */}
                     {streak >= 2 && (
                        <div className="flex items-center gap-1 text-orange-500 font-bold bg-orange-100 dark:bg-orange-500/20 px-2 py-0.5 rounded-xl text-sm sm:text-base animate-bounce">
                           🔥 {streak} Seri
@@ -640,7 +615,7 @@
                      </div>
                   )}
                 </div>
-                <button onClick={() => { setStepIndex(0); setErrorCount(0); }} className="text-[#94a8bc] dark:text-slate-500 hover:text-[#003666] dark:hover:text-white transition-colors" title="Başa Sar">
+                <button onClick={() => { setStepIndex(0); setErrorCount(0); }} className="text-[#94a8bc] dark:text-slate-500 hover:text-[#003666] dark:hover:text-white transition-colors outline-none" title="Başa Sar">
                   <RotateCcw size={24} />
                 </button>
               </header>
@@ -652,7 +627,6 @@
                   <div className="w-full flex justify-center items-end shrink-0 mb-2 sm:mb-8 min-h-[60px] sm:min-h-[80px]">
                     {!levelComplete && (
                       <div className="flex flex-col items-center opacity-40 dark:opacity-30 pointer-events-none z-10 scale-75 sm:scale-100 transition-opacity duration-300">
-                         {/* TUŞ BASMA EFEKTİ ENTEGRE EDİLDİ */}
                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-1.5 transition-all duration-100 ${activeKey === 'ArrowUp' ? 'bg-[#1dd2af] text-white scale-125 shadow-[0_0_15px_#1dd2af]' : 'bg-[#94a8bc] dark:bg-slate-500 text-white dark:text-slate-900'}`}><ArrowUp size={24} strokeWidth={3}/></div>
                          <div className="flex gap-1.5">
                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-100 ${activeKey === 'ArrowLeft' ? 'bg-[#1dd2af] text-white scale-125 shadow-[0_0_15px_#1dd2af]' : 'bg-[#94a8bc] dark:bg-slate-500 text-white dark:text-slate-900'}`}><ArrowLeft size={24} strokeWidth={3}/></div>
@@ -665,8 +639,6 @@
 
                   {levelComplete && (
                     <div className="absolute inset-0 bg-[#f8f9fa]/90 dark:bg-[#0f172a]/90 z-30 flex flex-col items-center justify-center backdrop-blur-sm animate-in fade-in zoom-in duration-300">
-                      
-                      {/* Yıldız Gösterimi */}
                       <div className="flex gap-2 mb-4">
                         {Array.from({length: 3}).map((_, i) => (
                            <Star key={i} size={40} className={i < earnedStars ? "text-yellow-400 fill-yellow-400 animate-in zoom-in duration-500 delay-" + (i*100) : "text-slate-300 dark:text-slate-700"} />
@@ -732,7 +704,7 @@
                 <div className="w-full md:w-1/2 flex flex-col justify-center relative h-[50vh] md:h-full">
                   <div 
                     ref={codeContainerRef}
-                    className="w-full h-full overflow-y-auto px-4 sm:px-8 lg:px-12 flex flex-col items-center justify-center relative"
+                    className="w-full h-full overflow-y-auto px-4 sm:px-8 lg:px-12 flex flex-col items-center justify-center relative touch-pan-y"
                   >
                      <div className="flex flex-col items-start w-fit py-12">
                        {displayLines.map((line) => {
@@ -766,6 +738,7 @@
                      </div>
                   </div>
 
+                  {/* Mobil D-PAD */}
                   <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 bg-[#f8f9fa] dark:bg-[#0f172a] p-3 rounded-2xl border border-[#e2e8f0] dark:border-slate-800 flex flex-col items-center shadow-sm z-30">
                     <div className="grid grid-cols-3 gap-2 w-[180px]">
                       <div className="col-start-2">
@@ -809,7 +782,6 @@
           );
         }
 
-        // Dokunmatik/Fare D-Pad Butonları (Mobil için tuş geri bildirimi eklendi)
         function ControlButton({ icon, isActive, onPress, onRelease }) {
           return (
             <button 
@@ -818,14 +790,13 @@
               onMouseLeave={onRelease}
               onTouchStart={(e) => { e.preventDefault(); onPress(); }}
               onTouchEnd={(e) => { e.preventDefault(); onRelease(); }}
-              className={`w-full aspect-square rounded-xl flex items-center justify-center transition-colors shadow-sm select-none ${isActive ? 'bg-[#1dd2af] text-white' : 'bg-[#e2e8f0] dark:bg-slate-800 text-[#64748b] dark:text-slate-400'}`}
+              className={`w-full aspect-square rounded-xl flex items-center justify-center transition-colors shadow-sm select-none outline-none ${isActive ? 'bg-[#1dd2af] text-white' : 'bg-[#e2e8f0] dark:bg-slate-800 text-[#64748b] dark:text-slate-400'}`}
             >
               {icon}
             </button>
           );
         }
 
-        // --- UYGULAMAYI BAŞLAT ---
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>

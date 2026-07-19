@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Piksel Sanat Atölyesi - 50 Görev</title>
     
     <!-- Tailwind CSS -->
@@ -21,12 +21,13 @@
             background-image: 
                 radial-gradient(circle at 20% 30%, rgba(56, 189, 248, 0.15) 0%, transparent 40%),
                 radial-gradient(circle at 80% 70%, rgba(244, 114, 182, 0.15) 0%, transparent 40%);
-            min-height: 100vh;
+            min-height: 100dvh;
             display: flex;
             flex-direction: column; 
             align-items: center;
             user-select: none; 
-            touch-action: manipulation; 
+            -webkit-user-select: none;
+            touch-action: pan-y; 
             overflow-x: hidden; 
             margin: 0;
             padding: 0;
@@ -39,31 +40,36 @@
             backdrop-filter: blur(10px);
             border: 4px solid #10b981; 
             box-shadow: 0 20px 40px rgba(0,0,0,0.1), inset 0 0 20px rgba(16, 185, 129, 0.1);
-            border-radius: 32px;
-            padding: 16px;
-            width: 98%;
-            max-width: 1400px;
+            border-radius: 20px;
+            padding: 12px;
+            width: 95%;
+            max-width: 1200px;
             display: flex;
             flex-direction: column; 
-            gap: 20px;
+            gap: 15px;
             margin-bottom: 20px;
         }
 
         @media (min-width: 768px) {
-            .game-container { padding: 24px; width: 95%; }
+            .game-container { padding: 24px; width: 90%; border-radius: 32px; gap: 20px; }
         }
 
         .pixel-grid {
             display: grid;
-            gap: 2px;
+            gap: 1px;
             background-color: #cbd5e1; 
-            border: 4px solid #94a3b8;
-            border-radius: 12px;
+            border: 3px solid #94a3b8;
+            border-radius: 8px;
             overflow: hidden;
             width: 100%; 
             aspect-ratio: 1 / 1; 
             margin: 0 auto;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            touch-action: none; 
+        }
+        
+        @media (min-width: 768px) {
+            .pixel-grid { gap: 2px; border-width: 4px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
         }
 
         .pixel-cell {
@@ -83,36 +89,37 @@
         .color-palette {
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 8px;
             flex-wrap: wrap;
-            padding: 10px;
+            padding: 8px;
             background: #f8fafc;
-            border-radius: 20px;
+            border-radius: 16px;
             border: 2px solid #e2e8f0;
         }
 
         @media (min-width: 640px) {
-            .color-palette { gap: 16px; padding: 16px; }
+            .color-palette { gap: 16px; padding: 16px; border-radius: 20px; }
         }
 
         .color-swatch {
-            width: 36px; height: 36px;
+            width: 32px; height: 32px;
             border-radius: 50%;
             cursor: pointer;
             border: 3px solid transparent;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin: 2px;
         }
         
         @media (min-width: 640px) {
-            .color-swatch { width: 50px; height: 50px; border-width: 4px; }
+            .color-swatch { width: 50px; height: 50px; border-width: 4px; margin: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         }
 
         .color-swatch:hover { transform: scale(1.1); }
         .color-swatch.active {
             transform: scale(1.2);
             border-color: #0f172a;
-            box-shadow: 0 0 15px rgba(0,0,0,0.3);
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
         }
 
         @keyframes shake {
@@ -138,76 +145,78 @@
             transform: translateY(2px);
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
         }
+        
+        * { -webkit-tap-highlight-color: transparent; }
     </style>
 </head>
 <body class="flex flex-col items-center p-0 m-0 w-full h-full relative">
 
     <!-- Başlangıç Ekranı -->
-    <div id="start-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-emerald-50/90 backdrop-blur-sm p-4 w-full h-full">
-        <!-- Ana Sayfa (Ev) Butonu -->
+    <div id="start-screen" class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-emerald-50/90 backdrop-blur-sm p-4 w-full h-full overflow-y-auto">
         <a href="index.html" class="absolute top-4 left-4 bg-white/80 hover:bg-white text-emerald-600 w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center text-2xl md:text-3xl backdrop-blur-md transition-all border-2 border-emerald-200 hover:scale-110 shadow-lg z-[100]" title="Ana Menüye Dön">🏠</a>
         
-        <div class="bg-white rounded-[3rem] p-6 md:p-12 max-w-3xl w-full text-center shadow-2xl border-4 border-emerald-400 pop-in relative overflow-hidden">
-            <div class="absolute -top-10 -right-10 text-9xl opacity-10 pointer-events-none">🎨</div>
-            <div class="absolute -bottom-10 -left-10 text-9xl opacity-10 pointer-events-none">🖼️</div>
+        <div class="bg-white rounded-[2rem] md:rounded-[3rem] p-6 md:p-12 max-w-3xl w-full text-center shadow-2xl border-4 border-emerald-400 pop-in relative overflow-hidden mt-12 md:mt-0">
+            <div class="absolute -top-10 -right-10 text-8xl md:text-9xl opacity-10 pointer-events-none">🎨</div>
+            <div class="absolute -bottom-10 -left-10 text-8xl md:text-9xl opacity-10 pointer-events-none">🖼️</div>
             
-            <div class="text-7xl md:text-8xl mb-4 animate-bounce">🎨</div>
-            <h1 class="text-4xl md:text-6xl font-fredoka text-emerald-600 mb-4 drop-shadow-sm leading-tight">Piksel Sanat Atölyesi</h1>
-            <p class="text-slate-500 font-bold text-lg md:text-2xl mb-10">Renkleri eşleştir, 50 farklı bölümü tamamla ve bir usta ol!</p>
+            <div class="text-6xl md:text-8xl mb-4 animate-bounce">🎨</div>
+            <h1 class="text-3xl md:text-6xl font-fredoka text-emerald-600 mb-2 md:mb-4 drop-shadow-sm leading-tight">Piksel Sanat Atölyesi</h1>
+            <p class="text-slate-500 font-bold text-sm md:text-2xl mb-6 md:mb-10 px-2">Renkleri eşleştir, 50 farklı bölümü tamamla ve bir usta ol!</p>
             
-            <div class="flex flex-col gap-4 max-w-xl mx-auto">
-                <button onclick="startGame('missions')" class="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xl md:text-3xl py-4 md:py-6 rounded-2xl shadow-[0_8px_0_#059669] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center gap-3 group">
-                    <span class="text-3xl md:text-4xl group-hover:scale-125 transition-transform">🏆</span> 
+            <div class="flex flex-col gap-3 md:gap-4 max-w-xl mx-auto">
+                <button onclick="startGame('missions')" class="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-black text-lg md:text-3xl py-4 md:py-6 rounded-2xl shadow-[0_6px_0_#059669] md:shadow-[0_8px_0_#059669] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center gap-2 md:gap-3 group px-2">
+                    <span class="text-2xl md:text-4xl group-hover:scale-125 transition-transform">🏆</span> 
                     GÖREVLERE BAŞLA (50 Bölüm)
                 </button>
-                <button onclick="startGame('freedraw')" class="w-full bg-indigo-500 hover:bg-indigo-400 text-white font-black text-xl md:text-3xl py-4 md:py-6 rounded-2xl shadow-[0_8px_0_#4338ca] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center gap-3 group">
-                    <span class="text-3xl md:text-4xl group-hover:scale-125 transition-transform">✨</span> 
+                <button onclick="startGame('freedraw')" class="w-full bg-indigo-500 hover:bg-indigo-400 text-white font-black text-lg md:text-3xl py-4 md:py-6 rounded-2xl shadow-[0_6px_0_#4338ca] md:shadow-[0_8px_0_#4338ca] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center gap-2 md:gap-3 group px-2">
+                    <span class="text-2xl md:text-4xl group-hover:scale-125 transition-transform">✨</span> 
                     SERBEST ÇİZİM MODU
                 </button>
             </div>
             
-            <div class="mt-8 pt-6 border-t-2 border-slate-100">
-                <p class="text-xs md:text-sm font-bold text-slate-400 tracking-widest uppercase">Geliştirici: Mehmet Baran İKİOK</p>
+            <div class="mt-6 md:mt-8 pt-4 md:pt-6 border-t-2 border-slate-100">
+                <p class="text-[10px] md:text-sm font-bold text-slate-400 tracking-widest uppercase">Geliştirici: Mehmet Baran İKİOK</p>
             </div>
         </div>
     </div>
 
     <!-- Oyun Alanı -->
-    <div id="game-area" class="w-full flex flex-col items-center hidden pb-10">
+    <div id="game-area" class="w-full flex flex-col items-center hidden pb-6">
         
         <!-- Üst Bar -->
-        <div class="w-full max-w-[1400px] flex flex-col md:flex-row justify-between items-center gap-4 mb-2 sm:mb-6 px-2 sm:px-4 pt-4">
-            <div class="flex items-center gap-2 sm:gap-3 bg-white/80 p-2 sm:p-3 rounded-2xl shadow-sm border border-emerald-200 w-full md:w-auto">
-                <a href="index.html" class="bg-slate-200 hover:bg-emerald-400 hover:text-white text-slate-600 font-bold w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-colors shadow-sm text-xl" title="Ana Menüye Dön">
-                    🏠
-                </a>
-                <button onclick="showStartScreen()" class="bg-slate-200 hover:bg-red-400 hover:text-white text-slate-600 font-bold w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-colors shadow-sm text-xl" title="Çıkış">
-                    ✖
-                </button>
-                <span class="text-3xl sm:text-4xl animate-pulse">🎨</span>
-                <div>
-                    <h1 class="text-lg sm:text-2xl font-fredoka text-emerald-600 leading-none">Piksel Sanat</h1>
-                    <p class="text-[10px] sm:text-xs font-bold text-slate-500 tracking-widest uppercase" id="top-mode-text">GÖREV MODU</p>
+        <div class="w-full max-w-[1200px] flex flex-col md:flex-row justify-between items-center gap-2 sm:gap-4 mb-2 sm:mb-4 px-2 sm:px-4 pt-2 sm:pt-4">
+            
+            <div class="flex items-center justify-between w-full md:w-auto gap-2 sm:gap-3 bg-white/80 p-2 sm:p-3 rounded-2xl shadow-sm border border-emerald-200">
+                <div class="flex gap-2">
+                    <a href="index.html" class="bg-slate-200 hover:bg-emerald-400 hover:text-white text-slate-600 font-bold w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-colors shadow-sm text-lg sm:text-xl" title="Ana Menüye Dön">🏠</a>
+                    <button onclick="showStartScreen()" class="bg-slate-200 hover:bg-red-400 hover:text-white text-slate-600 font-bold w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center transition-colors shadow-sm text-lg sm:text-xl" title="Çıkış">✖</button>
+                </div>
+                <div class="flex items-center gap-2 pr-2">
+                    <span class="text-2xl sm:text-4xl animate-pulse">🎨</span>
+                    <div class="text-right md:text-left">
+                        <h1 class="text-sm sm:text-2xl font-fredoka text-emerald-600 leading-none">Piksel Sanat</h1>
+                        <p class="text-[9px] sm:text-[10px] md:text-xs font-bold text-slate-500 tracking-widest uppercase" id="top-mode-text">GÖREV MODU</p>
+                    </div>
                 </div>
             </div>
             
-            <div class="flex gap-2 w-full md:w-auto justify-between md:justify-end items-center">
-                <!-- ZAMANLAYICI (Yeni) -->
-                <div id="timer-display-container" class="bg-rose-100 border-2 border-rose-300 text-rose-700 font-bold px-3 py-1.5 sm:px-5 sm:py-2 rounded-xl flex items-center gap-2 shadow-sm">
-                    <span class="text-lg sm:text-2xl">⏳</span>
-                    <span id="timer-display" class="text-lg sm:text-2xl font-mono">00:00</span>
+            <div class="flex flex-wrap md:flex-nowrap gap-2 w-full md:w-auto justify-center md:justify-end items-center">
+                <div id="timer-display-container" class="flex-1 md:flex-none justify-center bg-rose-100 border-2 border-rose-300 text-rose-700 font-bold px-2 py-1.5 sm:px-5 sm:py-2 rounded-xl flex items-center gap-1 sm:gap-2 shadow-sm">
+                    <span class="text-base sm:text-2xl">⏳</span>
+                    <span id="timer-display" class="text-base sm:text-2xl font-mono">00:00</span>
                 </div>
 
-                <div class="bg-indigo-100 border-2 border-indigo-300 text-indigo-700 font-bold px-3 py-1.5 sm:px-5 sm:py-2 rounded-xl flex items-center gap-2 shadow-sm">
-                    <span class="text-lg sm:text-2xl">⭐</span>
-                    <span id="stars-display" class="text-lg sm:text-2xl">0 / 50</span>
+                <div class="flex-1 md:flex-none justify-center bg-indigo-100 border-2 border-indigo-300 text-indigo-700 font-bold px-2 py-1.5 sm:px-5 sm:py-2 rounded-xl flex items-center gap-1 sm:gap-2 shadow-sm">
+                    <span class="text-base sm:text-2xl">⭐</span>
+                    <span id="stars-display" class="text-base sm:text-2xl">0/50</span>
                 </div>
+                
                 <div class="flex gap-2">
-                    <div class="bg-yellow-100 border-2 border-yellow-400 text-yellow-700 font-bold px-3 py-1.5 sm:px-5 sm:py-2 rounded-xl flex items-center gap-2 shadow-sm">
-                        <span class="text-lg sm:text-2xl">🏆</span>
-                        <span id="score-display" class="text-lg sm:text-2xl">0</span>
+                    <div class="bg-yellow-100 border-2 border-yellow-400 text-yellow-700 font-bold px-3 py-1.5 sm:px-5 sm:py-2 rounded-xl flex items-center gap-1 sm:gap-2 shadow-sm">
+                        <span class="text-base sm:text-2xl">🏆</span>
+                        <span id="score-display" class="text-base sm:text-2xl">0</span>
                     </div>
-                    <button id="sound-btn" onclick="toggleSound()" class="bg-slate-100 hover:bg-slate-200 border-2 border-slate-300 text-slate-600 rounded-xl w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xl transition-colors">
+                    <button id="sound-btn" onclick="toggleSound()" class="bg-slate-100 hover:bg-slate-200 border-2 border-slate-300 text-slate-600 rounded-xl w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-lg sm:text-xl transition-colors">
                         🔊
                     </button>
                 </div>
@@ -216,64 +225,58 @@
 
         <div class="game-container relative">
             
-            <!-- Mod Seçimi (İçeride) -->
-            <div class="absolute -top-5 left-1/2 transform -translate-x-1/2 flex gap-2">
-                <button onclick="switchMode('missions')" id="btn-missions" class="bg-emerald-500 text-white font-bold px-4 sm:px-8 py-2 rounded-full border-4 border-white shadow-md transition-all active:scale-95 text-sm sm:text-base">Görevler</button>
-                <button onclick="switchMode('freedraw')" id="btn-freedraw" class="bg-slate-200 text-slate-600 font-bold px-4 sm:px-8 py-2 rounded-full border-4 border-white shadow-md transition-all active:scale-95 hover:bg-slate-300 text-sm sm:text-base">Serbest Çizim</button>
+            <div class="absolute -top-4 left-1/2 transform -translate-x-1/2 flex gap-1 sm:gap-2">
+                <button onclick="switchMode('missions')" id="btn-missions" class="bg-emerald-500 text-white font-bold px-3 sm:px-8 py-1.5 sm:py-2 rounded-full border-2 sm:border-4 border-white shadow-md transition-all active:scale-95 text-xs sm:text-base">Görevler</button>
+                <button onclick="switchMode('freedraw')" id="btn-freedraw" class="bg-slate-200 text-slate-600 font-bold px-3 sm:px-8 py-1.5 sm:py-2 rounded-full border-2 sm:border-4 border-white shadow-md transition-all active:scale-95 hover:bg-slate-300 text-xs sm:text-base">Serbest Çizim</button>
             </div>
 
-            <div class="text-center w-full mt-6 mb-2 flex justify-center items-center gap-2 sm:gap-4">
-                <button onclick="prevLevel()" id="btn-prev" class="bg-slate-200 hover:bg-slate-300 rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xl sm:text-2xl font-bold transition-colors">◀</button>
-                <div class="flex-1 max-w-lg">
-                    <h2 id="level-title" class="text-2xl sm:text-4xl font-fredoka text-slate-700 mb-1 leading-tight">Görev Yükleniyor...</h2>
-                    <p id="level-desc" class="text-slate-500 font-bold text-xs sm:text-lg">Aşağıdan rengi seç ve aynısını çiz!</p>
+            <div class="text-center w-full mt-4 sm:mt-6 mb-2 flex justify-between sm:justify-center items-center gap-1 sm:gap-4 px-2">
+                <button onclick="prevLevel()" id="btn-prev" class="bg-slate-200 hover:bg-slate-300 rounded-full w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center text-sm sm:text-2xl font-bold transition-colors shrink-0">◀</button>
+                <div class="flex-1 max-w-lg px-1">
+                    <h2 id="level-title" class="text-lg sm:text-4xl font-fredoka text-slate-700 mb-0.5 sm:mb-1 leading-tight truncate">Görev Yükleniyor...</h2>
+                    <p id="level-desc" class="text-slate-500 font-bold text-[10px] sm:text-lg truncate">Aşağıdan rengi seç ve aynısını çiz!</p>
                 </div>
-                <button onclick="nextLevel()" id="btn-next" class="bg-slate-200 hover:bg-slate-300 rounded-full w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-xl sm:text-2xl font-bold transition-colors">▶</button>
+                <button onclick="nextLevel()" id="btn-next" class="bg-slate-200 hover:bg-slate-300 rounded-full w-8 h-8 sm:w-12 sm:h-12 flex items-center justify-center text-sm sm:text-2xl font-bold transition-colors shrink-0">▶</button>
             </div>
 
-            <!-- DEVASA ALANLAR (Mobil uyumlu) -->
-            <div class="flex flex-col md:flex-row justify-center items-center gap-4 sm:gap-8 lg:gap-16 w-full px-1 sm:px-4">
+            <div class="flex flex-col md:flex-row justify-center items-center gap-3 sm:gap-8 lg:gap-16 w-full px-1 sm:px-4">
                 
-                <!-- Referans Alanı -->
-                <div id="reference-area" class="flex flex-col items-center w-full md:w-1/2 max-w-[550px]">
-                    <span class="bg-indigo-100 text-indigo-700 font-black px-6 py-2 sm:py-3 rounded-t-2xl text-base sm:text-xl uppercase tracking-wider border-2 border-b-0 border-indigo-200 w-full text-center">Buna Bak 👁️</span>
-                    <div id="reference-grid" class="pixel-grid border-indigo-200 shadow-xl"></div>
+                <div id="reference-area" class="flex flex-col items-center w-full md:w-1/2 max-w-[450px]">
+                    <span class="bg-indigo-100 text-indigo-700 font-black px-4 py-1.5 sm:py-3 rounded-t-xl sm:rounded-t-2xl text-xs sm:text-xl uppercase tracking-wider border-2 border-b-0 border-indigo-200 w-full text-center">Buna Bak 👁️</span>
+                    <div id="reference-grid" class="pixel-grid border-indigo-200 shadow-lg sm:shadow-xl w-[200px] h-[200px] sm:w-full sm:h-auto max-h-[450px]"></div>
                 </div>
 
-                <!-- Ok İşareti -->
                 <div id="arrow-icon" class="text-5xl lg:text-7xl text-slate-300 hidden md:block animate-pulse">➡️</div>
-                <div id="arrow-icon-mobile" class="text-5xl text-slate-300 md:hidden animate-pulse">⬇️</div>
+                <div id="arrow-icon-mobile" class="text-3xl text-slate-300 md:hidden animate-pulse my-1">⬇️</div>
 
-                <!-- Çizim Alanı -->
-                <div class="flex flex-col items-center w-full md:w-1/2 max-w-[550px]">
-                    <span id="draw-title" class="bg-emerald-100 text-emerald-700 font-black px-6 py-2 sm:py-3 rounded-t-2xl text-base sm:text-xl uppercase tracking-wider border-2 border-b-0 border-emerald-200 w-full text-center">Buraya Çiz ✍️</span>
-                    <div id="drawing-grid" class="pixel-grid border-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.3)]"></div>
+                <div class="flex flex-col items-center w-full md:w-1/2 max-w-[450px]">
+                    <span id="draw-title" class="bg-emerald-100 text-emerald-700 font-black px-4 py-1.5 sm:py-3 rounded-t-xl sm:rounded-t-2xl text-xs sm:text-xl uppercase tracking-wider border-2 border-b-0 border-emerald-200 w-full text-center">Buraya Çiz ✍️</span>
+                    <div id="drawing-grid" class="pixel-grid border-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.3)] sm:shadow-[0_0_30px_rgba(16,185,129,0.3)] w-[280px] h-[280px] sm:w-full sm:h-auto max-h-[450px]"></div>
                 </div>
 
             </div>
 
-            <!-- Alt Palet Alanı -->
-            <div class="flex flex-col xl:flex-row items-center justify-between gap-4 bg-slate-50 p-4 sm:p-6 rounded-3xl border-2 border-slate-200 mt-4">
+            <!-- Alt Palet ve Araç Çubuğu -->
+            <div class="flex flex-col xl:flex-row items-center justify-between gap-3 sm:gap-4 bg-slate-50 p-2 sm:p-6 rounded-2xl sm:rounded-3xl border-2 border-slate-200 mt-2 sm:mt-4">
                 
-                <!-- ARAÇ ÇUBUĞU (Çiz, Doldur, Silgi, Damlalık, Geri, Temizle) -->
-                <div class="flex flex-wrap gap-2 w-full xl:w-auto justify-center">
-                    <button onclick="setTool('draw')" id="draw-btn" class="tool-btn active-tool bg-white border-2 border-slate-300 text-slate-600 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-bold flex items-center gap-1 sm:gap-2 shadow-sm text-xs sm:text-base">
-                        <span class="text-lg sm:text-xl">🖌️</span> <span class="hidden sm:inline">Çiz</span>
+                <div class="flex flex-wrap gap-1 sm:gap-2 w-full xl:w-auto justify-center">
+                    <button onclick="setTool('draw')" id="draw-btn" class="tool-btn active-tool bg-white border-2 border-slate-300 text-slate-600 px-2 sm:px-4 py-1.5 sm:py-3 rounded-lg sm:rounded-2xl font-bold flex items-center gap-1 shadow-sm text-xs sm:text-base">
+                        <span class="text-base sm:text-xl">🖌️</span> <span class="hidden sm:inline">Çiz</span>
                     </button>
-                    <button onclick="setTool('fill')" id="fill-btn" class="tool-btn bg-white border-2 border-slate-300 text-slate-600 hover:bg-blue-50 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-bold flex items-center gap-1 sm:gap-2 shadow-sm text-xs sm:text-base">
-                        <span class="text-lg sm:text-xl">🪣</span> <span class="hidden sm:inline">Doldur</span>
+                    <button onclick="setTool('fill')" id="fill-btn" class="tool-btn bg-white border-2 border-slate-300 text-slate-600 hover:bg-blue-50 px-2 sm:px-4 py-1.5 sm:py-3 rounded-lg sm:rounded-2xl font-bold flex items-center gap-1 shadow-sm text-xs sm:text-base">
+                        <span class="text-base sm:text-xl">🪣</span> <span class="hidden sm:inline">Doldur</span>
                     </button>
-                    <button onclick="setTool('eraser')" id="eraser-btn" class="tool-btn bg-white border-2 border-slate-300 text-slate-600 hover:bg-rose-50 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-bold flex items-center gap-1 sm:gap-2 shadow-sm text-xs sm:text-base">
-                        <span class="text-lg sm:text-xl">🧽</span> <span class="hidden sm:inline">Silgi</span>
+                    <button onclick="setTool('eraser')" id="eraser-btn" class="tool-btn bg-white border-2 border-slate-300 text-slate-600 hover:bg-rose-50 px-2 sm:px-4 py-1.5 sm:py-3 rounded-lg sm:rounded-2xl font-bold flex items-center gap-1 shadow-sm text-xs sm:text-base">
+                        <span class="text-base sm:text-xl">🧽</span> <span class="hidden sm:inline">Silgi</span>
                     </button>
-                    <button onclick="setTool('picker')" id="picker-btn" class="tool-btn bg-white border-2 border-slate-300 text-slate-600 hover:bg-purple-50 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-bold flex items-center gap-1 sm:gap-2 shadow-sm text-xs sm:text-base" title="Tuvalden Renk Seç">
-                        <span class="text-lg sm:text-xl">💧</span> <span class="hidden sm:inline">Damlalık</span>
+                    <button onclick="setTool('picker')" id="picker-btn" class="tool-btn bg-white border-2 border-slate-300 text-slate-600 hover:bg-purple-50 px-2 sm:px-4 py-1.5 sm:py-3 rounded-lg sm:rounded-2xl font-bold flex items-center gap-1 shadow-sm text-xs sm:text-base" title="Tuvalden Renk Seç">
+                        <span class="text-base sm:text-xl">💧</span> <span class="hidden sm:inline">Seçici</span>
                     </button>
-                    <button onclick="undo()" id="undo-btn" class="tool-btn bg-white border-2 border-slate-300 text-slate-600 hover:bg-orange-50 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-bold flex items-center gap-1 sm:gap-2 shadow-sm text-xs sm:text-base disabled:opacity-50">
-                        <span class="text-lg sm:text-xl">↩️</span> <span class="hidden sm:inline">Geri</span>
+                    <button onclick="undo()" id="undo-btn" class="tool-btn bg-white border-2 border-slate-300 text-slate-600 hover:bg-orange-50 px-2 sm:px-4 py-1.5 sm:py-3 rounded-lg sm:rounded-2xl font-bold flex items-center gap-1 shadow-sm text-xs sm:text-base disabled:opacity-50">
+                        <span class="text-base sm:text-xl">↩️</span> <span class="hidden sm:inline">Geri</span>
                     </button>
-                    <button onclick="clearCanvas()" class="tool-btn bg-white border-2 border-slate-300 text-slate-600 hover:bg-slate-100 px-3 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-bold flex items-center gap-1 sm:gap-2 shadow-sm text-xs sm:text-base">
-                        <span class="text-lg sm:text-xl">🗑️</span> <span class="hidden sm:inline">Temizle</span>
+                    <button onclick="clearCanvas()" class="tool-btn bg-white border-2 border-slate-300 text-slate-600 hover:bg-slate-100 px-2 sm:px-4 py-1.5 sm:py-3 rounded-lg sm:rounded-2xl font-bold flex items-center gap-1 shadow-sm text-xs sm:text-base">
+                        <span class="text-base sm:text-xl">🗑️</span> <span class="hidden sm:inline">Sil</span>
                     </button>
                 </div>
 
@@ -282,24 +285,24 @@
                 </div>
                 
                 <div class="flex flex-wrap gap-2 w-full xl:w-auto items-center justify-center">
-                    <!-- TUVAL BOYUTU (Sadece Serbest Modda) -->
-                    <select id="grid-size-select" onchange="changeFreeDrawSize(this.value)" class="hidden tool-btn bg-white border-2 border-slate-300 text-slate-600 px-4 py-3 rounded-xl sm:rounded-2xl font-bold shadow-sm outline-none cursor-pointer">
+                    
+                    <select id="grid-size-select" onchange="changeFreeDrawSize(this.value)" class="hidden tool-btn bg-white border-2 border-slate-300 text-slate-600 px-2 sm:px-4 py-2 sm:py-3 rounded-xl sm:rounded-2xl font-bold shadow-sm outline-none cursor-pointer text-xs sm:text-base">
                         <option value="8">8x8 Tuval</option>
                         <option value="12" selected>12x12 Tuval</option>
                         <option value="16">16x16 Tuval</option>
                         <option value="20">20x20 Tuval</option>
                     </select>
 
-                    <button id="download-btn" onclick="downloadImage()" class="tool-btn flex-1 xl:flex-none bg-indigo-500 hover:bg-indigo-600 text-white border-b-4 border-indigo-700 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-sm sm:text-xl shadow-sm hidden">
+                    <button id="download-btn" onclick="downloadImage()" class="tool-btn flex-1 xl:flex-none bg-indigo-500 hover:bg-indigo-600 text-white border-b-4 border-indigo-700 px-3 sm:px-6 py-2.5 sm:py-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-xl shadow-sm hidden">
                         İNDİR 💾
                     </button>
                     
-                    <button id="hint-btn" onclick="useHint()" class="tool-btn bg-yellow-400 hover:bg-yellow-500 text-slate-900 border-b-4 border-yellow-600 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-sm sm:text-xl shadow-sm hidden md:block">
-                        İPUCU 💡 (50)
+                    <button id="hint-btn" onclick="useHint()" class="tool-btn flex-1 md:flex-none bg-yellow-400 hover:bg-yellow-500 text-slate-900 border-b-4 border-yellow-600 px-3 sm:px-6 py-2.5 sm:py-4 rounded-xl sm:rounded-2xl font-black text-[10px] sm:text-xl shadow-sm">
+                        İPUCU 💡 <span class="hidden sm:inline">(50 Puan)</span>
                     </button>
 
-                    <button id="check-btn" onclick="checkWinCondition()" class="tool-btn flex-1 xl:flex-none bg-emerald-500 hover:bg-emerald-600 text-white border-b-4 border-emerald-700 px-4 sm:px-6 py-3 sm:py-4 rounded-xl sm:rounded-2xl font-black text-sm sm:text-xl shadow-sm hidden md:block">
-                        KONTROL ET
+                    <button id="check-btn" onclick="checkWinCondition()" class="tool-btn flex-[2] md:flex-none bg-emerald-500 hover:bg-emerald-600 text-white border-b-4 border-emerald-700 px-3 sm:px-6 py-2.5 sm:py-4 rounded-xl sm:rounded-2xl font-black text-[10px] sm:text-xl shadow-sm">
+                        KONTROL ET ✅
                     </button>
                 </div>
             </div>
@@ -309,14 +312,14 @@
 
     <!-- Başarı Modalı -->
     <div id="success-modal" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-[32px] p-8 md:p-12 max-w-lg w-full text-center shadow-2xl border-4 border-emerald-400 success-anim">
-            <div class="text-8xl mb-6">🏆</div>
-            <h2 class="text-5xl font-fredoka text-emerald-600 mb-4" id="modal-title-text">HARİKA!</h2>
-            <p class="text-slate-600 font-bold text-xl mb-4" id="modal-desc-text">Resmi kusursuz bir şekilde çizdin.</p>
-            <div id="modal-score-info" class="bg-yellow-50 text-yellow-700 font-bold p-3 rounded-xl mb-8 border border-yellow-200">
+        <div class="bg-white rounded-[2rem] md:rounded-[32px] p-6 md:p-12 max-w-lg w-full text-center shadow-2xl border-4 border-emerald-400 success-anim">
+            <div class="text-7xl md:text-8xl mb-4 md:mb-6">🏆</div>
+            <h2 class="text-3xl md:text-5xl font-fredoka text-emerald-600 mb-2 md:mb-4" id="modal-title-text">HARİKA!</h2>
+            <p class="text-slate-600 font-bold text-sm md:text-xl mb-4" id="modal-desc-text">Resmi kusursuz bir şekilde çizdin.</p>
+            <div id="modal-score-info" class="bg-yellow-50 text-yellow-700 font-bold p-2 md:p-3 rounded-lg md:rounded-xl mb-6 md:mb-8 border border-yellow-200 text-xs md:text-base">
                 +100 Puan (Hız Bonusu eklendi!)
             </div>
-            <button id="modal-next-btn" onclick="handleModalNext()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-black text-2xl md:text-3xl py-5 rounded-2xl shadow-[0_8px_0_#059669] active:translate-y-2 active:shadow-none transition-all">
+            <button id="modal-next-btn" onclick="handleModalNext()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-white font-black text-xl md:text-3xl py-4 md:py-5 rounded-2xl shadow-[0_6px_0_#059669] md:shadow-[0_8px_0_#059669] active:translate-y-2 active:shadow-none transition-all">
                 Sıradaki Bölüm ➡️
             </button>
         </div>
@@ -331,7 +334,6 @@
 
         const ALL_COLORS = Object.keys(COLORS).filter(c => c !== 'W');
 
-        // TAM 50 GÖREVLİK DEVASA ARŞİV
         const LEVELS = [
             { title: "Kırmızı Elma", gridSize: 8, allowedColors: ['R', 'G', 'BR'], pattern: ['W','W','W','W','W','W','W','W','W','W','W','BR','W','W','W','W','W','W','W','BR','G','G','W','W','W','W','R','R','R','W','W','W','W','R','R','R','R','R','W','W','W','R','R','R','R','R','W','W','W','W','R','R','R','W','W','W','W','W','W','W','W','W','W','W'] },
             { title: "Pembe Kalp", gridSize: 8, allowedColors: ['P', 'R'], pattern: ['W','W','W','W','W','W','W','W','W','R','R','W','W','R','R','W','R','P','P','R','R','P','P','R','R','P','P','P','P','P','P','R','W','R','P','P','P','P','R','W','W','W','R','P','P','R','W','W','W','W','W','R','R','W','W','W','W','W','W','W','W','W','W','W'] },
@@ -357,8 +359,6 @@
             { title: "Kelebek", gridSize: 8, allowedColors: ['P', 'PU', 'K'], pattern: ['W','K','W','W','W','W','K','W','P','P','P','W','W','P','P','P','P','PU','P','P','P','P','PU','P','P','P','P','K','K','P','P','P','W','P','P','K','K','P','P','W','W','PU','P','K','K','P','PU','W','W','P','P','W','W','P','P','W','W','W','W','W','W','W','W','W'] },
             { title: "Kardan Adam", gridSize: 8, allowedColors: ['W', 'K', 'O', 'R', 'B'], pattern: ['B','B','K','K','K','K','B','B','B','B','W','K','K','W','B','B','B','B','W','W','W','W','B','B','B','B','K','O','O','K','B','B','B','R','R','R','R','R','R','B','B','W','W','K','K','W','W','B','W','W','W','K','K','W','W','W','W','W','W','W','W','W','W','W'] },
             { title: "Yıldız", gridSize: 8, allowedColors: ['Y', 'O'], pattern: ['W','W','W','Y','Y','W','W','W','W','W','W','Y','Y','W','W','W','Y','Y','Y','Y','Y','Y','Y','Y','W','Y','Y','O','O','Y','Y','W','W','W','Y','O','O','Y','W','W','W','Y','Y','Y','Y','Y','Y','W','Y','Y','W','W','W','W','Y','Y','W','W','W','W','W','W','W','W'] },
-            
-            // YENİ EKLENEN 26 GÖREV
             { title: "Gözlük", gridSize: 8, allowedColors: ['K', 'C'], pattern: ['W','W','W','W','W','W','W','W','W','W','W','W','W','W','W','W','W','K','K','K','K','K','K','W','K','C','C','K','C','C','K','K','K','C','C','K','C','C','K','W','W','K','K','K','K','K','K','W','W','W','W','W','W','W','W','W','W','W','W','W','W','W','W','W'] },
             { title: "Uğur Böceği", gridSize: 8, allowedColors: ['R', 'K'], pattern: ['W','W','W','W','W','W','W','W','W','W','W','K','K','W','W','W','W','W','R','R','R','R','W','W','W','R','K','R','R','K','R','W','W','R','R','K','K','R','R','W','W','R','K','R','R','K','R','W','W','W','R','R','R','R','W','W','W','W','W','W','W','W','W','W'] },
             { title: "Balık", gridSize: 8, allowedColors: ['O', 'W', 'K'], pattern: ['W','W','W','W','W','W','W','W','W','W','O','O','O','W','W','W','W','O','O','O','O','O','W','W','O','O','W','K','O','O','O','O','O','O','O','O','O','O','O','O','W','O','O','O','O','O','W','W','W','W','O','O','O','W','W','W','W','W','W','W','W','W','W','W'] },
@@ -394,8 +394,8 @@
         let isDrawing = false; 
         let isSoundEnabled = true;
         
-        let currentTool = 'draw'; // 'draw', 'fill', 'eraser', 'picker'
-        let history = []; // Geri al (undo) için geçmiş
+        let currentTool = 'draw'; 
+        let history = []; 
         let currentGridSize = 8;
         let musicInterval;
         let timerInterval;
@@ -472,7 +472,7 @@
                 const gain = audioCtx.createGain();
                 osc.type = 'triangle';
                 osc.frequency.value = notes[noteIndex];
-                gain.gain.value = 0.015; // Çok kısık ses
+                gain.gain.value = 0.015; 
                 osc.connect(gain);
                 gain.connect(audioCtx.destination);
                 osc.start();
@@ -521,6 +521,7 @@
             clearInterval(timerInterval);
             gameAreaEl.classList.add('hidden');
             startScreenEl.classList.remove('hidden');
+            document.body.style.overflowY = 'auto'; 
         }
 
         function startGame(mode) {
@@ -528,6 +529,7 @@
             startBackgroundMusic();
             startScreenEl.classList.add('hidden');
             gameAreaEl.classList.remove('hidden');
+            document.body.style.overflowY = 'auto'; 
             switchMode(mode);
         }
 
@@ -544,6 +546,7 @@
                 document.getElementById('reference-area').classList.remove('hidden');
                 document.getElementById('arrow-icon').classList.remove('hidden');
                 document.getElementById('arrow-icon-mobile').classList.remove('hidden');
+                document.getElementById('check-btn').classList.remove('hidden');
                 document.getElementById('check-btn').classList.add('md:block');
                 document.getElementById('hint-btn').classList.remove('hidden');
                 document.getElementById('download-btn').classList.add('hidden');
@@ -551,8 +554,8 @@
                 document.getElementById('grid-size-select').classList.add('hidden');
                 document.getElementById('draw-title').innerHTML = "Buraya Çiz ✍️";
                 document.getElementById('top-mode-text').innerText = "GÖREV MODU";
-                document.getElementById('btn-prev').classList.remove('hidden');
-                document.getElementById('btn-next').classList.remove('hidden');
+                document.getElementById('btn-prev').classList.remove('invisible');
+                document.getElementById('btn-next').classList.remove('invisible');
                 loadLevel();
             } else {
                 document.getElementById('btn-freedraw').classList.replace('bg-slate-200', 'bg-emerald-500');
@@ -560,6 +563,7 @@
                 document.getElementById('reference-area').classList.add('hidden');
                 document.getElementById('arrow-icon').classList.add('hidden');
                 document.getElementById('arrow-icon-mobile').classList.add('hidden');
+                document.getElementById('check-btn').classList.add('hidden');
                 document.getElementById('check-btn').classList.remove('md:block');
                 document.getElementById('hint-btn').classList.add('hidden');
                 document.getElementById('download-btn').classList.remove('hidden');
@@ -567,8 +571,8 @@
                 document.getElementById('grid-size-select').classList.remove('hidden');
                 document.getElementById('draw-title').innerHTML = "Tuvalin (İstediğini Çiz) ✨";
                 document.getElementById('top-mode-text').innerText = "SERBEST ÇİZİM";
-                document.getElementById('btn-prev').classList.add('hidden');
-                document.getElementById('btn-next').classList.add('hidden');
+                document.getElementById('btn-prev').classList.add('invisible');
+                document.getElementById('btn-next').classList.add('invisible');
                 clearInterval(timerInterval);
                 loadFreeDraw();
             }
@@ -621,7 +625,7 @@
                 
                 drawCell.addEventListener('mousedown', handleDrawStart);
                 drawCell.addEventListener('mouseenter', handleDrawMove);
-                drawCell.addEventListener('touchstart', (e) => { e.preventDefault(); handleDrawStart(e); }, {passive: false});
+                drawCell.addEventListener('touchstart', handleTouchStart, {passive: false});
 
                 drawGridEl.appendChild(drawCell);
             }
@@ -653,7 +657,7 @@
                 
                 drawCell.addEventListener('mousedown', handleDrawStart);
                 drawCell.addEventListener('mouseenter', handleDrawMove);
-                drawCell.addEventListener('touchstart', (e) => { e.preventDefault(); handleDrawStart(e); }, {passive: false});
+                drawCell.addEventListener('touchstart', handleTouchStart, {passive: false});
 
                 drawGridEl.appendChild(drawCell);
             }
@@ -668,7 +672,7 @@
                 swatch.className = 'color-swatch';
                 swatch.dataset.colorCode = colorCode;
                 swatch.style.backgroundColor = COLORS[colorCode];
-                swatch.onclick = () => selectColor(colorCode, swatch);
+                swatch.onclick = (e) => { e.preventDefault(); selectColor(colorCode, swatch); };
                 if (index === 0) selectColor(colorCode, swatch);
                 paletteEl.appendChild(swatch);
             });
@@ -676,7 +680,7 @@
 
         function updateStarsUI() {
             let starsEarned = Math.min(Math.floor(score / 100), 50);
-            starsEl.innerText = `${starsEarned} / 50`;
+            starsEl.innerText = `${starsEarned}/50`;
         }
 
         document.addEventListener('mouseup', () => {
@@ -690,13 +694,22 @@
 
         drawGridEl.addEventListener('touchmove', (e) => {
             if (!isDrawing) return;
-            e.preventDefault();
+            e.preventDefault(); 
+            
             const touch = e.touches[0];
             const element = document.elementFromPoint(touch.clientX, touch.clientY);
+            
             if (element && element.classList.contains('pixel-cell') && element.parentElement.id === 'drawing-grid') {
-                if (currentTool === 'draw' || currentTool === 'eraser') paintCell(element);
+                if (currentTool === 'draw' || currentTool === 'eraser') {
+                    paintCell(element);
+                }
             }
         }, {passive: false});
+
+        function handleTouchStart(e) {
+            e.preventDefault(); 
+            handleDrawStart({ target: e.target }); 
+        }
 
         function handleDrawStart(e) { 
             isDrawing = true; 
@@ -716,8 +729,9 @@
                 paintCell(e.target); 
             }
         }
+        
         function handleDrawMove(e) { 
-            if (isDrawing && e.buttons === 1) {
+            if (isDrawing && e.buttons === 1) { 
                 if (currentTool === 'draw' || currentTool === 'eraser') paintCell(e.target);
             } 
         }
@@ -746,7 +760,6 @@
             if (currentMode === 'missions') checkWinCondition();
         }
 
-        // Boya Kovası
         function floodFill(startCell) {
             playSound('fill');
             const targetColorCode = startCell.dataset.colorCode;
@@ -793,12 +806,14 @@
         }
 
         function setTool(toolName) {
+            playSound('click');
             currentTool = toolName;
             document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active-tool'));
             document.getElementById(`${toolName}-btn`).classList.add('active-tool');
         }
 
         function selectColor(code, swatchElement) {
+            playSound('click');
             activeColorCode = code;
             if(currentTool === 'eraser' || currentTool === 'picker') setTool('draw'); 
             document.querySelectorAll('.color-swatch').forEach(el => el.classList.remove('active'));
@@ -818,7 +833,7 @@
         function downloadImage() {
             playSound('pop');
             const canvas = document.createElement('canvas');
-            const pixelSize = 20; 
+            const pixelSize = 40; 
             canvas.width = currentGridSize * pixelSize;
             canvas.height = currentGridSize * pixelSize;
             const ctx = canvas.getContext('2d');
@@ -858,7 +873,7 @@
                 }
             }
 
-            if(wrongIndices.length === 0) return; // Zaten bitmişse bir şey yapma
+            if(wrongIndices.length === 0) return;
 
             score -= 50;
             scoreEl.innerText = score;
@@ -898,12 +913,12 @@
 
         function handleWin() {
             isDrawing = false; 
-            clearInterval(timerInterval); // Süreyi durdur
+            clearInterval(timerInterval); 
             playSound('win');
             
             let timeBonus = 0;
-            if (score <= currentLevel * 100) { // Sadece ilk kez oynuyorsa puan ve bonus ver
-                timeBonus = Math.max(0, 150 - timeElapsed); // 2.5 dakika par süresi
+            if (score <= currentLevel * 100) { 
+                timeBonus = Math.max(0, 150 - timeElapsed); 
                 score += 100 + timeBonus;
             }
             
@@ -935,7 +950,6 @@
                 document.getElementById('modal-next-btn').onclick = () => {
                     modalEl.classList.add('hidden');
                     switchMode('freedraw');
-                    // Reset modal for future play
                     setTimeout(() => {
                         document.getElementById('modal-title-text').innerText = 'HARİKA!';
                         document.getElementById('modal-desc-text').innerText = "Resmi kusursuz bir şekilde çizdin.";
@@ -948,11 +962,13 @@
                 if (window.confetti) confetti({ particleCount: 300, spread: 120, origin: { y: 0.5 }, colors: ['#10b981', '#3b82f6', '#f59e0b', '#db2777'] });
                 return;
             }
+            playSound('click');
             loadLevel();
         }
 
         function prevLevel() {
             if (currentMode !== 'missions') return;
+            playSound('click');
             currentLevel--;
             if (currentLevel < 0) currentLevel = LEVELS.length - 1;
             loadLevel();

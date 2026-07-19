@@ -25,6 +25,7 @@
             overflow-x: hidden;
             user-select: none;
             touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent; /* Mobilde tıklama parlaklığını gizler */
         }
 
         .font-fredoka { font-family: 'Fredoka One', cursive; }
@@ -62,20 +63,23 @@
             background: white;
             border: 4px solid #cbd5e1;
             border-bottom-width: 8px;
-            border-radius: 1.5rem;
+            border-radius: 1.2rem;
             cursor: pointer;
             transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            width: 90px;
-            height: 100px;
+            width: 75px;
+            height: 90px;
             box-shadow: 0 10px 15px rgba(0,0,0,0.05);
         }
 
+        @media (min-width: 400px) {
+            .task-card { width: 85px; height: 100px; }
+        }
         @media (min-width: 640px) {
-            .task-card { width: 120px; height: 130px; }
+            .task-card { width: 120px; height: 130px; border-radius: 1.5rem; }
         }
         @media (min-width: 1024px) {
             .task-card { width: 140px; height: 150px; }
@@ -86,18 +90,19 @@
         
         /* Vagon Yuvaları */
         .wagon-slot {
-            width: 95px;
-            height: 105px;
+            width: 80px;
+            height: 95px;
             border: 4px dashed #94a3b8;
             background: rgba(255,255,255,0.6);
-            border-radius: 1.5rem;
+            border-radius: 1.2rem;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.3s;
         }
 
-        @media (min-width: 640px) { .wagon-slot { width: 125px; height: 135px; } }
+        @media (min-width: 400px) { .wagon-slot { width: 90px; height: 105px; } }
+        @media (min-width: 640px) { .wagon-slot { width: 125px; height: 135px; border-radius: 1.5rem; } }
         @media (min-width: 1024px) { .wagon-slot { width: 145px; height: 155px; } }
 
         .wagon-slot.filled { border-style: solid; border-color: #3b82f6; background: #eff6ff; box-shadow: inset 0 0 15px rgba(59,130,246,0.1); }
@@ -116,13 +121,13 @@
         }
         .train-departure { animation: train-depart 2.5s ease-in forwards; }
 
-        /* Tekerlek Dönüşü (Sola giden tren için saat yönünün tersi) */
+        /* Tekerlek Dönüşü */
         @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(-360deg); }
         }
         .wheel-spin { animation: spin 1.5s linear infinite; }
-        .train-departure .wheel-spin { animation: spin 0.4s linear infinite; } /* Yola çıkınca hızlanır */
+        .train-departure .wheel-spin { animation: spin 0.4s linear infinite; }
 
         /* Gizli Scrollbar (Ray alanı için) */
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -135,133 +140,119 @@
     <div class="scenery"></div>
     <div class="scenery scenery-front"></div>
 
-    <!-- Başlangıç Ekranı -->
     <div id="start-screen" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 transition-opacity duration-500">
-        <!-- SOL ÜST ANA SAYFA BUTONU EKLENDİ -->
         <a href="index.html" class="absolute top-4 left-4 md:top-6 md:left-6 bg-white/90 hover:bg-white text-sky-600 w-12 h-12 md:w-14 md:h-14 rounded-2xl text-2xl md:text-3xl flex items-center justify-center transition-all shadow-lg hover:scale-110 z-10 border-2 border-sky-200" title="Ana Sayfaya Dön">
             🏠
         </a>
 
-        <div class="glass-panel rounded-[3rem] p-8 md:p-12 max-w-2xl w-full text-center anim-pop border-8 border-sky-400 relative">
+        <div class="glass-panel rounded-[3rem] p-6 md:p-12 max-w-2xl w-full text-center anim-pop border-8 border-sky-400 relative">
             <div class="text-7xl md:text-9xl mb-6 animate-bounce drop-shadow-xl">🚂</div>
             <h1 class="text-4xl md:text-6xl font-fredoka text-sky-600 mb-4 drop-shadow-sm leading-tight">Algoritma Treni</h1>
-            <p class="text-slate-600 font-bold text-lg md:text-xl mb-8 bg-sky-50 p-4 rounded-2xl border border-sky-100">Vagonlara resimleri doğru sırayla yerleştir, treni hareket ettir! Bakalım günlük işleri ne kadar doğru sıralayacaksın?</p>
+            <p class="text-slate-600 font-bold text-base md:text-xl mb-8 bg-sky-50 p-4 rounded-2xl border border-sky-100">Vagonlara resimleri doğru sırayla yerleştir, treni hareket ettir! Bakalım günlük işleri ne kadar doğru sıralayacaksın?</p>
             
-            <button onclick="startGame()" class="w-full bg-sky-500 hover:bg-sky-400 text-white font-black text-2xl md:text-3xl py-5 rounded-2xl shadow-[0_8px_0_#0284c7] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center gap-3">
+            <button onclick="startGame()" class="w-full bg-sky-500 hover:bg-sky-400 text-white font-black text-2xl md:text-3xl py-4 md:py-5 rounded-2xl shadow-[0_8px_0_#0284c7] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center gap-3">
                 <span class="text-4xl">🛤️</span> YOLCULUĞA ÇIK!
             </button>
             
-            <!-- GELİŞTİRİCİ İMZASI GÜNCELLENDİ -->
             <p class="text-xs text-slate-400 font-bold tracking-widest uppercase mt-8 border-t border-slate-200 pt-4">Geliştirici: Mehmet Baran İKİOK</p>
         </div>
     </div>
 
-    <!-- Oyun Ekranı -->
     <div id="game-screen" class="hidden flex-1 flex flex-col z-10 opacity-0 transition-opacity duration-500 h-full relative">
         
-        <!-- Üst Bar -->
-        <div class="bg-white/90 backdrop-blur-md p-3 md:p-4 border-b-4 border-slate-200 flex justify-between items-center shadow-md shrink-0">
-            <!-- ÇIKIŞ BUTONU GÜNCELLENDİ (index.html'e Yönlendiriyor) -->
-            <a href="index.html" class="bg-slate-200 hover:bg-slate-300 text-slate-600 px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-colors border border-slate-300">
+        <div class="bg-white/90 backdrop-blur-md p-2 md:p-4 border-b-4 border-slate-200 flex justify-between items-center shadow-md shrink-0">
+            <a href="index.html" class="bg-slate-200 hover:bg-slate-300 text-slate-600 px-3 md:px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-colors border border-slate-300">
                 <span>🏠</span> <span class="hidden md:inline">Ana Menü</span>
             </a>
             
-            <div class="flex items-center gap-2 bg-sky-50 px-4 py-1.5 rounded-full border-2 border-sky-200">
-                <span class="text-2xl md:text-3xl">🚂</span>
-                <h1 class="text-lg md:text-2xl font-fredoka text-sky-600">Bölüm <span id="level-display" class="text-sky-800">1</span>/30</h1>
+            <div class="flex items-center gap-1 md:gap-2 bg-sky-50 px-3 md:px-4 py-1.5 rounded-full border-2 border-sky-200">
+                <span class="text-xl md:text-3xl">🚂</span>
+                <h1 class="text-base md:text-2xl font-fredoka text-sky-600">Bölüm <span id="level-display" class="text-sky-800">1</span>/30</h1>
             </div>
-            <button id="sound-btn" onclick="toggleSound()" class="bg-slate-200 hover:bg-slate-300 px-3 py-2 rounded-xl text-xl transition-colors border border-slate-300">🔊</button>
+            <button id="sound-btn" onclick="toggleSound()" class="bg-slate-200 hover:bg-slate-300 px-3 py-2 rounded-xl text-lg md:text-xl transition-colors border border-slate-300">🔊</button>
         </div>
 
-        <!-- Görev ve Havuz Alanı -->
         <div class="flex-1 flex flex-col items-center justify-center p-2 md:p-4 w-full max-w-6xl mx-auto min-h-[300px]">
             
-            <div class="text-center mb-4 md:mb-6 w-full px-4">
-                <h2 id="task-title" class="text-3xl md:text-5xl font-fredoka text-white drop-shadow-lg mb-2 leading-tight">Görev Adı</h2>
-                <p id="task-desc" class="text-sky-50 font-bold text-base md:text-xl drop-shadow-md bg-black/20 inline-block px-6 py-2 rounded-full border border-white/20">Açıklama burada yazacak.</p>
+            <div class="text-center mb-2 md:mb-6 w-full px-2">
+                <h2 id="task-title" class="text-2xl md:text-5xl font-fredoka text-white drop-shadow-lg mb-1 md:mb-2 leading-tight">Görev Adı</h2>
+                <p id="task-desc" class="text-sky-50 font-bold text-sm md:text-xl drop-shadow-md bg-black/20 inline-block px-4 py-1 md:py-2 rounded-full border border-white/20">Açıklama burada yazacak.</p>
             </div>
 
-            <!-- Kart Havuzu Paneli -->
-            <div class="glass-panel w-full p-4 md:p-6 rounded-[2rem] flex flex-col items-center relative shadow-2xl">
+            <div class="glass-panel w-full p-3 md:p-6 rounded-[2rem] flex flex-col items-center relative shadow-2xl">
                 
-                <div class="w-full flex justify-between items-center mb-4 px-2">
-                    <p class="text-slate-600 font-black text-sm md:text-lg text-center flex-1 uppercase tracking-wide">
+                <div class="w-full flex justify-between items-center mb-2 md:mb-4 px-2">
+                    <p class="text-slate-600 font-black text-xs md:text-lg text-center flex-1 uppercase tracking-wide">
                         Resimlere Tıklayarak Vagonları Doldur
                     </p>
                 </div>
                 
-                <div id="card-pool" class="flex flex-wrap justify-center gap-2 md:gap-4 lg:gap-6 min-h-[110px] md:min-h-[160px] w-full">
+                <div id="card-pool" class="flex flex-wrap justify-center gap-2 md:gap-4 lg:gap-6 min-h-[100px] md:min-h-[160px] w-full">
                     <!-- Kartlar JS ile yüklenecek -->
                 </div>
 
-                <!-- Geri Al Butonu (Kartların Altında, Ortada, Asla Kesilmez) -->
-                <div class="mt-4 md:mt-6 h-12 flex justify-center w-full">
-                    <button id="undo-btn" onclick="undoLastMove()" class="hidden bg-orange-100 hover:bg-orange-200 text-orange-600 font-bold py-2 md:py-3 px-6 md:px-8 rounded-full transition-transform active:scale-95 border-2 border-orange-300 shadow-md items-center gap-2">
-                        <span class="text-xl md:text-2xl">🔙</span> <span class="text-sm md:text-base">Geri Al</span>
+                <div class="mt-2 md:mt-6 h-10 md:h-12 flex justify-center w-full">
+                    <button id="undo-btn" onclick="undoLastMove()" class="hidden bg-orange-100 hover:bg-orange-200 text-orange-600 font-bold py-1.5 md:py-3 px-6 md:px-8 rounded-full transition-transform active:scale-95 border-2 border-orange-300 shadow-md items-center gap-2">
+                        <span class="text-lg md:text-2xl">🔙</span> <span class="text-xs md:text-base">Geri Al</span>
                     </button>
                 </div>
             </div>
 
         </div>
 
-        <!-- Tren ve Raylar Alanı -->
         <div class="w-full bg-slate-800/30 backdrop-blur-sm border-t-8 border-slate-700/50 relative flex flex-col items-center shrink-0">
             
-            <!-- Tren Rayı (Arkaplan) -->
             <div class="absolute bottom-4 left-0 w-full h-4 bg-slate-500 shadow-inner z-0"></div>
             <div class="absolute bottom-4 left-0 w-full h-4 z-0" style="background: repeating-linear-gradient(90deg, transparent, transparent 24px, #475569 24px, #475569 36px);"></div>
 
-            <!-- Kaydırılabilir Tren Alanı (Mobilde sığması için) -->
-            <div class="w-full overflow-x-auto no-scrollbar pb-6 pt-16 px-4 flex justify-start md:justify-center relative z-10">
-                
-                <!-- Onay Butonu (Trenin üstünde güvenli alanda) -->
-                <div class="absolute top-2 left-0 w-full flex justify-center z-30 pointer-events-none">
-                    <button id="check-btn" onclick="checkTrain()" class="pointer-events-auto bg-green-500 hover:bg-green-400 text-white font-black text-xl md:text-3xl py-3 md:py-4 px-10 md:px-12 rounded-full shadow-[0_6px_0_#16a34a] active:translate-y-2 active:shadow-none transition-all hidden opacity-0 border-4 border-green-300">
-                        HAZIR! ✔️
-                    </button>
-                </div>
+            <!-- Onay Butonu - Artık kaydırma alanının dışında ve her zaman ortada görünür! -->
+            <div class="absolute -top-6 left-0 w-full flex justify-center z-50 pointer-events-none">
+                <button id="check-btn" onclick="checkTrain()" class="pointer-events-auto bg-green-500 hover:bg-green-400 text-white font-black text-lg md:text-3xl py-2 md:py-4 px-8 md:px-12 rounded-full shadow-[0_6px_0_#16a34a] active:translate-y-2 active:shadow-none transition-all hidden opacity-0 border-4 border-green-300">
+                    HAZIR! ✔️
+                </button>
+            </div>
 
+            <!-- Kaydırılabilir Tren Alanı -->
+            <div class="w-full overflow-x-auto no-scrollbar pb-6 pt-10 px-4 flex justify-start md:justify-center relative z-10">
+                
                 <div id="train-container" class="flex items-end gap-2 md:gap-3 lg:gap-4 relative w-max transition-transform">
                     
-                    <!-- LOKOMOTİF (Sola Bakıyor) -->
+                    <!-- LOKOMOTİF -->
                     <div class="relative pb-6 flex flex-col items-center shrink-0">
-                        <div class="text-7xl md:text-8xl lg:text-9xl drop-shadow-2xl z-10 relative">
+                        <div class="text-6xl md:text-8xl lg:text-9xl drop-shadow-2xl z-10 relative">
                             🚂
-                            <!-- Buhar -->
-                            <div class="absolute -top-6 left-2 text-2xl md:text-3xl opacity-60 animate-bounce delay-100">💨</div>
-                            <div class="absolute -top-10 left-8 text-xl md:text-2xl opacity-40 animate-bounce">💨</div>
+                            <div class="absolute -top-4 md:-top-6 left-2 text-xl md:text-3xl opacity-60 animate-bounce delay-100">💨</div>
+                            <div class="absolute -top-8 md:-top-10 left-8 text-lg md:text-2xl opacity-40 animate-bounce">💨</div>
                         </div>
-                        <div class="absolute bottom-1 w-full flex justify-between px-2">
-                            <div class="text-2xl md:text-3xl wheel-spin drop-shadow-md">⚙️</div>
-                            <div class="text-2xl md:text-3xl wheel-spin drop-shadow-md">⚙️</div>
+                        <div class="absolute bottom-1 w-full flex justify-between px-1 md:px-2">
+                            <div class="text-xl md:text-3xl wheel-spin drop-shadow-md">⚙️</div>
+                            <div class="text-xl md:text-3xl wheel-spin drop-shadow-md">⚙️</div>
                         </div>
                     </div>
 
                     <!-- Vagonlar 1, 2, 3, 4 -->
-                    <div class="relative pb-6 shrink-0"><div id="wagon-0" class="wagon-slot bg-gradient-to-b from-blue-50 to-blue-100 shadow-xl border-blue-300"></div><div class="absolute bottom-1 w-full flex justify-between px-6"><div class="text-xl md:text-2xl wheel-spin">🔘</div><div class="text-xl md:text-2xl wheel-spin">🔘</div></div></div>
-                    <div class="relative pb-6 shrink-0"><div id="wagon-1" class="wagon-slot bg-gradient-to-b from-green-50 to-green-100 shadow-xl border-green-300"></div><div class="absolute bottom-1 w-full flex justify-between px-6"><div class="text-xl md:text-2xl wheel-spin">🔘</div><div class="text-xl md:text-2xl wheel-spin">🔘</div></div></div>
-                    <div class="relative pb-6 shrink-0"><div id="wagon-2" class="wagon-slot bg-gradient-to-b from-yellow-50 to-yellow-100 shadow-xl border-yellow-300"></div><div class="absolute bottom-1 w-full flex justify-between px-6"><div class="text-xl md:text-2xl wheel-spin">🔘</div><div class="text-xl md:text-2xl wheel-spin">🔘</div></div></div>
-                    <div class="relative pb-6 shrink-0"><div id="wagon-3" class="wagon-slot bg-gradient-to-b from-purple-50 to-purple-100 shadow-xl border-purple-300"></div><div class="absolute bottom-1 w-full flex justify-between px-6"><div class="text-xl md:text-2xl wheel-spin">🔘</div><div class="text-xl md:text-2xl wheel-spin">🔘</div></div></div>
+                    <div class="relative pb-6 shrink-0"><div id="wagon-0" class="wagon-slot bg-gradient-to-b from-blue-50 to-blue-100 shadow-xl border-blue-300"></div><div class="absolute bottom-1 w-full flex justify-between px-3 md:px-6"><div class="text-lg md:text-2xl wheel-spin">🔘</div><div class="text-lg md:text-2xl wheel-spin">🔘</div></div></div>
+                    <div class="relative pb-6 shrink-0"><div id="wagon-1" class="wagon-slot bg-gradient-to-b from-green-50 to-green-100 shadow-xl border-green-300"></div><div class="absolute bottom-1 w-full flex justify-between px-3 md:px-6"><div class="text-lg md:text-2xl wheel-spin">🔘</div><div class="text-lg md:text-2xl wheel-spin">🔘</div></div></div>
+                    <div class="relative pb-6 shrink-0"><div id="wagon-2" class="wagon-slot bg-gradient-to-b from-yellow-50 to-yellow-100 shadow-xl border-yellow-300"></div><div class="absolute bottom-1 w-full flex justify-between px-3 md:px-6"><div class="text-lg md:text-2xl wheel-spin">🔘</div><div class="text-lg md:text-2xl wheel-spin">🔘</div></div></div>
+                    <div class="relative pb-6 shrink-0"><div id="wagon-3" class="wagon-slot bg-gradient-to-b from-purple-50 to-purple-100 shadow-xl border-purple-300"></div><div class="absolute bottom-1 w-full flex justify-between px-3 md:px-6"><div class="text-lg md:text-2xl wheel-spin">🔘</div><div class="text-lg md:text-2xl wheel-spin">🔘</div></div></div>
                     
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Başarı Modalı -->
     <div id="success-modal" class="fixed inset-0 z-[60] hidden bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
-        <div class="bg-white rounded-[32px] p-8 md:p-12 max-w-lg w-full text-center shadow-2xl border-8 border-green-400 anim-pop">
-            <div class="text-8xl mb-6 drop-shadow-xl animate-bounce">🌟</div>
-            <h2 class="text-4xl md:text-5xl font-fredoka text-green-500 mb-4 uppercase">HARİKA!</h2>
-            <p class="text-slate-600 font-bold text-lg md:text-xl mb-8 bg-green-50 p-4 rounded-xl border border-green-100">Olayları mükemmel bir sıraya koydun ve tren yola çıktı!</p>
-            <button onclick="nextLevel()" class="w-full bg-green-500 hover:bg-green-400 text-white font-black text-2xl md:text-3xl py-5 rounded-2xl shadow-[0_8px_0_#16a34a] active:translate-y-2 active:shadow-none transition-all">
+        <div class="bg-white rounded-[32px] p-6 md:p-12 max-w-lg w-full text-center shadow-2xl border-8 border-green-400 anim-pop">
+            <div class="text-7xl md:text-8xl mb-4 drop-shadow-xl animate-bounce">🌟</div>
+            <h2 class="text-3xl md:text-5xl font-fredoka text-green-500 mb-2 md:mb-4 uppercase">HARİKA!</h2>
+            <p class="text-slate-600 font-bold text-base md:text-xl mb-6 bg-green-50 p-4 rounded-xl border border-green-100">Olayları mükemmel bir sıraya koydun ve tren yola çıktı!</p>
+            <button onclick="nextLevel()" class="w-full bg-green-500 hover:bg-green-400 text-white font-black text-xl md:text-3xl py-4 md:py-5 rounded-2xl shadow-[0_8px_0_#16a34a] active:translate-y-2 active:shadow-none transition-all">
                 Sıradaki Görev ➡️
             </button>
         </div>
     </div>
 
     <script>
-        // Ses Motoru
         let audioCtx;
         let isSoundEnabled = true;
 
@@ -291,7 +282,6 @@
                 gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
                 osc.start(now); osc.stop(now + 0.3);
             } else if (type === 'train') {
-                // Çuf çuf sesi
                 osc.type = 'square'; osc.frequency.setValueAtTime(300, now);
                 osc.frequency.setValueAtTime(400, now + 0.2); osc.frequency.setValueAtTime(300, now + 0.4);
                 gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.6);
@@ -315,7 +305,6 @@
             if(isSoundEnabled) initAudio();
         }
 
-        // TAM 30 GÖREVLİK ARŞİV
         const TASKS = [
             {
                 title: "Sabah Rutini", desc: "Sabah uyanınca sırasıyla ne yaparız?",
@@ -473,7 +462,6 @@
         let wagonSlots = [null, null, null, null]; 
         let isAnimating = false;
 
-        // Ekran Geçişleri
         function showStartScreen() {
             document.getElementById('game-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('opacity-100');
@@ -495,7 +483,6 @@
             }, 500);
         }
 
-        // Seviye Yükleme
         function loadLevel() {
             const task = TASKS[currentLevel];
             document.getElementById('level-display').innerText = currentLevel + 1;
@@ -504,12 +491,10 @@
             
             wagonSlots = [null, null, null, null];
             
-            // Treni eski haline getir
             const train = document.getElementById('train-container');
             train.classList.remove('train-departure');
             train.style.transform = 'translateX(0)';
             
-            // Vagonları temizle
             for(let i=0; i<4; i++) {
                 const wagon = document.getElementById(`wagon-${i}`);
                 wagon.innerHTML = '';
@@ -519,7 +504,6 @@
             document.getElementById('check-btn').classList.add('hidden', 'opacity-0');
             document.getElementById('undo-btn').classList.replace('flex', 'hidden');
 
-            // Havuzu doldur (Karışık sıra ile)
             const pool = document.getElementById('card-pool');
             pool.innerHTML = '';
             
@@ -531,11 +515,10 @@
                 card.style.animationDelay = `${index * 0.1}s`;
                 card.dataset.step = item.step;
                 card.innerHTML = `
-                    <span class="text-4xl md:text-6xl drop-shadow-md mb-2 pointer-events-none">${item.emoji}</span>
-                    <span class="text-[10px] md:text-sm font-bold text-slate-700 pointer-events-none uppercase tracking-wider text-center px-1 leading-tight">${item.text}</span>
+                    <span class="text-3xl sm:text-4xl md:text-6xl drop-shadow-md mb-1 md:mb-2 pointer-events-none">${item.emoji}</span>
+                    <span class="text-[8px] sm:text-[10px] md:text-sm font-bold text-slate-700 pointer-events-none uppercase tracking-wider text-center px-1 leading-tight">${item.text}</span>
                 `;
                 
-                // Tıklama Olayı (Havuza tıklandığında vagona git)
                 card.onclick = () => handleCardClick(card);
                 pool.appendChild(card);
             });
@@ -545,7 +528,6 @@
             if (isAnimating) return;
             
             if (card.parentElement.id === 'card-pool') {
-                // Havuzdan Vagona
                 const emptyIndex = wagonSlots.indexOf(null);
                 if (emptyIndex !== -1) {
                     isAnimating = true;
@@ -569,12 +551,10 @@
                     }, 150);
                 }
             } else {
-                // Vagondan Havuza
                 moveToPool(wagonSlots.indexOf(card));
             }
         }
 
-        // Belirli bir vagondaki kartı havuza geri gönderir
         function moveToPool(slotIndex) {
             if (isAnimating || slotIndex === -1 || !wagonSlots[slotIndex]) return;
             
@@ -600,10 +580,8 @@
             }, 150);
         }
 
-        // Geri Al Fonksiyonu
         function undoLastMove() {
             if (isAnimating) return;
-            // Sondan başa doğru dolu olan ilk vagonu bul ve havuza geri gönder
             for (let i = wagonSlots.length - 1; i >= 0; i--) {
                 if (wagonSlots[i] !== null) {
                     moveToPool(i);
@@ -616,7 +594,6 @@
             const checkBtn = document.getElementById('check-btn');
             const undoBtn = document.getElementById('undo-btn');
 
-            // Tüm vagonlar doluysa Kontrol butonunu göster
             if (wagonSlots.every(slot => slot !== null)) {
                 checkBtn.classList.remove('hidden');
                 setTimeout(() => { checkBtn.classList.remove('opacity-0'); }, 50);
@@ -625,7 +602,6 @@
                 setTimeout(() => { checkBtn.classList.add('hidden'); }, 300);
             }
 
-            // En az bir vagon doluysa Geri Al butonunu göster (Görseli bozmamak için flex kullanıyoruz)
             if (wagonSlots.some(slot => slot !== null)) {
                 undoBtn.classList.remove('hidden');
                 undoBtn.classList.add('flex');
@@ -637,7 +613,6 @@
         function checkTrain() {
             let isCorrect = true;
             
-            // Doğruluk Kontrolü
             for (let i = 0; i < 4; i++) {
                 if (!wagonSlots[i] || parseInt(wagonSlots[i].dataset.step) !== (i + 1)) {
                     isCorrect = false;
@@ -646,11 +621,9 @@
             }
 
             if (isCorrect) {
-                // BAŞARILI
                 document.getElementById('check-btn').classList.add('opacity-0');
                 playSound('train');
                 
-                // Tren Sola doğru yola çıkar
                 const train = document.getElementById('train-container');
                 train.classList.add('train-departure');
                 
@@ -664,12 +637,10 @@
                 }, 1800);
 
             } else {
-                // HATALI
                 playSound('error');
                 for (let i = 0; i < 4; i++) {
                     const wagon = document.getElementById(`wagon-${i}`);
                     wagon.classList.remove('error-shake');
-                    // Yeniden tetiklemek için ufak hile
                     void wagon.offsetWidth;
                     
                     if (wagonSlots[i] && parseInt(wagonSlots[i].dataset.step) !== (i + 1)) {

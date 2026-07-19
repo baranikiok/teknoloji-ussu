@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Algoritma Gezgini - Kodlama Macerası</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -16,7 +16,8 @@
             padding: 0;
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
+            min-height: 100dvh;
+            -webkit-tap-highlight-color: transparent;
         }
 
         #start-screen { backdrop-filter: blur(8px); }
@@ -97,6 +98,10 @@
             -webkit-tap-highlight-color: transparent;
         }
 
+        @media (max-width: 768px) {
+            .block { font-size: 1rem; padding: 10px 14px; min-width: 120px; }
+        }
+
         .block:active { transform: scale(0.98); }
 
         .block::before {
@@ -145,9 +150,7 @@
 </head>
 <body>
 
-    <!-- Başlangıç Ekranı -->
     <div id="start-screen" class="fixed inset-0 bg-slate-800 bg-opacity-90 flex flex-col items-center justify-center z-50 transition-opacity duration-500">
-        <!-- SOL ÜST ANA SAYFA BUTONU EKLENDİ -->
         <a href="index.html" class="absolute top-4 left-4 md:top-6 md:left-6 bg-white/70 hover:bg-white text-slate-800 w-12 h-12 md:w-14 md:h-14 rounded-2xl text-2xl md:text-3xl flex items-center justify-center transition-all shadow-lg backdrop-blur-md hover:scale-110 z-10" title="Ana Sayfaya Dön">
             🏠
         </a>
@@ -163,20 +166,17 @@
                 <span class="text-3xl">▶️</span> OYUNA BAŞLA
             </button>
             
-            <!-- GELİŞTİRİCİ İMZASI GÜNCELLENDİ (Tasarım ve Geliştirme -> Geliştirici) -->
             <div class="mt-6 text-gray-400 font-bold text-sm bg-gray-100 px-4 py-2 rounded-full w-full border border-gray-200">
                 👨‍💻 Geliştirici: <span class="text-gray-500">Mehmet Baran İKİOK</span>
             </div>
         </div>
     </div>
 
-    <!-- Üst Bar -->
     <div class="header-bar w-full min-h-[4rem] flex flex-col md:flex-row justify-between items-center py-2 md:py-0 gap-2 md:gap-0">
         <div class="font-black text-lg md:text-2xl tracking-wide flex items-center gap-2">
             <span>🗺️</span> Kod Kâşifleri
         </div>
         
-        <!-- Dünyalar Arası Navigasyon -->
         <div class="flex items-center gap-1 sm:gap-2 px-2 max-w-[70%]">
             <button onclick="changeStage(-1)" class="text-white hover:text-yellow-300 text-2xl font-bold transition-transform active:scale-90 drop-shadow-md">◀</button>
             <div class="flex flex-wrap justify-center gap-1 sm:gap-2" id="level-dots">
@@ -190,64 +190,60 @@
         </div>
     </div>
 
-    <!-- Ana İçerik -->
-    <div class="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
+    <div class="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden h-full">
         
-        <!-- SOL PANEL: Oyun ve Araç Kutusu -->
         <div class="w-full md:w-5/12 lg:w-4/12 flex flex-col bg-white border-b-4 md:border-b-0 md:border-r border-gray-300 z-10 flex-shrink-0">
             
-            <!-- Oyun Ekranı -->
             <div class="p-2 sm:p-4 flex flex-col items-center border-b border-gray-200">
-                <div id="instruction-text" class="w-full text-center font-bold text-gray-700 mb-2 text-base sm:text-lg min-h-[3.5rem] flex items-center justify-center px-2 leading-tight">
+                <div id="instruction-text" class="w-full text-center font-bold text-gray-700 mb-2 text-sm sm:text-lg min-h-[3rem] flex items-center justify-center px-2 leading-tight">
                     Beni hedefe ulaştır!
                 </div>
                 
-                <div id="game-board" class="w-full max-w-[280px] sm:max-w-[350px] aspect-square relative grid grid-cols-5 grid-rows-5 overflow-hidden shadow-inner">
+                <div id="game-board" class="w-full max-w-[250px] sm:max-w-[350px] aspect-square relative grid grid-cols-5 grid-rows-5 overflow-hidden shadow-inner">
                     <!-- Hücreler ve Karakter JS ile çizilecek -->
                 </div>
                 
-                <!-- Çalıştır ve Geri Al Butonları -->
-                <div class="flex w-full max-w-[280px] sm:max-w-[350px] gap-2 mt-4">
-                    <button id="run-btn" onclick="runAlgorithm()" class="run-button flex-[3] py-3 rounded-full text-white font-black text-lg sm:text-xl flex items-center justify-center gap-2">
+                <div class="flex w-full max-w-[250px] sm:max-w-[350px] gap-2 mt-4">
+                    <button id="run-btn" onclick="runAlgorithm()" class="run-button flex-[3] py-2 sm:py-3 rounded-full text-white font-black text-lg sm:text-xl flex items-center justify-center gap-2">
                         <span class="text-xl sm:text-2xl">▶️</span> ÇALIŞTIR
                     </button>
-                    <button onclick="removeLastCommand()" class="bg-orange-400 hover:bg-orange-500 text-white font-bold py-3 px-4 rounded-full shadow-[0_4px_0_#c2410c] active:translate-y-1 active:shadow-none transition flex-1 flex justify-center items-center text-2xl" title="Son Bloğu Sil">
+                    <button onclick="removeLastCommand()" class="bg-orange-400 hover:bg-orange-500 text-white font-bold py-2 sm:py-3 px-4 rounded-full shadow-[0_4px_0_#c2410c] active:translate-y-1 active:shadow-none transition flex-1 flex justify-center items-center text-xl sm:text-2xl" title="Son Bloğu Sil">
                         🔙
                     </button>
                 </div>
             </div>
 
-            <!-- Blok Araç Kutusu (Toolbox) -->
+            <!-- Araç Kutusu -->
             <div class="bg-gray-50 p-3 sm:p-4 overflow-x-auto md:overflow-y-auto border-t-4 border-gray-200 md:flex-1">
                 <div class="flex justify-between items-center mb-2">
                     <h3 class="text-gray-500 font-bold uppercase text-xs sm:text-sm">Bloklar (Araç Kutusu)</h3>
-                    <span class="text-xs text-gray-400 font-bold block md:hidden">Sola Kaydır 👉</span>
+                    <span class="text-[10px] text-gray-400 font-bold block md:hidden">Sola Kaydır 👉</span>
                 </div>
                 
-                <div class="flex flex-row md:flex-col gap-3 items-center md:items-start w-max md:w-full pb-2 md:pb-0">
+                <div class="flex flex-row md:flex-col gap-2 sm:gap-3 items-center md:items-start w-max md:w-full pb-2 md:pb-0">
                     <div class="block block-move toolbox-block shadow-md" onclick="addCommand('up')">
-                        <span class="text-xl sm:text-2xl">⬆️</span> Kuzey (Y)
+                        <span class="text-lg sm:text-2xl">⬆️</span> Kuzey (Y)
                     </div>
                     <div class="block block-move toolbox-block shadow-md" onclick="addCommand('down')">
-                        <span class="text-xl sm:text-2xl">⬇️</span> Güney (A)
+                        <span class="text-lg sm:text-2xl">⬇️</span> Güney (A)
                     </div>
                     <div class="block block-move toolbox-block shadow-md" onclick="addCommand('left')">
-                        <span class="text-xl sm:text-2xl">⬅️</span> Batı (S)
+                        <span class="text-lg sm:text-2xl">⬅️</span> Batı (S)
                     </div>
                     <div class="block block-move toolbox-block shadow-md" onclick="addCommand('right')">
-                        <span class="text-xl sm:text-2xl">➡️</span> Doğu (S)
+                        <span class="text-lg sm:text-2xl">➡️</span> Doğu (D)
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- SAĞ PANEL: Çalışma Alanı (Workspace) -->
-        <div id="workspace-container" class="w-full md:flex-1 bg-[url('https://studio.code.org/blockly/media/1x1.gif')] bg-gray-200 p-4 relative overflow-y-auto flex flex-col min-h-[400px] md:min-h-0">
+        <!-- Çalışma Alanı -->
+        <div id="workspace-container" class="w-full md:flex-1 bg-[url('https://studio.code.org/blockly/media/1x1.gif')] bg-gray-200 p-4 relative overflow-y-auto flex flex-col min-h-[300px] md:min-h-0">
             
-            <div class="flex justify-between items-center mb-6 sticky top-0 bg-gray-200/90 py-2 z-10 backdrop-blur-sm rounded-lg px-2">
-                <h2 class="text-lg sm:text-xl font-black text-gray-600 uppercase tracking-widest">Çalışma Alanı</h2>
-                <button onclick="clearWorkspace()" class="bg-gray-300 hover:bg-red-400 hover:text-white text-gray-700 font-bold py-2 px-3 sm:px-4 rounded shadow-sm text-xs sm:text-sm flex items-center gap-2 transition">
-                    🗑️ Hepsini Sil
+            <div class="flex justify-between items-center mb-4 sm:mb-6 sticky top-0 bg-gray-200/90 py-2 z-10 backdrop-blur-sm rounded-lg px-2">
+                <h2 class="text-base sm:text-xl font-black text-gray-600 uppercase tracking-widest">Çalışma Alanı</h2>
+                <button onclick="clearWorkspace()" class="bg-gray-300 hover:bg-red-400 hover:text-white text-gray-700 font-bold py-1.5 sm:py-2 px-3 sm:px-4 rounded shadow-sm text-xs sm:text-sm flex items-center gap-2 transition">
+                    🗑️ <span class="hidden sm:inline">Hepsini</span> Sil
                 </button>
             </div>
 
@@ -258,29 +254,26 @@
                 <div id="blocks-list" class="block-container w-full pb-10"></div>
             </div>
             
-            <!-- GELİŞTİRİCİ İMZASI GÜNCELLENDİ (ÇALIŞMA ALANI ALTI) -->
-            <div class="mt-auto pt-8 flex flex-col justify-center items-center opacity-70 text-gray-500 font-bold text-xs sm:text-sm pointer-events-none text-center gap-1">
+            <div class="mt-auto pt-8 flex flex-col justify-center items-center opacity-70 text-gray-500 font-bold text-[10px] sm:text-sm pointer-events-none text-center gap-1">
                 <span>Silmek için çalışma alanındaki bir bloğa veya 🔙 butonuna tıkla.</span>
-                <span class="text-[10px] text-gray-400 mt-2 tracking-wide uppercase">© Geliştirici: <span class="text-gray-500 font-black">Mehmet Baran İKİOK</span></span>
             </div>
         </div>
     </div>
 
-    <!-- Başarı Modalı -->
-    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-md w-full mx-4 border-t-8 border-green-500">
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-md w-full border-t-8 border-green-500">
             <div class="text-6xl mb-4">🏆</div>
             <h2 class="text-3xl font-black text-gray-800 mb-2 text-center">Tebrikler!</h2>
             <p class="text-gray-600 text-center font-bold text-lg mb-2">Bölüm <span id="modal-level">1</span>'i tamamladın.</p>
-            <p class="text-green-600 text-center font-bold text-md mb-8 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
+            <p class="text-green-600 text-center font-bold text-sm sm:text-md mb-8 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
                 Az önce <span id="line-count" class="text-xl">0</span> satır kod yazdın!
             </p>
             
-            <div class="flex gap-4 w-full">
-                <button onclick="replayLevel()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-xl transition">
+            <div class="flex gap-2 sm:gap-4 w-full">
+                <button onclick="replayLevel()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-2 sm:px-4 rounded-xl transition text-sm sm:text-base">
                     🔄 Tekrar
                 </button>
-                <button onclick="nextLevel()" class="flex-[2] bg-green-500 hover:bg-green-600 text-white font-black py-3 px-4 rounded-xl text-lg shadow-[0_4px_0_#16a34a] active:translate-y-1 active:shadow-none transition">
+                <button onclick="nextLevel()" class="flex-[2] bg-green-500 hover:bg-green-600 text-white font-black py-3 px-2 sm:px-4 rounded-xl text-base sm:text-lg shadow-[0_4px_0_#16a34a] active:translate-y-1 active:shadow-none transition">
                     Devam Et ➡️
                 </button>
             </div>
@@ -288,7 +281,6 @@
     </div>
 
     <script>
-        // --- SES MOTORU ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -329,7 +321,6 @@
             }
         }
 
-        // --- OYUN DEĞİŞKENLERİ VE YAPISI ---
         const GRID_SIZE = 5;
         let robotPos = { x: 0, y: 0 };
         let startPos = { x: 0, y: 0 };
@@ -338,15 +329,12 @@
         let isRunning = false;
         let currentLevelIndex = 0;
         
-        // --- KAYIT SİSTEMİ ---
         let maxUnlockedLevel = localStorage.getItem('algoritma_max_level') ? parseInt(localStorage.getItem('algoritma_max_level')) : 0;
 
-        // Ekrana girildiğinde kayıt varsa uyarı göster
         if(maxUnlockedLevel > 0) {
             document.getElementById('save-info').classList.remove('hidden');
         }
 
-        // 10 Dünya
         const stages = [
             { name: "Aşama 1: Robot ve Batarya", player: "🤖", target: "🔋", obstacle: "🧱", bg: "#cbd5e1", border: "#94a3b8" },
             { name: "Aşama 2: Sevimli Dostumuz", player: "🐶", target: "🦴", obstacle: "🌳", bg: "#a3e635", border: "#84cc16" },
@@ -371,9 +359,7 @@
             'right': { icon: '➡️', text: 'Doğu' } 
         };
 
-        // --- TAM 100 BÖLÜM ---
         const levels = [
-            // AŞAMA 1: Temeller (0-9)
             { stageIndex: 0, instruction: "Hedefe ulaş! Sadece Doğu'ya (Sağa) git.", start: {x:0, y:2}, target: {x:2, y:2}, obstacles: [] },
             { stageIndex: 0, instruction: "Daha uzağa gitmeliyim.", start: {x:0, y:3}, target: {x:4, y:3}, obstacles: [] },
             { stageIndex: 0, instruction: "Şimdi de Güney'e (Aşağıya) in.", start: {x:2, y:0}, target: {x:2, y:3}, obstacles: [] },
@@ -385,7 +371,6 @@
             { stageIndex: 0, instruction: "Haritanın diğer ucuna git.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [] },
             { stageIndex: 0, instruction: "Zikzak çizerek ulaş.", start: {x:1, y:1}, target: {x:3, y:3}, obstacles: [] },
 
-            // AŞAMA 2: Sevimli Dostumuz (10-19)
             { stageIndex: 1, instruction: "Ağacın etrafından dolaş.", start: {x:0, y:2}, target: {x:2, y:2}, obstacles: [{x:1, y:2}] },
             { stageIndex: 1, instruction: "Yolu kapatmışlar, yukarıdan dolaş.", start: {x:1, y:3}, target: {x:3, y:3}, obstacles: [{x:2, y:3}] },
             { stageIndex: 1, instruction: "İki ağacın arasından geç.", start: {x:0, y:1}, target: {x:4, y:1}, obstacles: [{x:2, y:0}, {x:2, y:2}] },
@@ -397,7 +382,6 @@
             { stageIndex: 1, instruction: "Ters 'U' çiz.", start: {x:1, y:3}, target: {x:3, y:3}, obstacles: [{x:2, y:3}, {x:2, y:2}] },
             { stageIndex: 1, instruction: "Ağaçlara dikkat et!", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:1, y:1}, {x:2, y:2}, {x:3, y:3}] },
 
-            // AŞAMA 3: Uzay Keşfi (20-29)
             { stageIndex: 2, instruction: "Meteorların arasındaki dar boşluktan geç!", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:2, y:0}, {x:2, y:1}, {x:2, y:3}, {x:2, y:4}] },
             { stageIndex: 2, instruction: "Güvenli yoldan ilerle.", start: {x:0, y:0}, target: {x:4, y:0}, obstacles: [{x:1, y:1}, {x:2, y:1}, {x:3, y:1}] },
             { stageIndex: 2, instruction: "Zikzak çizerek git!", start: {x:0, y:4}, target: {x:4, y:0}, obstacles: [{x:1, y:4}, {x:2, y:3}, {x:3, y:2}, {x:4, y:1}] },
@@ -409,7 +393,6 @@
             { stageIndex: 2, instruction: "Aşağıya inip sağa dön.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:2, y:0}, {x:2, y:1}, {x:2, y:2}] },
             { stageIndex: 2, instruction: "Sıkışık yol.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [{x:2, y:0}, {x:2, y:1}, {x:2, y:3}, {x:2, y:4}] },
 
-            // AŞAMA 4: Orman Macerası (30-39)
             { stageIndex: 3, instruction: "Doğru yolu seç, çıkmaza girme.", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:1, y:2}, {x:1, y:3}, {x:1, y:4}] },
             { stageIndex: 3, instruction: "Sarmaşıkların etrafından dolan.", start: {x:2, y:4}, target: {x:2, y:0}, obstacles: [{x:2, y:2}, {x:3, y:2}, {x:4, y:2}] },
             { stageIndex: 3, instruction: "S harfi çiz.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [{x:3, y:0}, {x:3, y:1}, {x:1, y:3}, {x:1, y:4}] },
@@ -421,7 +404,6 @@
             { stageIndex: 3, instruction: "Büyük bir C harfi çizmen gerekecek.", start: {x:4, y:1}, target: {x:4, y:3}, obstacles: [{x:3, y:1}, {x:3, y:2}, {x:3, y:3}, {x:4, y:2}] },
             { stageIndex: 3, instruction: "Ormanın ortası.", start: {x:0, y:4}, target: {x:4, y:0}, obstacles: [{x:2, y:2}, {x:2, y:3}, {x:2, y:1}] },
 
-            // AŞAMA 5: Büyülü Labirent (40-49)
             { stageIndex: 4, instruction: "Sarmal bir yol! Başım dönmeden hedefe var.", start: {x:0, y:0}, target: {x:2, y:2}, obstacles: [{x:1, y:1}, {x:1, y:2}, {x:1, y:3}, {x:2, y:3}, {x:3, y:3}, {x:3, y:2}, {x:3, y:1}] },
             { stageIndex: 4, instruction: "Ters sarmal! Dışarıdan içeri doğru kıvrıl.", start: {x:4, y:4}, target: {x:2, y:2}, obstacles: [{x:3, y:4}, {x:3, y:3}, {x:3, y:2}, {x:3, y:1}, {x:4, y:1}, {x:1, y:1}, {x:1, y:2}, {x:1, y:3}] },
             { stageIndex: 4, instruction: "Dar koridorlar...", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:1, y:1}, {x:1, y:2}, {x:1, y:3}, {x:3, y:1}, {x:3, y:2}, {x:3, y:3}] },
@@ -433,7 +415,6 @@
             { stageIndex: 4, instruction: "Duvarları dolaş.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [{x:2, y:0}, {x:2, y:1}, {x:2, y:2}, {x:0, y:2}, {x:1, y:2}] },
             { stageIndex: 4, instruction: "Büyük 'S'.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:0, y:1}, {x:1, y:1}, {x:2, y:1}, {x:3, y:1}, {x:1, y:3}, {x:2, y:3}, {x:3, y:3}, {x:4, y:3}] },
 
-            // AŞAMA 6: Korsan Hazinesi (50-59)
             { stageIndex: 5, instruction: "Hazineye ulaşmak için uzun yoldan git.", start: {x:0, y:0}, target: {x:0, y:1}, obstacles: [{x:0, y:2}, {x:1, y:0}, {x:1, y:1}] },
             { stageIndex: 5, instruction: "Palmiyeleri geç.", start: {x:2, y:4}, target: {x:2, y:0}, obstacles: [{x:1, y:1}, {x:2, y:1}, {x:3, y:1}, {x:1, y:3}, {x:2, y:3}, {x:3, y:3}] },
             { stageIndex: 5, instruction: "Korsan köşesi.", start: {x:0, y:4}, target: {x:4, y:0}, obstacles: [{x:1, y:3}, {x:2, y:2}, {x:3, y:1}] },
@@ -445,7 +426,6 @@
             { stageIndex: 5, instruction: "Hazine haritası.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:0, y:2}, {x:1, y:2}, {x:2, y:2}, {x:2, y:3}, {x:2, y:4}] },
             { stageIndex: 5, instruction: "Zorlu kumlar.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [{x:2, y:0}, {x:3, y:2}, {x:1, y:2}, {x:2, y:4}] },
 
-            // AŞAMA 7: Uzaylı İstilası (60-69)
             { stageIndex: 6, instruction: "UFO'ya bin.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:1, y:0}, {x:1, y:1}, {x:3, y:3}, {x:3, y:4}] },
             { stageIndex: 6, instruction: "Gezegenleri atlat.", start: {x:2, y:0}, target: {x:2, y:4}, obstacles: [{x:1, y:2}, {x:2, y:2}, {x:3, y:2}] },
             { stageIndex: 6, instruction: "Uzay boşluğu.", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:1, y:1}, {x:2, y:2}, {x:3, y:3}] },
@@ -457,7 +437,6 @@
             { stageIndex: 6, instruction: "Derin uzay.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [{x:3, y:0}, {x:2, y:1}, {x:1, y:2}, {x:0, y:3}] },
             { stageIndex: 6, instruction: "Meteor fırtınası.", start: {x:2, y:4}, target: {x:2, y:0}, obstacles: [{x:1, y:3}, {x:3, y:3}, {x:1, y:1}, {x:3, y:1}] },
 
-            // AŞAMA 8: Şövalye Görevi (70-79)
             { stageIndex: 7, instruction: "Kaleye gir.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:2, y:1}, {x:2, y:2}, {x:2, y:3}] },
             { stageIndex: 7, instruction: "Sur diplerinden git.", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:1, y:1}, {x:2, y:1}, {x:3, y:1}] },
             { stageIndex: 7, instruction: "Kapıyı bul.", start: {x:2, y:4}, target: {x:2, y:0}, obstacles: [{x:1, y:2}, {x:2, y:2}, {x:3, y:2}] },
@@ -469,7 +448,6 @@
             { stageIndex: 7, instruction: "Muhafızları atlat.", start: {x:1, y:0}, target: {x:3, y:4}, obstacles: [{x:2, y:1}, {x:2, y:2}, {x:2, y:3}] },
             { stageIndex: 7, instruction: "Zindan çıkışı.", start: {x:0, y:0}, target: {x:4, y:0}, obstacles: [{x:1, y:1}, {x:2, y:1}, {x:3, y:1}] },
 
-            // AŞAMA 9: Derin Deniz (80-89)
             { stageIndex: 8, instruction: "İnciyi bul.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:1, y:1}, {x:2, y:2}, {x:3, y:3}] },
             { stageIndex: 8, instruction: "Köpekbalıklarından kaç.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [{x:3, y:1}, {x:2, y:2}, {x:1, y:3}] },
             { stageIndex: 8, instruction: "Mercan resifi.", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:2, y:1}, {x:2, y:3}] },
@@ -481,7 +459,6 @@
             { stageIndex: 8, instruction: "Girdap.", start: {x:0, y:0}, target: {x:2, y:2}, obstacles: [{x:1, y:0}, {x:1, y:1}, {x:1, y:2}] },
             { stageIndex: 8, instruction: "Derin uçurum.", start: {x:4, y:2}, target: {x:0, y:2}, obstacles: [{x:2, y:1}, {x:2, y:2}, {x:2, y:3}] },
 
-            // AŞAMA 10: Ninja Ustası (90-99) - En Zor Seviyeler
             { stageIndex: 9, instruction: "Ninja ustalığını kanıtla.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:1, y:0}, {x:1, y:2}, {x:3, y:2}, {x:3, y:4}] },
             { stageIndex: 9, instruction: "Gölgelerde ilerle.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [{x:3, y:0}, {x:3, y:2}, {x:1, y:2}, {x:1, y:4}] },
             { stageIndex: 9, instruction: "Tapınağa sız.", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:1, y:1}, {x:1, y:2}, {x:3, y:2}, {x:3, y:3}] },
@@ -494,7 +471,6 @@
             { stageIndex: 9, instruction: "BÜYÜK FİNAL! Efsanevi Parşömen!", start: {x:0, y:4}, target: {x:4, y:0}, obstacles: [{x:0, y:3}, {x:1, y:3}, {x:2, y:3}, {x:2, y:2}, {x:2, y:1}, {x:3, y:1}, {x:4, y:1}] }
         ];
 
-        // --- BAŞLATMA VE ÇİZİM ---
         function startGame() {
             try { audioCtx.resume(); } catch(e){}
             playSound('click');
@@ -508,7 +484,6 @@
             }, 500);
         }
 
-        // Dünya değiştirme (Ok tuşları için)
         function changeStage(dir) {
             if(isRunning) return;
             playSound('click');
@@ -540,7 +515,6 @@
             const levelData = levels[currentLevelIndex];
             const currentStage = stages[levelData.stageIndex];
             
-            // Temayı Ayarla
             PLAYER = currentStage.player;
             TARGET = currentStage.target;
             OBSTACLE = currentStage.obstacle;
@@ -562,14 +536,13 @@
             const runBtn = document.getElementById('run-btn');
             runBtn.disabled = false;
             runBtn.innerHTML = '<span class="text-xl sm:text-2xl">▶️</span> ÇALIŞTIR';
-            runBtn.className = "run-button flex-[3] py-3 rounded-full text-white font-black text-lg sm:text-xl flex items-center justify-center gap-2";
+            runBtn.className = "run-button flex-[3] py-2 sm:py-3 rounded-full text-white font-black text-lg sm:text-xl flex items-center justify-center gap-2";
         }
 
         function updateLevelDots() {
             const dotsContainer = document.getElementById('level-dots');
             dotsContainer.innerHTML = '';
             
-            // Sadece aktif aşamanın (stage) seviyelerini göster
             const currentStageIndex = levels[currentLevelIndex].stageIndex;
             const stageLevels = levels.map((l, idx) => ({...l, globalIndex: idx})).filter(l => l.stageIndex === currentStageIndex);
 
@@ -637,7 +610,6 @@
             board.appendChild(player);
         }
 
-        // --- BLOK / ÇALIŞMA ALANI MANTIĞI ---
         function addCommand(direction) {
             if (isRunning) return;
             try { audioCtx.resume(); } catch(e){}
@@ -688,7 +660,7 @@
                 const blockDiv = document.createElement('div');
                 blockDiv.id = `ws-cmd-${index}`;
                 blockDiv.className = 'block block-move';
-                blockDiv.innerHTML = `<span class="text-2xl">${ARROWS[cmd].icon}</span> ${ARROWS[cmd].text}`;
+                blockDiv.innerHTML = `<span class="text-xl sm:text-2xl">${ARROWS[cmd].icon}</span> ${ARROWS[cmd].text}`;
                 
                 blockDiv.onclick = () => removeCommand(index);
                 list.appendChild(blockDiv);
@@ -698,7 +670,6 @@
             if(workspace) workspace.scrollTop = workspace.scrollHeight;
         }
 
-        // --- OYUN (ALGORİTMA) ÇALIŞTIRMA ---
         async function runAlgorithm() {
             if (isRunning) return;
             
@@ -795,7 +766,6 @@
             const nextLevelIndex = currentLevelIndex + 1;
             const currentStageIndex = levels[currentLevelIndex].stageIndex;
             
-            // Kayıt Sistemini Güncelle
             if (nextLevelIndex > maxUnlockedLevel && nextLevelIndex < levels.length) {
                 maxUnlockedLevel = nextLevelIndex;
                 localStorage.setItem('algoritma_max_level', maxUnlockedLevel);

@@ -2,7 +2,8 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Mobil cihazlar için hayati olan viewport ayarları (Yakınlaştırmayı ve yenilemeyi engeller) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Minik Kodlayıcılar</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -14,15 +15,22 @@
         
         body { 
             font-family: 'Nunito', sans-serif; 
-            overflow-x: hidden; 
-            overflow-y: auto; 
+            overflow: hidden; /* Dış kaydırmayı engeller */
             user-select: none; 
-            touch-action: manipulation; 
-            min-height: 100vh;
+            -webkit-user-select: none;
+            touch-action: manipulation; /* Çift tıklama yakınlaştırmasını engeller */
+            min-height: 100dvh; /* Mobil tarayıcı barlarına uyum sağlar */
             margin: 0;
             padding: 0;
+            background-color: #000;
         }
         
+        #root {
+            height: 100dvh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
         .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 
@@ -55,26 +63,30 @@
 
         .grid-cell-border {
             position: absolute;
-            border: 3px solid rgba(79, 70, 229, 0.4); 
+            border: 2px solid rgba(255, 255, 255, 0.15); 
             background: rgba(255, 255, 255, 0.08); 
             box-sizing: border-box;
+            border-radius: 8px;
         }
 
-        .emoji-shadow { filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+        .emoji-shadow { filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
 
         .command-item {
-            background: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.9);
             border: 2px solid rgba(79, 70, 229, 0.3);
-            backdrop-filter: blur(8px);
             transition: all 0.2s ease;
         }
         .command-item-active {
             background: #fbbf24; 
-            box-shadow: 0 0 15px rgba(251, 191, 36, 0.7); 
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.8); 
             border-color: #fff; 
             transform: scale(1.15); 
             z-index: 10;
         }
+
+        /* Yatay kaydırma çubuğunu gizleme (Kodu temiz gösterir) */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         .char-btn {
             transition: all 0.2s;
@@ -93,9 +105,9 @@
         .theme-crystal { background: linear-gradient(135deg, #4c1d95, #db2777); }
 
         .glass-panel {
-            background: rgba(255, 255, 255, 0.92);
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.8);
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
         }
 
@@ -104,7 +116,7 @@
             border: 3px solid rgba(255, 255, 255, 0.5);
             color: white;
             text-align: center;
-            font-size: 1.25rem;
+            font-size: 16px; /* Mobilde otomatik yakınlaştırmayı önlemek için 16px */
             font-weight: bold;
             padding: 12px;
             border-radius: 15px;
@@ -114,10 +126,13 @@
         }
         .name-input:focus { border-color: #fbbf24; background: rgba(255, 255, 255, 0.3); }
         .name-input::placeholder { color: rgba(255,255,255,0.6); }
+
+        /* Yön butonları için mobil dokunma efekti */
+        .dir-btn:active { transform: scale(0.90); }
     </style>
 </head>
 <body class="theme-forest transition-colors duration-1000">
-    <div id="root" class="min-h-screen w-full"></div>
+    <div id="root" class="w-full h-full relative"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef, useMemo } = React;
@@ -283,21 +298,33 @@
             const [earnedStars, setEarnedStars] = useState(0);
             const [showTutorial, setShowTutorial] = useState(false);
             const [showNameError, setShowNameError] = useState(false);
+            
+            const commandsEndRef = useRef(null);
 
+            // Mobil cihazlara özel boyutlandırma algoritması
             useEffect(() => {
                 const handleResize = () => {
                     const w = window.innerWidth;
                     const h = window.innerHeight;
-                    if (w < 400) setCellSize(55);
-                    else if (w < 500) setCellSize(65);
-                    else if (w < 768) setCellSize(75);
-                    else if (h < 800) setCellSize(80);
-                    else setCellSize(100);
+                    
+                    // Ekran genişliğine göre grid hücresi boyutunu hesapla
+                    if (w < 380) setCellSize(55);       // Çok küçük ekranlar (iPhone SE vb)
+                    else if (w < 450) setCellSize(65);  // Standart telefonlar
+                    else if (w < 768) setCellSize(75);  // Büyük telefonlar/Küçük tabletler
+                    else if (h < 800) setCellSize(80);  // Yüksekliği az olan PC ekranları
+                    else setCellSize(95);               // Geniş ekranlar
                 };
                 handleResize(); 
                 window.addEventListener('resize', handleResize);
                 return () => window.removeEventListener('resize', handleResize);
             }, []);
+
+            // Komutlar güncellendiğinde otomatik sağa kaydır (Mobil yatay menü için)
+            useEffect(() => {
+                if (commandsEndRef.current) {
+                    commandsEndRef.current.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, [commands, currentStep]);
 
             useEffect(() => {
                 const handleKeyDown = (e) => {
@@ -371,7 +398,7 @@
                 }
             };
 
-            const addCommand = (direction) => { if (isExecuting || commands.length >= 15 || status !== 'idle') return; playSound('click'); setCommands(prev => [...prev, direction]); };
+            const addCommand = (direction) => { if (isExecuting || commands.length >= 20 || status !== 'idle') return; playSound('click'); setCommands(prev => [...prev, direction]); };
             const undoCommand = () => { if (isExecuting || commands.length === 0 || status !== 'idle') return; playSound('click'); setCommands(prev => prev.slice(0, -1)); };
             const clearCommands = () => { if (isExecuting) return; playSound('click'); setCommands([]); setStatus('idle'); setCurrentStep(-1); setPlayerPos(levelData.playerPos); setHint(""); };
             
@@ -460,51 +487,60 @@
 
             if (mode === 'menu') {
                 return (
-                    <div className="min-h-screen w-full flex flex-col items-center justify-center text-white p-4 relative overflow-hidden">
-                        <a href="index.html" className="absolute top-4 left-4 bg-white/20 hover:bg-white/40 text-white w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center text-2xl md:text-3xl backdrop-blur-md transition-all border border-white/30 hover:scale-110 shadow-lg z-50" title="Ana Menüye Dön">🏠</a>
+                    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-start md:justify-center text-white p-4 relative overflow-y-auto hide-scrollbar">
+                        <a href="index.html" className="absolute top-4 left-4 bg-white/20 hover:bg-white/40 text-white w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center text-xl md:text-3xl backdrop-blur-md transition-all border border-white/30 hover:scale-110 shadow-lg z-50" title="Ana Menüye Dön">🏠</a>
                         
                         {showTutorial && (
-                            <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-                                <div className="bg-white text-indigo-900 p-6 md:p-8 rounded-[30px] max-w-lg w-full animate-pop shadow-2xl">
+                            <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+                                <div className="bg-white text-indigo-900 p-6 md:p-8 rounded-[30px] max-w-lg w-full animate-pop shadow-2xl relative">
                                     <h2 className="text-2xl md:text-3xl font-black mb-4 text-center text-indigo-700">Nasıl Oynanır? 🎮</h2>
-                                    <div className="space-y-4 font-bold opacity-90 mb-6 bg-indigo-50 p-4 rounded-2xl">
+                                    <div className="space-y-4 font-bold opacity-90 mb-6 bg-indigo-50 p-4 rounded-2xl text-sm md:text-base">
                                         <p>1️⃣ Karakterini seçip oyuna başla.</p>
                                         <p>2️⃣ Hedefe ulaştırmak için sırasıyla ok tuşlarına bas.</p>
                                         <p>3️⃣ Engellere çarpmamaya çalış.</p>
-                                        <p>⭐ En kısa yoldan gidersen 3 YILDIZ kazanırsın!</p>
+                                        <p className="text-yellow-600">⭐ En kısa yoldan gidersen 3 YILDIZ kazanırsın!</p>
                                     </div>
-                                    <button onClick={() => setShowTutorial(false)} className="w-full bg-green-500 text-white py-4 rounded-xl font-black text-xl shadow-lg">ANLADIM!</button>
+                                    <button onClick={() => setShowTutorial(false)} className="w-full bg-green-500 text-white py-3 md:py-4 rounded-xl font-black text-lg md:text-xl shadow-lg active:scale-95 transition-transform">ANLADIM!</button>
                                 </div>
                             </div>
                         )}
-                        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
-                        <div className="z-10 text-center animate-pop w-full max-w-2xl px-4 py-8">
-                            <div className="text-6xl mb-4 animate-bounce text-yellow-300 flex justify-center"><Icons.Rocket /></div>
-                            <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter mb-4 drop-shadow-xl uppercase">Minik Kodlayıcılar</h1>
-                            <div className="mb-6 bg-black/20 p-6 md:p-8 rounded-3xl backdrop-blur-sm border border-white/10 relative">
-                                <button onClick={() => setShowTutorial(true)} className="absolute top-4 right-4 text-white/50 hover:text-white"><Icons.Info /></button>
-                                <p className="text-xl mb-3 font-bold">Merhaba! Adın ne?</p>
+                        <div className="absolute inset-0 opacity-20 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                        
+                        <div className="z-10 text-center animate-pop w-full max-w-2xl px-2 py-10 mt-10 md:mt-0">
+                            <div className="text-5xl md:text-6xl mb-2 md:mb-4 animate-bounce text-yellow-300 flex justify-center"><Icons.Rocket /></div>
+                            <h1 className="text-3xl md:text-6xl font-black italic tracking-tighter mb-4 drop-shadow-xl uppercase">Minik Kodlayıcılar</h1>
+                            
+                            <div className="mb-6 bg-black/20 p-5 md:p-8 rounded-3xl backdrop-blur-sm border border-white/10 relative shadow-xl">
+                                <button onClick={() => setShowTutorial(true)} className="absolute top-3 right-3 text-white/50 hover:text-white p-2 active:scale-90 transition-transform"><Icons.Info /></button>
+                                <p className="text-lg md:text-xl mb-3 font-bold">Merhaba! Adın ne?</p>
                                 <input type="text" className="name-input" placeholder="Adını Buraya Yaz" value={inputName} onChange={(e) => setInputName(e.target.value)} maxLength={15} />
-                                {showNameError && <p className="text-red-300 font-bold text-sm mt-2 animate-bounce">Lütfen oyuna başlamadan önce adını yaz!</p>}
-                                <p className="text-md mb-2 font-bold mt-4">Karakterini Seç:</p>
-                                <div className="flex flex-wrap justify-center gap-2">{CHARACTERS.map(char => (<button key={char} onClick={() => setSelectedChar(char)} className={`char-btn text-4xl p-2 rounded-xl ${selectedChar === char ? 'selected' : 'hover:scale-110'}`}>{char}</button>))}</div>
+                                {showNameError && <p className="text-red-300 font-bold text-xs md:text-sm mt-2 animate-bounce">Lütfen oyuna başlamadan önce adını yaz!</p>}
+                                
+                                <p className="text-sm md:text-md mb-2 font-bold mt-5 text-indigo-100">Karakterini Seç:</p>
+                                <div className="flex flex-wrap justify-center gap-2">
+                                    {CHARACTERS.map(char => (
+                                        <button key={char} onClick={() => setSelectedChar(char)} className={`char-btn text-3xl md:text-4xl p-2 rounded-xl ${selectedChar === char ? 'selected' : 'hover:scale-110 active:scale-95'}`}>{char}</button>
+                                    ))}
+                                </div>
                             </div>
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                <button onClick={() => handleStart('story')} className="group relative bg-white/20 backdrop-blur-md border-4 border-white/30 p-6 rounded-[30px] hover:bg-white/30 transition-all hover:scale-105 w-full md:w-64">
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-indigo-900 px-3 py-1 rounded-full font-black text-xs uppercase">100 Bölüm</div>
-                                    <div className="text-4xl mb-2 flex justify-center">🗺️</div>
-                                    <h2 className="text-2xl font-black uppercase tracking-tight">Hikaye Modu</h2>
+                            
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center px-4">
+                                <button onClick={() => handleStart('story')} className="group relative bg-white/20 backdrop-blur-md border-4 border-white/30 p-5 md:p-6 rounded-[24px] md:rounded-[30px] active:bg-white/30 transition-all hover:scale-105 w-full md:w-64 shadow-lg">
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-indigo-900 px-3 py-1 rounded-full font-black text-[10px] md:text-xs uppercase">100 Bölüm</div>
+                                    <div className="text-3xl md:text-4xl mb-1 md:mb-2 flex justify-center">🗺️</div>
+                                    <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight">Hikaye Modu</h2>
                                 </button>
-                                <button onClick={() => handleStart('endless')} className="group relative bg-white/20 backdrop-blur-md border-4 border-white/30 p-6 rounded-[30px] hover:bg-white/30 transition-all hover:scale-105 w-full md:w-64">
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-400 text-white px-3 py-1 rounded-full font-black text-xs uppercase tracking-tight">Sınırsız</div>
-                                    <div className="text-4xl mb-2 flex justify-center"><Icons.Dice /></div>
-                                    <h2 className="text-2xl font-black uppercase tracking-tight">Sonsuz Mod</h2>
+                                <button onClick={() => handleStart('endless')} className="group relative bg-white/20 backdrop-blur-md border-4 border-white/30 p-5 md:p-6 rounded-[24px] md:rounded-[30px] active:bg-white/30 transition-all hover:scale-105 w-full md:w-64 shadow-lg">
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-400 text-white px-3 py-1 rounded-full font-black text-[10px] md:text-xs uppercase tracking-tight">Sınırsız</div>
+                                    <div className="text-3xl md:text-4xl mb-1 md:mb-2 flex justify-center"><Icons.Dice /></div>
+                                    <h2 className="text-xl md:text-2xl font-black uppercase tracking-tight">Sonsuz Mod</h2>
                                 </button>
                             </div>
                         </div>
-                        <div className="absolute bottom-4 text-center opacity-70">
-                            <p className="text-xs font-black tracking-[0.3em] uppercase">GELİŞTİRİCİ</p>
-                            <div className="text-2xl font-black italic uppercase">Mehmet Baran İKİOK</div>
+                        
+                        <div className="mt-auto mb-4 text-center opacity-70">
+                            <p className="text-[10px] md:text-xs font-black tracking-[0.3em] uppercase">GELİŞTİRİCİ</p>
+                            <div className="text-lg md:text-2xl font-black italic uppercase">Mehmet Baran İKİOK</div>
                         </div>
                     </div>
                 );
@@ -514,78 +550,53 @@
             const theme = THEME_MAP[levelData.theme];
 
             return (
-                <div className="min-h-screen w-full p-2 md:p-4 text-gray-800 flex flex-col items-center">
-                    <div className="w-full max-w-[1200px] mb-2 flex flex-wrap items-center justify-between text-white gap-2">
-                        <div className="flex items-center gap-2">
-                            <a href="index.html" className="bg-white/20 p-2 rounded-xl active:scale-95 flex items-center justify-center hover:bg-white/30 transition-colors text-xl" title="Ana Menüye Dön">🏠</a>
-                            <button onClick={goToMenu} className="bg-white/20 p-2 rounded-xl active:scale-95 hover:bg-white/30 transition-colors" title="Geri Çık"><Icons.Back /></button>
-                            <div className="bg-white/10 px-4 py-2 rounded-full border border-white/20 shadow-xl flex items-center gap-2">
-                                <span className="text-2xl">{selectedChar}</span>
-                                <h1 className="text-lg font-black italic hidden sm:block uppercase">Minik Kodlayıcılar</h1>
+                <div className="min-h-[100dvh] w-full p-2 md:p-4 text-gray-800 flex flex-col items-center justify-between">
+                    
+                    {/* Oyun Üst Menüsü (Header) */}
+                    <div className="w-full max-w-[1200px] mb-2 flex items-center justify-between text-white shrink-0">
+                        <div className="flex items-center gap-1 sm:gap-2">
+                            <a href="index.html" className="bg-white/20 p-2 sm:p-3 rounded-xl active:scale-95 flex items-center justify-center transition-colors text-base sm:text-xl" title="Ana Menüye Dön">🏠</a>
+                            <button onClick={goToMenu} className="bg-white/20 p-2 sm:p-3 rounded-xl active:scale-95 transition-colors" title="Geri Çık"><Icons.Back /></button>
+                            <div className="bg-white/10 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full border border-white/20 shadow-lg flex items-center gap-2 ml-1">
+                                <span className="text-lg sm:text-2xl">{selectedChar}</span>
+                                <h1 className="text-sm sm:text-lg font-black italic hidden md:block uppercase">Minik Kodlayıcılar</h1>
                             </div>
                         </div>
-                        <div className="flex gap-2 items-center">
-                            <div className="hidden lg:block bg-white/20 px-4 py-2 rounded-xl font-bold text-sm uppercase">HAYDİ, {userName}!</div>
-                            <button onClick={() => setSoundEnabled(!soundEnabled)} className="bg-white/20 p-2 rounded-xl hover:bg-white/30 transition-colors">{soundEnabled ? <Icons.SoundOn /> : <Icons.SoundOff />}</button>
-                            <div className="glass-panel bg-white/90 text-indigo-800 px-4 py-1 rounded-xl flex flex-col items-center">
-                                <span className="text-[8px] font-black uppercase opacity-60">{mode === 'story' ? 'BÖLÜM' : 'GÖREV'}</span>
-                                <span className="text-xl font-black">{mode === 'story' ? levelIndex + 1 : levelIndex + 1}</span>
+                        
+                        <div className="flex gap-1 sm:gap-2 items-center">
+                            <div className="hidden lg:block bg-white/20 px-4 py-2 rounded-xl font-bold text-sm uppercase truncate max-w-[150px]">HAYDİ, {userName}!</div>
+                            <button onClick={() => setSoundEnabled(!soundEnabled)} className="bg-white/20 p-2 sm:p-3 rounded-xl active:scale-95 transition-colors">{soundEnabled ? <Icons.SoundOn /> : <Icons.SoundOff />}</button>
+                            <div className="glass-panel bg-white/95 text-indigo-800 px-3 py-1 sm:px-4 sm:py-1 rounded-xl flex flex-col items-center">
+                                <span className="text-[7px] sm:text-[8px] font-black uppercase opacity-60 leading-tight">{mode === 'story' ? 'BÖLÜM' : 'GÖREV'}</span>
+                                <span className="text-sm sm:text-xl font-black leading-tight">{mode === 'story' ? levelIndex + 1 : levelIndex + 1}</span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="max-w-[1200px] w-full glass-panel rounded-[20px] md:rounded-[30px] shadow-2xl overflow-hidden flex flex-col-reverse lg:flex-row flex-1 border-4 border-white/60">
-                        <div className="w-full lg:w-[350px] p-4 bg-white/95 backdrop-blur-md lg:border-r-4 border-white/50 flex flex-col shrink-0">
-                            <div className="flex justify-between items-center mb-3">
-                                <div className="text-indigo-700 font-black flex items-center gap-2 text-sm md:text-base"><Icons.Keyboard /> KOD PANELİ</div>
-                                <button onClick={getHint} className="bg-yellow-400 text-indigo-900 px-3 py-1.5 rounded-lg font-black text-xs shadow-md flex items-center gap-1 active:scale-95 transition-transform"><Icons.Bulb /> İPUCU</button>
-                            </div>
-                            
-                            <div className="grid grid-cols-3 gap-2 mb-3 max-w-[220px] mx-auto w-full">
-                                <div />
-                                <button onClick={() => addCommand('up')} className="aspect-square bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-[0_4px_0_rgb(67,56,202)] flex items-center justify-center border-2 border-white/20 active:translate-y-1 transition-colors"><Icons.Up /></button>
-                                <div />
-                                <button onClick={() => addCommand('left')} className="aspect-square bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-[0_4px_0_rgb(67,56,202)] flex items-center justify-center border-2 border-white/20 active:translate-y-1 transition-colors"><Icons.Left /></button>
-                                <button onClick={() => addCommand('down')} className="aspect-square bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-[0_4px_0_rgb(67,56,202)] flex items-center justify-center border-2 border-white/20 active:translate-y-1 transition-colors"><Icons.Down /></button>
-                                <button onClick={() => addCommand('right')} className="aspect-square bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-[0_4px_0_rgb(67,56,202)] flex items-center justify-center border-2 border-white/20 active:translate-y-1 transition-colors"><Icons.Right /></button>
-                            </div>
-
-                            <div className="flex-1 bg-indigo-50/50 rounded-2xl p-3 border-2 border-dashed border-indigo-200/50 overflow-y-auto mb-3 min-h-[80px]">
-                                <div className="flex flex-wrap gap-2">
-                                    {commands.map((cmd, idx) => (
-                                        <div key={idx} className={`w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center shadow-sm transition-all ${currentStep === idx ? 'command-item-active' : 'bg-white text-indigo-600'}`}>
-                                            {cmd === 'up' ? <Icons.Up /> : cmd === 'down' ? <Icons.Down /> : cmd === 'left' ? <Icons.Left /> : <Icons.Right />}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            <div className="flex gap-2 shrink-0">
-                                <button onClick={undoCommand} className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-600 py-3 rounded-xl font-black text-xs md:text-sm border-2 border-blue-200 active:scale-95 transition-all uppercase">Geri Al</button>
-                                <button onClick={clearCommands} className="flex-1 bg-white hover:bg-gray-100 text-rose-500 py-3 rounded-xl font-black text-xs md:text-sm border-2 border-rose-100 active:scale-95 transition-all uppercase">Sil</button>
-                                <button onClick={runCommands} className="flex-[1.5] bg-green-500 hover:bg-green-400 text-white py-3 rounded-xl font-black text-base md:text-lg shadow-[0_6px_0_rgb(22,163,74)] flex items-center justify-center gap-2 active:translate-y-1 transition-all uppercase tracking-tight"><Icons.Play /> YÜRÜ!</button>
-                            </div>
-                        </div>
-
-                        <div className="flex-1 p-4 bg-white/30 backdrop-blur-sm flex flex-col items-center justify-center relative min-h-[350px]">
+                    {}
+                    {/* Ana Oyun Alanı (Mobilde dikey, masaüstünde yatay yerleşim) */}
+                    <div className="max-w-[1200px] w-full glass-panel rounded-[20px] md:rounded-[30px] shadow-2xl overflow-hidden flex flex-col lg:flex-row flex-1 border-4 border-white/60 mb-2">
+                        
+                        {/* Harita ve Karakter (Üstte/Ortada) */}
+                        <div className="flex-1 p-2 sm:p-4 bg-white/20 backdrop-blur-sm flex flex-col items-center justify-center relative min-h-[320px] md:min-h-[400px]">
                             {status === 'success' && (
-                                <div className="absolute inset-0 z-50 bg-green-500/95 flex flex-col items-center justify-center text-white text-center animate-pop p-4">
-                                    <div className="flex gap-4 mb-4">
-                                        {[1, 2, 3].map(i => (<span key={i} className={`text-6xl md:text-8xl drop-shadow-2xl ${i <= earnedStars ? 'text-yellow-300 animate-star' : 'text-green-800/30'}`} style={{animationDelay: `${i*0.2}s`}}>⭐</span>))}
+                                <div className="absolute inset-0 z-50 bg-green-500/95 flex flex-col items-center justify-center text-white text-center animate-pop p-4 backdrop-blur-md">
+                                    <div className="flex gap-2 sm:gap-4 mb-4">
+                                        {[1, 2, 3].map(i => (<span key={i} className={`text-5xl sm:text-7xl md:text-8xl drop-shadow-2xl ${i <= earnedStars ? 'text-yellow-300 animate-star' : 'text-green-800/30'}`} style={{animationDelay: `${i*0.2}s`}}>⭐</span>))}
                                     </div>
-                                    <h2 className="text-3xl md:text-5xl font-black mb-6 uppercase tracking-tight">HARİKASIN {userName.toUpperCase()}!</h2>
-                                    <button onClick={nextLevel} className="bg-white text-green-600 px-12 py-4 rounded-full font-black text-2xl shadow-xl hover:scale-105 active:scale-95 transition-transform uppercase">Sıradaki Bölüm</button>
+                                    <h2 className="text-2xl sm:text-4xl md:text-5xl font-black mb-4 md:mb-6 uppercase tracking-tight">HARİKASIN {userName.toUpperCase()}!</h2>
+                                    <button onClick={nextLevel} className="bg-white text-green-600 px-8 py-3 md:px-12 md:py-4 rounded-full font-black text-lg md:text-2xl shadow-xl active:scale-95 transition-transform uppercase">Sıradaki Bölüm</button>
                                 </div>
                             )}
                             {status === 'fail' && (
-                                <div className="absolute inset-0 z-50 bg-rose-500/95 flex flex-col items-center justify-center text-white text-center animate-pop p-4">
-                                    <div className="text-8xl mb-4 animate-bounce">💥</div>
-                                    <h2 className="text-3xl md:text-5xl font-black mb-6 uppercase tracking-tight uppercase">Dikkat Et!</h2>
-                                    <button onClick={clearCommands} className="bg-white text-rose-600 px-12 py-4 rounded-full font-black text-2xl shadow-xl hover:scale-105 active:scale-95 transition-transform uppercase">Tekrar Dene</button>
+                                <div className="absolute inset-0 z-50 bg-rose-500/95 flex flex-col items-center justify-center text-white text-center animate-pop p-4 backdrop-blur-md">
+                                    <div className="text-7xl md:text-8xl mb-4 animate-bounce">💥</div>
+                                    <h2 className="text-2xl sm:text-4xl md:text-5xl font-black mb-4 md:mb-6 uppercase tracking-tight">Dikkat Et!</h2>
+                                    <button onClick={clearCommands} className="bg-white text-rose-600 px-8 py-3 md:px-12 md:py-4 rounded-full font-black text-lg md:text-2xl shadow-xl active:scale-95 transition-transform uppercase">Tekrar Dene</button>
                                 </div>
                             )}
                             
-                            <div className={`relative rounded-[30px] border-[4px] shadow-2xl overflow-hidden backdrop-blur-sm transition-transform duration-300 ${shake ? 'animate-shake' : 'border-white/50'}`} style={{ width: GRID_SIZE * cellSize, height: GRID_SIZE * cellSize, background: 'rgba(255,255,255,0.15)' }}>
+                            <div className={`relative rounded-[20px] md:rounded-[30px] border-[4px] shadow-2xl overflow-hidden backdrop-blur-sm transition-transform duration-300 ${shake ? 'animate-shake' : 'border-white/50'}`} style={{ width: GRID_SIZE * cellSize, height: GRID_SIZE * cellSize, background: 'rgba(255,255,255,0.15)' }}>
                                 {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => (
                                     <div key={i} className="grid-cell-border" style={{ left: (i % GRID_SIZE) * cellSize, top: Math.floor(i / GRID_SIZE) * cellSize, width: cellSize, height: cellSize }} />
                                 ))}
@@ -597,21 +608,65 @@
                                 <div className="cell-content animate-pulse" style={{ transform: `translate(${levelData.targetPos.x * cellSize}px, ${levelData.targetPos.y * cellSize}px)`, width: cellSize, height: cellSize, fontSize: cellSize * 0.7 }}><span className="emoji-shadow">{theme.target}</span></div>
                                 <div className="cell-content" style={{ transform: `translate(${playerPos.x * cellSize}px, ${playerPos.y * cellSize}px)`, width: cellSize, height: cellSize, fontSize: cellSize * 0.7, zIndex: 30 }}>
                                     <span className="emoji-shadow">{selectedChar}</span>
-                                    {hint && <div className="absolute -top-16 bg-white text-indigo-700 text-xs font-black px-3 py-2 rounded-xl shadow-lg border-2 border-indigo-200 animate-bounce z-50 whitespace-nowrap">{hint}</div>}
+                                    {hint && <div className="absolute -top-12 sm:-top-16 bg-white text-indigo-700 text-[10px] sm:text-xs font-black px-2 py-1 sm:px-3 sm:py-2 rounded-xl shadow-lg border-2 border-indigo-200 animate-bounce z-50 whitespace-nowrap">{hint}</div>}
                                 </div>
                             </div>
 
-                            <div className="mt-4 flex gap-6 text-[10px] font-black text-white uppercase bg-black/40 px-6 py-2 rounded-full border border-white/20 shadow-md">
-                                <div className="flex items-center gap-2"><span>{selectedChar}</span> SEN</div>
-                                <div className="flex items-center gap-2"><span>{theme.target}</span> HEDEF</div>
-                                <div className="flex items-center gap-2"><span>{theme.obstacle}</span> ENGEL</div>
+                            {/* Harita Altı Kılavuz */}
+                            <div className="mt-3 md:mt-4 flex gap-3 md:gap-6 text-[8px] md:text-[10px] font-black text-white uppercase bg-black/40 px-4 md:px-6 py-1.5 md:py-2 rounded-full border border-white/20 shadow-md">
+                                <div className="flex items-center gap-1 md:gap-2"><span>{selectedChar}</span> SEN</div>
+                                <div className="flex items-center gap-1 md:gap-2"><span>{theme.target}</span> HEDEF</div>
+                                <div className="flex items-center gap-1 md:gap-2"><span>{theme.obstacle}</span> ENGEL</div>
                             </div>
                         </div>
+
+                        {/* Kontrol Paneli (Altta) */}
+                        <div className="w-full lg:w-[350px] p-3 md:p-4 bg-white/95 backdrop-blur-md lg:border-l-4 border-white/50 flex flex-col shrink-0">
+                            
+                            <div className="flex justify-between items-center mb-2 md:mb-3">
+                                <div className="text-indigo-700 font-black flex items-center gap-1 sm:gap-2 text-xs md:text-sm"><Icons.Keyboard /> KOD PANELİ</div>
+                                <button onClick={getHint} className="bg-yellow-400 text-indigo-900 px-2 py-1 md:px-3 md:py-1.5 rounded-lg font-black text-[10px] md:text-xs shadow-md flex items-center gap-1 active:scale-95 transition-transform"><Icons.Bulb /> İPUCU</button>
+                            </div>
+                            
+                            {/* Yön Tuşları (Mobil için optimize edilmiş, dokunma alanı büyük) */}
+                            <div className="grid grid-cols-3 gap-1.5 sm:gap-2 mb-2 md:mb-3 max-w-[200px] sm:max-w-[220px] mx-auto w-full">
+                                <div />
+                                <button onClick={() => addCommand('up')} className="dir-btn w-12 h-12 sm:w-14 sm:h-14 mx-auto bg-indigo-600 hover:bg-indigo-500 text-white rounded-[14px] shadow-[0_4px_0_rgb(67,56,202)] flex items-center justify-center border-2 border-white/20 transition-transform"><Icons.Up /></button>
+                                <div />
+                                <button onClick={() => addCommand('left')} className="dir-btn w-12 h-12 sm:w-14 sm:h-14 mx-auto bg-indigo-600 hover:bg-indigo-500 text-white rounded-[14px] shadow-[0_4px_0_rgb(67,56,202)] flex items-center justify-center border-2 border-white/20 transition-transform"><Icons.Left /></button>
+                                <button onClick={() => addCommand('down')} className="dir-btn w-12 h-12 sm:w-14 sm:h-14 mx-auto bg-indigo-600 hover:bg-indigo-500 text-white rounded-[14px] shadow-[0_4px_0_rgb(67,56,202)] flex items-center justify-center border-2 border-white/20 transition-transform"><Icons.Down /></button>
+                                <button onClick={() => addCommand('right')} className="dir-btn w-12 h-12 sm:w-14 sm:h-14 mx-auto bg-indigo-600 hover:bg-indigo-500 text-white rounded-[14px] shadow-[0_4px_0_rgb(67,56,202)] flex items-center justify-center border-2 border-white/20 transition-transform"><Icons.Right /></button>
+                            </div>
+
+                            {/* Eklenen Komutlar Kutusu (Mobilde Yatay Kaydırma) */}
+                            <div className="w-full bg-indigo-50/50 rounded-xl md:rounded-2xl p-2 md:p-3 border-2 border-dashed border-indigo-200/50 overflow-x-auto hide-scrollbar mb-2 md:mb-3 h-[52px] md:h-[64px] flex items-center shadow-inner">
+                                <div className="flex flex-nowrap gap-1.5 md:gap-2 items-center w-max">
+                                    {commands.length === 0 && <span className="text-[10px] md:text-xs text-indigo-300 font-bold italic w-full text-center px-4">Ok tuşları ile yönleri ekle...</span>}
+                                    {commands.map((cmd, idx) => (
+                                        <div key={idx} className={`w-8 h-8 md:w-10 md:h-10 shrink-0 rounded-lg flex items-center justify-center shadow-sm transition-all ${currentStep === idx ? 'command-item-active' : 'command-item text-indigo-600'}`}>
+                                            {cmd === 'up' ? <Icons.Up /> : cmd === 'down' ? <Icons.Down /> : cmd === 'left' ? <Icons.Left /> : <Icons.Right />}
+                                        </div>
+                                    ))}
+                                    <div ref={commandsEndRef} className="w-1 h-1 shrink-0"></div>
+                                </div>
+                            </div>
+                            
+                            {/* Aksiyon Butonları */}
+                            <div className="flex gap-1.5 md:gap-2 shrink-0 mt-auto">
+                                <button onClick={undoCommand} className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 py-2.5 md:py-3 rounded-xl font-black text-[10px] sm:text-xs md:text-sm border-2 border-blue-200 active:scale-95 transition-all uppercase leading-tight">Geri Al</button>
+                                <button onClick={clearCommands} className="flex-1 bg-white hover:bg-gray-100 text-rose-500 py-2.5 md:py-3 rounded-xl font-black text-[10px] sm:text-xs md:text-sm border-2 border-rose-100 active:scale-95 transition-all uppercase leading-tight">Sil</button>
+                                <button onClick={runCommands} className="flex-[1.5] bg-green-500 hover:bg-green-400 text-white py-2.5 md:py-3 rounded-xl font-black text-sm md:text-lg shadow-[0_4px_0_rgb(22,163,74)] flex items-center justify-center gap-1 md:gap-2 active:translate-y-1 transition-all uppercase tracking-tight leading-tight">
+                                    <Icons.Play /> <span className="hidden sm:inline">YÜRÜ!</span><span className="sm:hidden">BAŞLA</span>
+                                </button>
+                            </div>
+                        </div>
+
                     </div>
                     
-                    <div className="mt-2 bg-white/10 backdrop-blur-md px-8 py-2 rounded-2xl text-white text-center shadow-lg shrink-0">
-                        <span className="text-[9px] font-black tracking-[0.3em] opacity-60 block uppercase">GELİŞTİRİCİ</span>
-                        <div className="text-xl font-black italic tracking-tighter uppercase">MEHMET BARAN İKİOK</div>
+                    {/* Alt Bilgi */}
+                    <div className="mt-1 bg-white/10 backdrop-blur-md px-6 py-1.5 rounded-2xl text-white text-center shadow-lg shrink-0">
+                        <span className="text-[8px] font-black tracking-[0.2em] opacity-60 block uppercase">GELİŞTİRİCİ</span>
+                        <div className="text-sm sm:text-base font-black italic tracking-tighter uppercase">MEHMET BARAN İKİOK</div>
                     </div>
                 </div>
             );

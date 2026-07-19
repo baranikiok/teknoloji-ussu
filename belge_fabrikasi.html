@@ -30,14 +30,13 @@
             overflow: hidden;
             user-select: none;
             touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent; /* Mobil mavi tıklama efekti kaldırıldı */
         }
 
         .font-fredoka { font-family: 'Fredoka One', cursive; }
-        
-        /* Dinamik Yazı Tipleri */
-        .font-roboto { font-family: 'Roboto', sans-serif; } /* Düz / Modern */
-        .font-lora { font-family: 'Lora', serif; } /* Resmi / Kitap */
-        .font-comic { font-family: 'Comic Neue', cursive; } /* Eğlenceli / Çocuk */
+        .font-roboto { font-family: 'Roboto', sans-serif; } 
+        .font-lora { font-family: 'Lora', serif; } 
+        .font-comic { font-family: 'Comic Neue', cursive; } 
 
         .glass-panel {
             background: rgba(255, 255, 255, 0.1);
@@ -85,6 +84,7 @@
             background: #f8fafc; color: #334155;
             border: 2px solid #cbd5e1; border-bottom-width: 4px;
             cursor: pointer; transition: all 0.1s;
+            outline: none;
         }
         @media (min-width: 768px) {
             .toolbar-btn { width: 45px; height: 45px; font-size: 1.3rem; }
@@ -107,7 +107,7 @@
         .dropdown-select:active { transform: translateY(2px); border-bottom-width: 2px; }
 
         .paper-container {
-            width: 300px; height: 200px;
+            width: 90vw; max-width: 450px; height: 220px;
             background: #ffffff; border-radius: 4px;
             box-shadow: 2px 2px 10px rgba(0,0,0,0.2), inset 0 0 50px rgba(0,0,0,0.02);
             position: relative; padding: 20px;
@@ -118,22 +118,22 @@
             z-index: 10;
             overflow: hidden;
         }
-        @media (min-width: 768px) { .paper-container { width: 450px; height: 250px; } }
+        @media (min-width: 768px) { .paper-container { height: 250px; } }
 
-        /* Kağıt Giriş/Çıkış */
         .paper-slide-in { animation: slideIn 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
         .paper-slide-out { animation: slideOut 0.8s ease-in forwards; }
         @keyframes slideIn { 0% { transform: translateX(-200vw) rotate(-10deg); } 100% { transform: translateX(0) rotate(0deg); } }
         @keyframes slideOut { 0% { transform: translateX(0) rotate(0deg); } 100% { transform: translateX(200vw) rotate(10deg); } }
 
-        /* Mekanik Damga */
         .stamp {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%) scale(3) rotate(-15deg);
             opacity: 0; pointer-events: none; z-index: 20;
-            font-size: 2rem; font-weight: 900; border: 6px solid; padding: 10px 20px; border-radius: 12px;
+            font-size: 1.5rem; font-weight: 900; border: 6px solid; padding: 8px 16px; border-radius: 12px;
             text-transform: uppercase; letter-spacing: 2px;
         }
+        @media (min-width: 768px) { .stamp { font-size: 2rem; padding: 10px 20px; } }
+        
         .stamp.approved { color: #22c55e; border-color: #22c55e; box-shadow: 0 0 20px rgba(34,197,94,0.4); text-shadow: 0 0 10px rgba(34,197,94,0.4); }
         .stamp.rejected { color: #ef4444; border-color: #ef4444; box-shadow: 0 0 20px rgba(239,68,68,0.4); text-shadow: 0 0 10px rgba(239,68,68,0.4); }
         
@@ -144,28 +144,27 @@
             100% { transform: translate(-50%, -50%) scale(1) rotate(-15deg); opacity: 1; }
         }
 
-        /* Efektler */
         @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        .anim-pop { animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .anim-pop { animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
         
         .error-shake { animation: shake 0.4s ease-in-out; }
         @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
 
-        /* Hedef Metin Alanı */
         #target-text {
             transition: all 0.2s;
             line-height: 1.2;
             word-wrap: break-word;
         }
-        /* Madde işaretleri için özel stil */
         #target-text.bullet-list { display: list-item; list-style-type: disc; list-style-position: inside; }
+        
+        /* Yatay Scrollbar Gizleme (Araç Çubuğu İçin) */
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="relative">
 
     <div id="start-screen" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 transition-opacity duration-500">
-        
-        <!-- Ana Sayfa Butonu -->
         <a href="index.html" class="absolute top-4 left-4 md:top-8 md:left-8 bg-slate-800 hover:bg-slate-700 text-white w-12 h-12 md:w-14 md:h-14 rounded-2xl font-bold transition-all hover:scale-110 flex items-center justify-center text-2xl md:text-3xl border-2 border-slate-600 shadow-lg z-[100]" title="Ana Menüye Dön">
             🏠
         </a>
@@ -179,7 +178,7 @@
                 <p class="text-slate-300 font-bold text-sm md:text-base text-center">Banttan gelen belgeleri, müşteri siparişine göre Word araçlarını kullanarak düzelt!</p>
             </div>
 
-            <button onclick="startGame()" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black text-2xl py-4 rounded-2xl shadow-[0_8px_0_#ca8a04] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center gap-3">
+            <button onclick="startGame()" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black text-2xl py-4 rounded-2xl shadow-[0_8px_0_#ca8a04] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center gap-3 outline-none">
                 <span class="text-3xl">⚙️</span> MESAİYE BAŞLA!
             </button>
             <p class="text-xs text-slate-500 font-bold tracking-widest uppercase mt-6 border-t border-slate-700 pt-4">Geliştirici: Mehmet Baran İKİOK</p>
@@ -188,26 +187,23 @@
 
     <div id="game-screen" class="hidden flex-1 flex flex-col z-10 opacity-0 transition-opacity duration-500 h-full">
         
-        <!-- Üst Bar -->
         <div class="glass-panel px-4 py-2 flex justify-between items-center shrink-0 border-b border-slate-600">
             <div class="flex items-center gap-2">
-                <a href="index.html" class="bg-slate-700 hover:bg-slate-600 text-white w-10 h-10 rounded-xl font-bold transition-colors flex items-center justify-center text-lg" title="Ana Menüye Dön">🏠</a>
-                <button onclick="showStartScreen()" class="bg-slate-700 hover:bg-red-500 text-white w-10 h-10 rounded-xl font-bold transition-colors" title="Oyundan Çık">✖</button>
+                <a href="index.html" class="bg-slate-700 hover:bg-slate-600 text-white w-10 h-10 rounded-xl font-bold transition-colors flex items-center justify-center text-lg outline-none" title="Ana Menüye Dön">🏠</a>
+                <button onclick="showStartScreen()" class="bg-slate-700 hover:bg-red-500 text-white w-10 h-10 rounded-xl font-bold transition-colors outline-none" title="Oyundan Çık">✖</button>
             </div>
             <div class="flex flex-col items-center">
                 <span class="text-[10px] font-black text-yellow-400 tracking-widest uppercase" id="career-title">Çırak</span>
-                <h2 class="text-xl font-fredoka text-white leading-none">Sipariş <span id="level-display">1</span> / 15</h2>
+                <h2 class="text-lg md:text-xl font-fredoka text-white leading-none">Sipariş <span id="level-display">1</span> / 15</h2>
             </div>
-            <button id="sound-btn" onclick="toggleSound()" class="bg-slate-700 hover:bg-slate-600 text-white w-10 h-10 rounded-xl transition-colors">🔊</button>
+            <button id="sound-btn" onclick="toggleSound()" class="bg-slate-700 hover:bg-slate-600 text-white w-10 h-10 rounded-xl transition-colors outline-none">🔊</button>
         </div>
 
         <div class="flex-1 flex flex-col items-center w-full max-w-5xl mx-auto relative overflow-hidden">
             
-            <!-- Arkaplan Dişlileri -->
             <div class="gear top-[15%] left-[5%]"></div>
             <div class="gear reverse top-[30%] right-[5%]" style="width: 50px; height: 50px;"></div>
             
-            <!-- Müşteri Siparişi (Görev Ekranı) -->
             <div class="mt-4 bg-slate-900 border-4 border-slate-700 rounded-2xl p-4 w-[95%] md:w-[80%] text-center shadow-xl relative z-20">
                 <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-slate-900 text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest border-2 border-yellow-700">
                     Sipariş Fişi
@@ -215,55 +211,47 @@
                 <p id="task-instruction" class="text-green-400 font-mono text-sm md:text-lg font-bold">Yükleniyor...</p>
             </div>
 
-            <!-- Gelişmiş Word Araç Çubuğu -->
-            <div class="mt-4 bg-slate-200 p-2 md:p-3 rounded-2xl shadow-xl border-b-4 border-slate-400 w-[98%] md:w-[85%] z-20 flex flex-col gap-2">
+            <div class="mt-4 bg-slate-200 p-2 md:p-3 rounded-2xl shadow-xl border-b-4 border-slate-400 w-[95%] md:w-[85%] z-20 flex flex-col gap-2">
                 
-                <!-- Üst Satır: Font ve Boyut -->
                 <div class="flex flex-wrap justify-between items-center gap-2 bg-white p-2 rounded-xl border border-slate-300">
-                    <select id="font-select" onchange="changeFormat('font', this.value)" class="dropdown-select flex-1 min-w-[120px] text-sm md:text-base">
-                        <option value="font-roboto">Düz Yazı (Arial)</option>
-                        <option value="font-lora">Resmi Yazı (Times)</option>
-                        <option value="font-comic">Eğlenceli (Comic)</option>
+                    <select id="font-select" onchange="changeFormat('font', this.value)" class="dropdown-select flex-1 min-w-[120px] text-xs md:text-base">
+                        <option value="font-roboto">Düz (Arial)</option>
+                        <option value="font-lora">Resmi (Times)</option>
+                        <option value="font-comic">Eğlence (Comic)</option>
                     </select>
                     
                     <div class="toolbar-group border-none">
                         <button onclick="changeFormat('size', 'small')" class="toolbar-btn" title="Küçült" style="font-size: 0.9rem;">A-</button>
                         <button onclick="changeFormat('size', 'medium')" class="toolbar-btn active" title="Normal">A</button>
-                        <button onclick="changeFormat('size', 'large')" class="toolbar-btn" title="Büyüt" style="font-size: 1.4rem;">A+</button>
+                        <button onclick="changeFormat('size', 'large')" class="toolbar-btn" title="Büyüt" style="font-size: 1.2rem;">A+</button>
                     </div>
                 </div>
 
-                <!-- Alt Satır: Stiller, Hizalama, Renkler -->
-                <div class="flex flex-wrap justify-center md:justify-between items-center gap-2 bg-white p-2 rounded-xl border border-slate-300 overflow-x-auto">
+                <div class="flex overflow-x-auto hide-scrollbar items-center gap-2 bg-white p-2 rounded-xl border border-slate-300">
                     
-                    <!-- K T A -->
-                    <div class="toolbar-group">
+                    <div class="toolbar-group shrink-0">
                         <button id="btn-bold" onclick="toggleFormat('bold')" class="toolbar-btn font-black" title="Kalın (Ctrl+K)">K</button>
                         <button id="btn-italic" onclick="toggleFormat('italic')" class="toolbar-btn italic font-serif" title="İtalik (Ctrl+T)">T</button>
                         <button id="btn-underline" onclick="toggleFormat('underline')" class="toolbar-btn underline" title="Altı Çizili (Ctrl+Shift+A)">A</button>
                     </div>
 
-                    <!-- Hizalama ve Madde İşareti -->
-                    <div class="toolbar-group">
+                    <div class="toolbar-group shrink-0">
                         <button id="btn-align-left" onclick="changeFormat('align', 'left')" class="toolbar-btn active" title="Sola Yasla">⬅️</button>
                         <button id="btn-align-center" onclick="changeFormat('align', 'center')" class="toolbar-btn" title="Ortala">🀄</button>
                         <button id="btn-align-right" onclick="changeFormat('align', 'right')" class="toolbar-btn" title="Sağa Yasla">➡️</button>
-                        <button id="btn-bullet" onclick="toggleFormat('bullet')" class="toolbar-btn ml-2" title="Madde İşaretleri">📑</button>
+                        <button id="btn-bullet" onclick="toggleFormat('bullet')" class="toolbar-btn ml-1 md:ml-2" title="Madde İşaretleri">📑</button>
                     </div>
 
-                    <!-- Renkler (Metin ve Fosforlu) -->
-                    <div class="flex items-center gap-2 pl-2">
-                        <!-- Metin Rengi -->
+                    <div class="flex items-center gap-2 shrink-0">
                         <div class="flex gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
-                            <button onclick="changeFormat('color', '#000000')" class="w-6 h-6 rounded-full bg-black border-2 border-slate-300 transform transition active:scale-90" title="Siyah Metin"></button>
-                            <button onclick="changeFormat('color', '#ef4444')" class="w-6 h-6 rounded-full bg-red-500 border-2 border-slate-300 transform transition active:scale-90" title="Kırmızı Metin"></button>
-                            <button onclick="changeFormat('color', '#3b82f6')" class="w-6 h-6 rounded-full bg-blue-500 border-2 border-slate-300 transform transition active:scale-90" title="Mavi Metin"></button>
+                            <button onclick="changeFormat('color', '#000000')" class="w-6 h-6 rounded-full bg-black border-2 border-slate-300 transform transition active:scale-90 outline-none"></button>
+                            <button onclick="changeFormat('color', '#ef4444')" class="w-6 h-6 rounded-full bg-red-500 border-2 border-slate-300 transform transition active:scale-90 outline-none"></button>
+                            <button onclick="changeFormat('color', '#3b82f6')" class="w-6 h-6 rounded-full bg-blue-500 border-2 border-slate-300 transform transition active:scale-90 outline-none"></button>
                         </div>
-                        <!-- Fosforlu Kalem (Highlight) -->
-                        <div class="flex gap-1 bg-yellow-50 p-1 rounded-lg border border-yellow-200 ml-1">
-                            <button onclick="changeFormat('highlight', 'transparent')" class="w-6 h-6 rounded border-2 border-slate-300 bg-white flex items-center justify-center text-xs" title="Vurgu Yok">✖</button>
-                            <button onclick="changeFormat('highlight', '#fef08a')" class="w-6 h-6 rounded border-2 border-slate-300 bg-yellow-200" title="Sarı Fosforlu"></button>
-                            <button onclick="changeFormat('highlight', '#bbf7d0')" class="w-6 h-6 rounded border-2 border-slate-300 bg-green-200" title="Yeşil Fosforlu"></button>
+                        <div class="flex gap-1 bg-yellow-50 p-1 rounded-lg border border-yellow-200">
+                            <button onclick="changeFormat('highlight', 'transparent')" class="w-6 h-6 rounded border-2 border-slate-300 bg-white flex items-center justify-center text-xs outline-none">✖</button>
+                            <button onclick="changeFormat('highlight', '#fef08a')" class="w-6 h-6 rounded border-2 border-slate-300 bg-yellow-200 outline-none"></button>
+                            <button onclick="changeFormat('highlight', '#bbf7d0')" class="w-6 h-6 rounded border-2 border-slate-300 bg-green-200 outline-none"></button>
                         </div>
                     </div>
 
@@ -272,23 +260,18 @@
 
             <div class="flex-1 w-full flex flex-col items-center justify-end relative">
                 
-                <!-- Kağıt Çıktısı -->
-                <div id="paper-wrapper" class="absolute bottom-[35px] md:bottom-[45px] z-20 pointer-events-none">
+                <div id="paper-wrapper" class="absolute bottom-[20px] md:bottom-[45px] z-20 pointer-events-none">
                     <div id="active-paper" class="paper-container paper-slide-in">
-                        <span id="target-text" class="font-roboto transition-all duration-200" style="color:#000; font-size:2rem; text-align:left; background-color:transparent;">
-                            <!-- Kelime/Evrak buraya gelecek -->
+                        <span id="target-text" class="font-roboto transition-all duration-200" style="color:#000; font-size:1.8rem; text-align:left; background-color:transparent;">
                         </span>
-                        <!-- Mekanik Damga Alanı -->
                         <div id="stamp-mark" class="stamp">ONAYLANDI</div>
                     </div>
                 </div>
 
-                <!-- Üretim Bandı -->
                 <div class="conveyor-belt" id="conveyor"></div>
 
-                <!-- Baskı Onay Butonu -->
                 <div class="absolute bottom-[70px] md:bottom-[80px] right-[2%] md:right-[5%] z-30">
-                    <button onclick="submitDocument()" id="submit-btn" class="bg-green-500 hover:bg-green-400 text-white font-black text-sm md:text-xl px-4 md:px-8 py-3 md:py-4 rounded-2xl shadow-[0_6px_0_#16a34a] active:translate-y-2 active:shadow-none transition-all border-4 border-white flex flex-col items-center">
+                    <button onclick="submitDocument()" id="submit-btn" class="bg-green-500 hover:bg-green-400 text-white font-black text-xs md:text-xl px-4 md:px-8 py-3 md:py-4 rounded-2xl shadow-[0_6px_0_#16a34a] active:translate-y-2 active:shadow-none transition-all border-4 border-white flex flex-col items-center outline-none">
                         <span>BASKIYA</span>
                         <span>GÖNDER ✔️</span>
                     </button>
@@ -303,7 +286,7 @@
             <div class="text-7xl mb-4 drop-shadow-xl animate-bounce">🎖️</div>
             <h2 class="text-4xl font-fredoka text-green-500 mb-2 uppercase">MÜKEMMEL İŞ!</h2>
             <p class="text-slate-600 font-bold text-lg mb-8 bg-green-50 p-4 rounded-xl border border-green-100">Siparişi tam istendiği gibi biçimlendirdin. Word menülerine çok hakimsin!</p>
-            <button onclick="nextLevel()" class="w-full bg-green-500 hover:bg-green-400 text-white font-black text-2xl py-5 rounded-2xl shadow-[0_8px_0_#16a34a] active:translate-y-2 active:shadow-none transition-all">
+            <button onclick="nextLevel()" class="w-full bg-green-500 hover:bg-green-400 text-white font-black text-2xl py-5 rounded-2xl shadow-[0_8px_0_#16a34a] active:translate-y-2 active:shadow-none transition-all outline-none">
                 Sıradaki Belge ➡️
             </button>
         </div>
@@ -358,7 +341,6 @@
         }
 
         const TASKS = [
-            // Aşama 1: Temel Biçimlendirme (Matbaa Çırağı)
             { word: "BİLİŞİM", instruction: "Bu yazıyı KIRMIZI ve KALIN yap!", 
               target: { bold: true, italic: false, underline: false, color: '#ef4444', highlight: 'transparent', font: 'font-roboto', size: 'medium', align: 'left', bullet: false } },
             { word: "DİKKAT", instruction: "Bu uyarıyı BÜYÜT ve ALTINI ÇİZ!", 
@@ -366,7 +348,6 @@
             { word: "Şiir Kısmı", instruction: "Şiiri İTALİK (Eğik) ve MAVİ yap!", 
               target: { bold: false, italic: true, underline: false, color: '#3b82f6', highlight: 'transparent', font: 'font-roboto', size: 'medium', align: 'left', bullet: false } },
             
-            // Aşama 2: Hizalama ve Font (Belge Stajyeri)
             { word: "GAZETE MANŞETİ", instruction: "Başlığı ORTALA ve Resmi Yazı Tipi (Times) seç!", 
               target: { bold: false, italic: false, underline: false, color: '#000000', highlight: 'transparent', font: 'font-lora', size: 'medium', align: 'center', bullet: false } },
             { word: "Doğum Günüme Davetlisin!", instruction: "Davetiyeyi Eğlenceli Yazı Tipi (Comic) yap, ORTALA ve KIRMIZI renge boya!", 
@@ -374,7 +355,6 @@
             { word: "İmza Alanı", instruction: "İmza yerini SAĞA YASLA ve İTALİK yap!", 
               target: { bold: false, italic: true, underline: false, color: '#000000', highlight: 'transparent', font: 'font-roboto', size: 'medium', align: 'right', bullet: false } },
             
-            // Aşama 3: Fosforlu Kalem ve Listeler (Kelime İşlemci Ustası)
             { word: "Sınav Tarihi: Yarın", instruction: "Çok önemli! Arkaplanı SARI FOSFORLU yap ve yazıyı KALINLAŞTIR.", 
               target: { bold: true, italic: false, underline: false, color: '#000000', highlight: '#fef08a', font: 'font-roboto', size: 'medium', align: 'left', bullet: false } },
             { word: "Elma\nArmut\nMuz", instruction: "Alışveriş listesine MADDE İŞARETİ ekle!", 
@@ -382,9 +362,8 @@
             { word: "GİZLİ DOSYA", instruction: "BÜYÜK yap, ORTALA, KIRMIZI renk yap ve YEŞİL FOSFORLU ile çiz!", 
               target: { bold: false, italic: false, underline: false, color: '#ef4444', highlight: '#bbf7d0', font: 'font-roboto', size: 'large', align: 'center', bullet: false } },
             
-            // Aşama 4: Hata Ayıklama (Patron Modu - Müşteri Yanlış Yapmış, Düzelt!)
             { word: "BAŞLIK", instruction: "Hata! Müşteri yazıyı sağa yaslamış. Lütfen ORTALA, KALIN yap ve BÜYÜT.", 
-              startState: { align: 'right', size: 'small', bold: false }, // Başlangıçta bozuk gelecek
+              startState: { align: 'right', size: 'small', bold: false },
               target: { bold: true, italic: false, underline: false, color: '#000000', highlight: 'transparent', font: 'font-roboto', size: 'large', align: 'center', bullet: false } },
             { word: "Şifrem: 1234", instruction: "Eyvah! Şifreyi sarı fosforlu yapmışlar. Fosforu KALDIR ve Eğlenceli Font (Comic) yap.", 
               startState: { highlight: '#fef08a', font: 'font-roboto' }, 
@@ -397,13 +376,12 @@
         let currentLevel = 0;
         let isAnimating = false;
 
-        // Mevcut Belge Durumu
         let currentFormat = {
             bold: false, italic: false, underline: false, color: '#000000', highlight: 'transparent',
             font: 'font-roboto', size: 'medium', align: 'left', bullet: false
         };
 
-        const sizes = { 'small': '1.2rem', 'medium': '2.2rem', 'large': '3.2rem' };
+        const sizes = { 'small': '1.2rem', 'medium': '1.8rem', 'large': '2.6rem' };
 
         function showStartScreen() {
             document.getElementById('game-screen').classList.add('hidden');
@@ -441,22 +419,19 @@
             document.getElementById('level-display').innerText = currentLevel + 1;
             updateCareerTitle();
             
-            // Başlangıç durumunu ayarla (Hata ayıklama bölümleri için)
             currentFormat = { 
                 bold: false, italic: false, underline: false, color: '#000000', highlight: 'transparent',
                 font: 'font-roboto', size: 'medium', align: 'left', bullet: false
             };
             if (task.startState) { Object.assign(currentFormat, task.startState); }
             
-            syncUIWithState(); // Butonların görünümünü mevcut duruma eşitle
+            syncUIWithState(); 
             
             document.getElementById('task-instruction').innerHTML = `> ${task.instruction}`;
             
-            // Eğer liste formatındaysa (\n varsa) HTML <br> e çevir
             let displayWord = task.word.replace(/\n/g, '<br>');
             document.getElementById('target-text').innerHTML = displayWord;
             
-            // Kağıt Animasyonu ve Damga Temizliği
             const paper = document.getElementById('active-paper');
             paper.className = 'paper-container paper-slide-in';
             const stamp = document.getElementById('stamp-mark');
@@ -467,7 +442,6 @@
             document.querySelectorAll('.gear').forEach(g => g.classList.add('paused'));
         }
 
-        // TOOLBAR FONKSİYONLARI (Hem state günceller hem UI değiştirir)
         function toggleFormat(type) {
             if (isAnimating) return;
             playSound('click');
@@ -482,32 +456,26 @@
             syncUIWithState();
         }
 
-        // Arayüzü Mevcut Duruma Göre Güncelle (State to UI)
         function syncUIWithState() {
-            // Buton Aktiflikleri
             document.getElementById('btn-bold').classList.toggle('active', currentFormat.bold);
             document.getElementById('btn-italic').classList.toggle('active', currentFormat.italic);
             document.getElementById('btn-underline').classList.toggle('active', currentFormat.underline);
             document.getElementById('btn-bullet').classList.toggle('active', currentFormat.bullet);
 
-            // Hizalama Butonları
             ['left', 'center', 'right'].forEach(a => {
                 document.getElementById(`btn-align-${a}`).classList.toggle('active', currentFormat.align === a);
             });
 
-            // Boyut Butonları
             document.querySelectorAll('.toolbar-group button[title="Küçült"], .toolbar-group button[title="Normal"], .toolbar-group button[title="Büyüt"]').forEach(btn => btn.classList.remove('active'));
             if(currentFormat.size === 'small') document.querySelector('button[title="Küçült"]').classList.add('active');
             if(currentFormat.size === 'medium') document.querySelector('button[title="Normal"]').classList.add('active');
             if(currentFormat.size === 'large') document.querySelector('button[title="Büyüt"]').classList.add('active');
 
-            // Dropdown Font
             document.getElementById('font-select').value = currentFormat.font;
 
             applyFormatToText();
         }
 
-        // METNE UYGULAMA (GÖRSEL ÇIKTI)
         function applyFormatToText() {
             const textEl = document.getElementById('target-text');
             
@@ -516,17 +484,20 @@
             textEl.style.textDecoration = currentFormat.underline ? 'underline' : 'none';
             textEl.style.color = currentFormat.color;
             textEl.style.backgroundColor = currentFormat.highlight;
-            textEl.style.fontSize = sizes[currentFormat.size];
+            
+            // Ekran boyutuna göre boyutlandırma
+            let currentSize = sizes[currentFormat.size];
+            if(window.innerWidth < 768 && currentFormat.size === 'large') currentSize = '2.2rem';
+            textEl.style.fontSize = currentSize;
+            
             textEl.style.textAlign = currentFormat.align;
             
-            // Font Sınıflarını Temizle ve Ekle
             textEl.classList.remove('font-roboto', 'font-lora', 'font-comic');
             textEl.classList.add(currentFormat.font);
 
-            // Madde İşareti
             if (currentFormat.bullet) {
                 textEl.classList.add('bullet-list');
-                textEl.style.textAlign = 'left'; // Liste olunca sola yaslamak daha mantıklı
+                textEl.style.textAlign = 'left'; 
             } else {
                 textEl.classList.remove('bullet-list');
             }
@@ -538,7 +509,6 @@
             
             const taskTarget = TASKS[currentLevel].target;
             
-            // Karşılaştırma
             let isCorrect = true;
             for (let key in taskTarget) {
                 if (currentFormat[key] !== taskTarget[key]) {
@@ -570,7 +540,7 @@
                 stamp.classList.remove('stamp-anim');
                 stamp.style.opacity = '0';
                 isAnimating = false;
-            }, 1000); // Hata damgası 1 saniye ekranda kalsın
+            }, 1000); 
         }
 
         function handleWin() {
@@ -581,11 +551,9 @@
             stamp.className = 'stamp approved stamp-anim';
             
             setTimeout(() => {
-                // Bantı ve Dişlileri Çalıştır (Görsel olarak gidiyor hissi)
                 document.getElementById('conveyor').classList.remove('paused');
                 document.querySelectorAll('.gear').forEach(g => g.classList.remove('paused'));
                 
-                // Kağıdı Banttan Yolla
                 const paper = document.getElementById('active-paper');
                 paper.className = 'paper-container paper-slide-out';
                 
@@ -596,7 +564,7 @@
                     }
                     document.getElementById('success-modal').classList.remove('hidden');
                 }, 800);
-            }, 600); // Damga vurulduktan yarım saniye sonra bant hareket etsin
+            }, 600); 
         }
 
         function nextLevel() {

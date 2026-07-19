@@ -26,8 +26,9 @@
             margin: 0;
             overflow: hidden;
             user-select: none;
-            touch-action: none;
+            touch-action: none; /* Mobilde kaydırmayı engeller */
             color: #1e293b;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .font-fredoka { font-family: 'Fredoka One', cursive; }
@@ -51,7 +52,7 @@
 
         .folder-wrapper {
             position: relative;
-            width: 80px; height: 75px;
+            width: 70px; height: 65px; /* Mobilde daha küçük */
             display: flex; flex-direction: column; align-items: center;
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             perspective: 500px;
@@ -88,14 +89,17 @@
             transform: rotateX(-35deg);
         }
 
-        .folder-icon { font-size: 2rem; transform: translateZ(20px); filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
+        .folder-icon { font-size: 1.5rem; transform: translateZ(20px); filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
         @media (min-width: 768px) { .folder-icon { font-size: 3rem; } }
 
         .folder-label {
-            position: absolute; bottom: -25px;
-            background: rgba(0,0,0,0.7); color: white; padding: 2px 12px;
-            border-radius: 12px; font-size: 0.75rem; font-weight: 900;
+            position: absolute; bottom: -20px;
+            background: rgba(0,0,0,0.7); color: white; padding: 2px 8px;
+            border-radius: 12px; font-size: 0.6rem; font-weight: 900;
             letter-spacing: 1px; white-space: nowrap; backdrop-filter: blur(4px);
+        }
+        @media (min-width: 768px) {
+            .folder-label { bottom: -25px; padding: 2px 12px; font-size: 0.75rem; }
         }
 
         /* Tema Renkleri */
@@ -108,9 +112,9 @@
             position: absolute;
             cursor: grab;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            width: 80px; height: 90px;
+            width: 70px; height: 80px; /* Mobilde daha küçük */
             background: rgba(255, 255, 255, 0.98);
-            border-radius: 12px;
+            border-radius: 10px;
             box-shadow: 0 8px 15px rgba(0,0,0,0.2);
             transition: transform 0.1s;
             touch-action: none;
@@ -152,6 +156,7 @@
 </head>
 <body class="relative flex flex-col h-[100dvh]">
 
+    <!-- STREAMING_CHUNK:Başlangıç Ekranı -->
     <div id="start-screen" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 transition-opacity duration-500">
         <!-- Sol Üst Ana Sayfa Butonu -->
         <a href="index.html" class="absolute top-4 left-4 md:top-6 md:left-6 bg-white/70 hover:bg-white text-slate-800 w-12 h-12 md:w-14 md:h-14 rounded-2xl text-2xl md:text-3xl flex items-center justify-center transition-all shadow-lg backdrop-blur-md hover:scale-110 z-10" title="Ana Sayfaya Dön">
@@ -174,35 +179,32 @@
         </div>
     </div>
 
+    <!-- STREAMING_CHUNK:Öğretici Ekranı -->
     <div id="tutorial-screen" class="absolute inset-0 z-[55] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 transition-opacity duration-500">
         <div class="glass-panel p-6 md:p-10 max-w-3xl w-full text-center anim-pop rounded-[2.5rem] border-4 border-yellow-400">
             <h2 class="text-3xl md:text-4xl font-fredoka text-slate-800 mb-2">Dosyaları Tanıyalım! 🔍</h2>
             <p class="text-slate-600 font-bold text-sm md:text-lg mb-6">Her dosyanın köşesinde türünü gösteren bir resim ve isminde bir uzantı vardır. Oyuna başlamadan bunları öğren:</p>
             
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <!-- Resim -->
                 <div class="bg-blue-50 rounded-2xl p-4 border-2 border-blue-200 flex flex-col items-center">
                     <div class="text-4xl mb-2">🖼️</div>
-                    <div class="bg-blue-500 text-white text-xs font-black px-2 py-1 rounded mb-2">.JPG / .PNG</div>
-                    <h3 class="font-black text-slate-700 text-sm">RESİMLER</h3>
+                    <div class="bg-blue-500 text-white text-[10px] md:text-xs font-black px-2 py-1 rounded mb-2">.JPG / .PNG</div>
+                    <h3 class="font-black text-slate-700 text-xs md:text-sm">RESİMLER</h3>
                 </div>
-                <!-- Müzik -->
                 <div class="bg-purple-50 rounded-2xl p-4 border-2 border-purple-200 flex flex-col items-center">
                     <div class="text-4xl mb-2">🎵</div>
-                    <div class="bg-purple-500 text-white text-xs font-black px-2 py-1 rounded mb-2">.MP3 / .WAV</div>
-                    <h3 class="font-black text-slate-700 text-sm">MÜZİKLER</h3>
+                    <div class="bg-purple-500 text-white text-[10px] md:text-xs font-black px-2 py-1 rounded mb-2">.MP3 / .WAV</div>
+                    <h3 class="font-black text-slate-700 text-xs md:text-sm">MÜZİKLER</h3>
                 </div>
-                <!-- Video -->
                 <div class="bg-red-50 rounded-2xl p-4 border-2 border-red-200 flex flex-col items-center">
                     <div class="text-4xl mb-2">🎬</div>
-                    <div class="bg-red-500 text-white text-xs font-black px-2 py-1 rounded mb-2">.MP4 / .AVI</div>
-                    <h3 class="font-black text-slate-700 text-sm">VİDEOLAR</h3>
+                    <div class="bg-red-500 text-white text-[10px] md:text-xs font-black px-2 py-1 rounded mb-2">.MP4 / .AVI</div>
+                    <h3 class="font-black text-slate-700 text-xs md:text-sm">VİDEOLAR</h3>
                 </div>
-                <!-- Yazı -->
                 <div class="bg-yellow-50 rounded-2xl p-4 border-2 border-yellow-200 flex flex-col items-center">
                     <div class="text-4xl mb-2">📝</div>
-                    <div class="bg-yellow-500 text-white text-xs font-black px-2 py-1 rounded mb-2">.TXT / .DOC</div>
-                    <h3 class="font-black text-slate-700 text-sm">YAZILAR</h3>
+                    <div class="bg-yellow-500 text-white text-[10px] md:text-xs font-black px-2 py-1 rounded mb-2">.TXT / .DOC</div>
+                    <h3 class="font-black text-slate-700 text-xs md:text-sm">YAZILAR</h3>
                 </div>
             </div>
 
@@ -212,20 +214,21 @@
         </div>
     </div>
 
+    <!-- STREAMING_CHUNK:Oyun Ekranı -->
     <div id="game-screen" class="hidden flex-1 flex flex-col z-10 opacity-0 transition-opacity duration-500 h-full">
         
-        <div class="bg-white/10 backdrop-blur-md border-b border-white/20 px-4 py-3 flex justify-between items-center shrink-0 shadow-sm">
+        <div class="bg-white/10 backdrop-blur-md border-b border-white/20 px-2 md:px-4 py-2 md:py-3 flex justify-between items-center shrink-0 shadow-sm">
             <button onclick="showStartScreen()" class="bg-white/50 hover:bg-red-400 hover:text-white text-slate-800 w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold flex items-center justify-center transition-colors shadow-sm">
                 ✖
             </button>
             
-            <div class="flex flex-col items-center bg-white/50 px-4 md:px-6 py-1.5 rounded-2xl shadow-sm border border-white/60">
+            <div class="flex flex-col items-center bg-white/50 px-4 md:px-6 py-1.5 rounded-2xl shadow-sm border border-white/60 mx-2 text-center">
                 <span class="text-[10px] md:text-xs font-black text-blue-700 tracking-widest uppercase" id="level-subtitle">Seviye 1/20</span>
-                <h2 class="text-lg md:text-2xl font-fredoka text-slate-800 leading-tight" id="level-title">Temel Dosyalar</h2>
+                <h2 class="text-sm md:text-2xl font-fredoka text-slate-800 leading-tight truncate w-[150px] md:w-auto" id="level-title">Temel Dosyalar</h2>
             </div>
 
             <div class="flex items-center gap-2">
-                <div class="hidden md:flex bg-yellow-400 text-yellow-900 font-black px-4 py-2 rounded-xl shadow-sm items-center gap-2">
+                <div class="hidden sm:flex bg-yellow-400 text-yellow-900 font-black px-3 md:px-4 py-2 rounded-xl shadow-sm items-center gap-1 md:gap-2">
                     <span>⭐</span>
                     <span id="score-display">0</span>
                 </div>
@@ -233,17 +236,19 @@
             </div>
         </div>
 
+        <!-- STREAMING_CHUNK:Masaüstü Alanı -->
         <div class="flex-1 relative w-full overflow-hidden" id="desktop-area">
             <!-- Dosyalar JS ile buraya eklenecek -->
         </div>
 
-        <div class="w-full flex justify-center pb-2 md:pb-6 px-2 shrink-0 z-30 pointer-events-none">
-            <div class="mac-dock rounded-3xl p-4 md:p-6 flex justify-center gap-6 md:gap-12 min-h-[120px] md:min-h-[160px] items-end pointer-events-auto" id="folders-dock">
+        <div class="w-full flex justify-center pb-2 md:pb-6 px-1 md:px-2 shrink-0 z-30 pointer-events-none">
+            <div class="mac-dock rounded-3xl p-3 md:p-6 flex justify-center gap-3 md:gap-12 min-h-[90px] md:min-h-[160px] items-end pointer-events-auto" id="folders-dock">
                 <!-- Klasörler JS ile buraya eklenecek -->
             </div>
         </div>
     </div>
 
+    <!-- STREAMING_CHUNK:Başarı Modalı -->
     <div id="success-modal" class="absolute inset-0 z-[60] hidden bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
         <div class="glass-panel p-8 md:p-14 max-w-lg w-full text-center anim-pop rounded-[2.5rem] border-4 border-green-400">
             <div class="text-8xl mb-6 drop-shadow-2xl animate-bounce">✨</div>
@@ -262,6 +267,7 @@
     </div>
 
     <script>
+        // STREAMING_CHUNK:JS Değişkenleri
         let audioCtx;
         let isSoundEnabled = true;
         let totalScore = 0;
@@ -315,6 +321,7 @@
             if(isSoundEnabled) initAudio();
         }
 
+        // STREAMING_CHUNK:Veritabanı
         const FOLDERS = {
             img:  { id: 'img', label: 'Resimler', icon: '🖼️', styleBase: 'bg-img', typeIcon: '🖼️', color: 'text-blue-500' },
             music:{ id: 'music', label: 'Müzikler', icon: '🎵', styleBase: 'bg-music', typeIcon: '🎵', color: 'text-purple-500' },
@@ -323,27 +330,23 @@
         };
 
         const FILE_ITEMS = [
-            // Resim Dosyaları
             { id: 'f1', type: 'img', emoji: '🐶', name: 'Köpek.jpg' }, { id: 'f2', type: 'img', emoji: '🌄', name: 'Manzara.png' },
             { id: 'f3', type: 'img', emoji: '🎨', name: 'Çizim.jpg' }, { id: 'f4', type: 'img', emoji: '📸', name: 'Ailemiz.jpg' },
             { id: 'f5', type: 'img', emoji: '🐱', name: 'Kedi.png' }, { id: 'f19', type: 'img', emoji: '🚗', name: 'Araba.jpg' },
             { id: 'f20', type: 'img', emoji: '🌻', name: 'Çiçek.png' }, { id: 'f21', type: 'img', emoji: '🐦', name: 'Kuş.jpg' },
             { id: 'f22', type: 'img', emoji: '🏖️', name: 'Tatil.png' },
             
-            // Müzik Dosyaları
             { id: 'f6', type: 'music', emoji: '🎸', name: 'Gitar.mp3' }, { id: 'f7', type: 'music', emoji: '🎼', name: 'Notalar.wav' },
             { id: 'f8', type: 'music', emoji: '🎧', name: 'Şarkı.mp3' }, { id: 'f9', type: 'music', emoji: '🎹', name: 'Piyano.mp3' },
             { id: 'f10', type: 'music', emoji: '📻', name: 'Radyo.wav' }, { id: 'f23', type: 'music', emoji: '🎻', name: 'Keman.mp3' },
             { id: 'f24', type: 'music', emoji: '🥁', name: 'Davul.wav' }, { id: 'f25', type: 'music', emoji: '🎺', name: 'Trompet.mp3' },
             { id: 'f26', type: 'music', emoji: '🎤', name: 'Vokal.mp3' },
             
-            // Video Dosyaları
             { id: 'f11', type: 'video', emoji: '📹', name: 'Kamera.mp4' }, { id: 'f12', type: 'video', emoji: '🍿', name: 'Film.avi' },
             { id: 'f13', type: 'video', emoji: '📺', name: 'ÇizgiFilm.mp4' }, { id: 'f14', type: 'video', emoji: '📱', name: 'Kısa.mp4' },
             { id: 'f27', type: 'video', emoji: '🎭', name: 'Tiyatro.avi' }, { id: 'f28', type: 'video', emoji: '🐅', name: 'Belgesel.mp4' },
             { id: 'f29', type: 'video', emoji: '🏃', name: 'Spor.mp4' }, { id: 'f30', type: 'video', emoji: '🎉', name: 'Düğün.avi' },
             
-            // Yazı/Belge Dosyaları
             { id: 'f15', type: 'doc', emoji: '📖', name: 'Hikaye.txt' }, { id: 'f16', type: 'doc', emoji: '📝', name: 'Ödev.doc' },
             { id: 'f17', type: 'doc', emoji: '📜', name: 'Şiir.txt' }, { id: 'f18', type: 'doc', emoji: '🔤', name: 'Alfabe.pdf' },
             { id: 'f31', type: 'doc', emoji: '🧚', name: 'Masal.doc' }, { id: 'f32', type: 'doc', emoji: '📋', name: 'Liste.txt' },
@@ -377,8 +380,9 @@
         let activeDragItem = null;
         let dragOffset = { x: 0, y: 0 };
         let itemsToSort = 0;
-        let levelInitialScore = 0; // To track score gained just in this level
+        let levelInitialScore = 0; 
 
+        // STREAMING_CHUNK:Ekran Geçişleri
         function showStartScreen() {
             document.getElementById('game-screen').classList.add('hidden');
             document.getElementById('game-screen').classList.remove('opacity-100');
@@ -411,6 +415,7 @@
             }, 500);
         }
 
+        // STREAMING_CHUNK:Oyun Motoru
         function loadLevel() {
             const levelData = LEVELS[currentLevel];
             
@@ -468,11 +473,9 @@
                 fileEl.dataset.rotate = randomRotate;
                 fileEl.id = `file-${index}`;
                 
-                // Uzantıyı bul (.jpg, .mp3 vb.)
                 const ext = item.name.split('.').pop().toUpperCase();
                 const typeInfo = FOLDERS[item.type];
 
-                // Gerçekçi dosya görünümü (İkon + Uzantı + İsim)
                 fileEl.innerHTML = `
                     <div class="flex flex-col justify-between items-center w-full h-full p-1 md:p-2">
                         <div class="flex justify-between w-full px-1 items-center">
@@ -484,9 +487,10 @@
                     </div>
                 `;
 
-                const itemSize = 100;
-                const maxX = Math.max(10, deskWidth - itemSize - 20);
-                const maxY = Math.max(10, deskHeight - itemSize - 40);
+                // Mobilde boyutlar daha küçük
+                const itemSize = window.innerWidth < 768 ? 70 : 100;
+                const maxX = Math.max(10, deskWidth - itemSize - 10);
+                const maxY = Math.max(10, deskHeight - itemSize - 20);
                 
                 fileEl.style.left = `${Math.random() * maxX}px`;
                 fileEl.style.top = `${Math.random() * maxY}px`;
@@ -496,6 +500,7 @@
             });
         }
 
+        // STREAMING_CHUNK:Sürükle Bırak (Pointer Events)
         function handlePointerDown(e) {
             if (activeDragItem) return;
             
@@ -560,10 +565,7 @@
             const pointerY = e.clientY;
             let droppedFolder = null;
 
-            // Öğeyi yerel bir değişkene kopyalıyoruz
             const currentItem = activeDragItem;
-            
-            // Global değişkeni HEMEN SIFIRLIYORUZ ki diğer dosyalara anında tıklanabilsin!
             activeDragItem = null;
 
             document.querySelectorAll('.folder-wrapper').forEach(folder => {
@@ -608,7 +610,7 @@
                     playSound('wrong');
                     
                     comboMultiplier = 1;
-                    totalScore = Math.max(0, totalScore - 5); // Penalty for wrong drop
+                    totalScore = Math.max(0, totalScore - 5); 
                     updateScoreDisplay();
                     showFloatingText('-5', e.clientX, e.clientY, 'text-red-500');
 
@@ -641,7 +643,6 @@
             el.style.transition = 'all 0.8s ease-out';
             document.body.appendChild(el);
             
-            // Trigger reflow
             void el.offsetWidth;
             
             el.style.transform = 'translateY(-50px) scale(1.2)';
@@ -658,9 +659,9 @@
             item.style.position = 'absolute';
             item.style.transform = `rotate(${item.dataset.rotate}deg)`;
             
-            const itemSize = 100;
-            item.style.left = `${Math.random() * (deskWidth - itemSize - 20) + 10}px`;
-            item.style.top = `${Math.random() * (deskHeight - itemSize - 40) + 10}px`;
+            const itemSize = window.innerWidth < 768 ? 70 : 100;
+            item.style.left = `${Math.random() * (deskWidth - itemSize - 10) + 5}px`;
+            item.style.top = `${Math.random() * (deskHeight - itemSize - 20) + 5}px`;
             
             desktop.appendChild(item);
         }

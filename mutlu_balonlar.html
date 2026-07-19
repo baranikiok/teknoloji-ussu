@@ -2,7 +2,7 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Mutlu Balonlar: Fare Okulu</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
@@ -10,13 +10,12 @@
         body {
             font-family: 'Nunito', sans-serif;
             overflow: hidden;
-            touch-action: none;
+            touch-action: none; /* Dokunmatik kaydırmayı tamamen kapatır (Oyun için kritik) */
             user-select: none;
+            -webkit-user-select: none;
         }
 
-        h1, h2, h3, .font-bubble {
-            font-family: 'Fredoka One', cursive;
-        }
+        h1, h2, h3, .font-bubble { font-family: 'Fredoka One', cursive; }
 
         .sky-background {
             background: linear-gradient(to bottom, #74ebd5, #ACB6E5);
@@ -25,9 +24,7 @@
             transition: background 0.8s ease;
         }
 
-        .sky-background.warning {
-            background: linear-gradient(to bottom, #ff9a9e, #fecfef);
-        }
+        .sky-background.warning { background: linear-gradient(to bottom, #ff9a9e, #fecfef); }
 
         .cloud {
             position: absolute;
@@ -44,7 +41,7 @@
             100% { transform: translateX(120vw); }
         }
 
-        /* Oyun Objeleri */
+        /* Oyun Objeleri ve Responsive Boyutlar */
         .game-entity {
             position: absolute;
             display: flex;
@@ -57,11 +54,11 @@
             filter: drop-shadow(0 5px 5px rgba(0,0,0,0.2));
             user-select: none;
             -webkit-user-drag: none;
+            touch-action: none; /* Objelerin üstünde ekran kaymasını engeller */
         }
         
         .game-entity:active { transform: scale(0.85); }
 
-        /* Balon (Sol Tık) */
         .balloon {
             width: 90px; height: 110px;
             border-radius: 50%;
@@ -73,22 +70,12 @@
             width: 4px; height: 35px; background: rgba(0,0,0,0.3);
         }
 
-        /* Sandık (Sağ Tık) */
         .chest { font-size: 4rem; animation: bounce-in 0.5s ease-out; }
-        
-        /* Şeker (Sürükle Bırak) */
         .candy { font-size: 3.5rem; animation: bounce-in 0.5s ease-out; }
-
-        /* Tuzaklar */
         .trap { font-size: 3.5rem; animation: shake 1.5s infinite; filter: drop-shadow(0 0 10px red); }
-
-        /* Bonus Zaman Nesnesi */
         .bonus-time { font-size: 3.5rem; filter: drop-shadow(0 0 20px gold); animation: pulse-glow 1s infinite alternate; }
-
-        /* Elma (Tekerlek Modu) */
         .apple { font-size: 3.5rem; }
 
-        /* Karakterler */
         #basket-player {
             position: absolute; left: 50%; top: 50%;
             font-size: 5rem;
@@ -96,6 +83,7 @@
             transition: top 0.1s ease-out;
             z-index: 20;
             filter: drop-shadow(0 10px 10px rgba(0,0,0,0.3));
+            pointer-events: none;
         }
 
         #monster-player {
@@ -105,6 +93,16 @@
             z-index: 20;
             filter: drop-shadow(0 10px 10px rgba(0,0,0,0.3));
             animation: mascotBounce 2s infinite ease-in-out;
+            pointer-events: none;
+        }
+
+        @media (max-width: 768px) {
+            .game-entity { font-size: 2.5rem; }
+            .balloon { width: 60px; height: 75px; font-size: 1.8rem; }
+            .balloon::after { height: 25px; bottom: -10px; }
+            .chest { font-size: 3rem; }
+            #basket-player { font-size: 4rem; }
+            #monster-player { font-size: 4.5rem; bottom: 10px; }
         }
 
         @keyframes floatUp {
@@ -120,7 +118,6 @@
         .shake-anim { animation: shake 0.5s ease-in-out; }
         .animate-bounce-in { animation: bounce-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
-        /* Partikül Efekti */
         .pop-particle {
             position: absolute; width: 15px; height: 15px;
             border-radius: 50%; pointer-events: none;
@@ -129,20 +126,20 @@
         }
         @keyframes particleFade { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(3); opacity: 0; } }
 
-        /* Uçuşan Yazılar */
         .floating-text {
-            position: absolute; font-size: 3rem; font-family: 'Fredoka One', cursive;
+            position: absolute; font-size: 2.5rem; font-family: 'Fredoka One', cursive;
             pointer-events: none; z-index: 1000;
             animation: floatText 1s ease-out forwards;
-            text-shadow: 3px 3px 0 #fff, -3px -3px 0 #fff, 3px -3px 0 #fff, -3px 3px 0 #fff;
+            text-shadow: 2px 2px 0 #fff, -2px -2px 0 #fff, 2px -2px 0 #fff, -2px 2px 0 #fff;
         }
+        @media (min-width: 768px) { .floating-text { font-size: 3rem; } }
+        
         @keyframes floatText { 
             0% { transform: translate(-50%, 0) scale(0.5); opacity: 1; } 
             50% { transform: translate(-50%, -50px) scale(1.3); opacity: 1; }
             100% { transform: translate(-50%, -100px) scale(1); opacity: 0; } 
         }
 
-        /* Sihirli Fare İzi */
         .mouse-trail {
             position: absolute; width: 20px; height: 20px;
             background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,215,0,0.5) 100%);
@@ -153,52 +150,61 @@
         }
         @keyframes trailFade { 0% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; } 100% { transform: translate(-50%, -50%) scale(0.1); opacity: 0; } }
 
-        /* Mod Seçim Kartları */
         .mode-card {
             transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            border-bottom-width: 8px;
+            border-bottom-width: 6px;
         }
+        @media (min-width: 768px) { .mode-card { border-bottom-width: 8px; } }
+        
         .mode-card:hover {
-            transform: translateY(-8px) scale(1.02);
+            transform: translateY(-5px) scale(1.02);
             border-bottom-width: 4px;
             margin-top: 4px;
             box-shadow: 0 15px 25px rgba(0,0,0,0.15);
         }
 
-        /* Mascot Bouncing */
         .mascot-bounce { animation: mascotBounce 2s infinite ease-in-out; }
         @keyframes mascotBounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
 
-        /* Progress Bar */
-        .progress-bar-container { width: 100%; height: 24px; background: #e2e8f0; border-radius: 12px; overflow: hidden; border: 3px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative;}
+        .progress-bar-container { width: 100%; height: 20px; background: #e2e8f0; border-radius: 12px; overflow: hidden; border: 3px solid white; box-shadow: 0 4px 6px rgba(0,0,0,0.1); position: relative;}
+        @media (min-width: 768px) { .progress-bar-container { height: 24px; } }
         .progress-bar-fill { height: 100%; background: linear-gradient(90deg, #f59e0b, #fbbf24); width: 0%; transition: width 0.3s ease-out; position: relative; }
         .progress-bar-fill::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(rgba(255,255,255,0.3) 0%, transparent 100%); }
 
-        /* End Screen Stars */
-        .star-icon { font-size: 5rem; color: #cbd5e1; transition: all 0.5s; filter: grayscale(100%); transform: scale(0.5); opacity: 0; }
+        .star-icon { font-size: 4rem; color: #cbd5e1; transition: all 0.5s; filter: grayscale(100%); transform: scale(0.5); opacity: 0; }
+        @media (min-width: 768px) { .star-icon { font-size: 5rem; } }
         .star-icon.earned { color: #fbbf24; filter: grayscale(0%); filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.8)); animation: bounce-in 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
         .star-1 { animation-delay: 0.2s; }
         .star-2 { animation-delay: 0.6s; }
         .star-3 { animation-delay: 1s; }
 
-        /* Draggable Utility */
         .dragging {
             transition: none !important;
             transform: scale(1.2) !important;
             opacity: 0.9;
         }
+
+        /* Ekstra basılı tutma animasyonu (Mobil sağ tık için) */
+        .long-pressing {
+            animation: pressShrink 0.4s forwards;
+            filter: brightness(1.2);
+        }
+        @keyframes pressShrink {
+            0% { transform: scale(1); }
+            100% { transform: scale(0.85); }
+        }
     </style>
 </head>
-<body class="h-screen w-screen sky-background flex flex-col relative" id="main-body">
+<body class="h-[100dvh] w-full sky-background flex flex-col relative" id="main-body">
 
-    <div id="ui-layer" class="absolute top-0 left-0 w-full p-4 flex flex-col gap-2 z-50 pointer-events-none hidden">
-        <div class="flex justify-between items-center w-full gap-4 pointer-events-auto">
-            <div class="flex-grow bg-white/90 backdrop-blur-sm p-3 rounded-3xl shadow-lg border-4 border-yellow-300 flex items-center gap-3">
-                <div class="text-3xl">⭐</div>
+    <div id="ui-layer" class="absolute top-0 left-0 w-full p-2 md:p-4 flex flex-col gap-2 z-50 pointer-events-none hidden">
+        <div class="flex justify-between items-center w-full gap-2 md:gap-4 pointer-events-auto">
+            <div class="flex-grow bg-white/90 backdrop-blur-sm p-2 md:p-3 rounded-2xl md:rounded-3xl shadow-lg border-2 md:border-4 border-yellow-300 flex items-center gap-2 md:gap-3">
+                <div class="text-2xl md:text-3xl">⭐</div>
                 <div class="flex-grow flex flex-col">
                     <div class="flex justify-between w-full mb-1">
-                        <span class="text-yellow-600 font-bold text-sm">Harika Gidiyorsun!</span>
-                        <span id="score-display" class="font-bubble text-yellow-600 text-lg">0 Puan</span>
+                        <span class="text-yellow-600 font-bold text-[10px] md:text-sm">Harika Gidiyorsun!</span>
+                        <span id="score-display" class="font-bubble text-yellow-600 text-sm md:text-lg">0 Puan</span>
                     </div>
                     <div class="progress-bar-container">
                         <div id="progress-fill" class="progress-bar-fill"></div>
@@ -206,25 +212,25 @@
                 </div>
             </div>
 
-            <div id="time-container" class="bg-white/90 backdrop-blur-sm px-6 py-3 rounded-3xl shadow-lg border-4 border-orange-300 flex flex-col items-center justify-center min-w-[120px] transition-colors duration-300">
-                <span class="text-orange-500 text-sm font-bold tracking-wider">SÜRE</span>
-                <span id="time-display" class="text-4xl font-bubble text-orange-600">60</span>
+            <div id="time-container" class="bg-white/90 backdrop-blur-sm px-4 py-2 md:px-6 md:py-3 rounded-2xl md:rounded-3xl shadow-lg border-2 md:border-4 border-orange-300 flex flex-col items-center justify-center min-w-[80px] md:min-w-[120px] transition-colors duration-300">
+                <span class="text-orange-500 text-[10px] md:text-sm font-bold tracking-wider">SÜRE</span>
+                <span id="time-display" class="text-2xl md:text-4xl font-bubble text-orange-600">60</span>
             </div>
 
-            <button onclick="returnToMenu()" class="bg-red-500 hover:bg-red-600 text-white font-bubble p-3 rounded-3xl shadow-lg border-b-8 border-red-700 active:border-b-0 active:translate-y-2 transition-all flex flex-col items-center justify-center min-w-[80px]">
-                <span class="text-3xl mb-1">⬅️</span>
-                <span class="text-[11px] font-bold">GERİ</span>
+            <button onclick="returnToMenu()" class="bg-red-500 hover:bg-red-600 text-white font-bubble p-2 md:p-3 rounded-2xl md:rounded-3xl shadow-lg border-b-4 md:border-b-8 border-red-700 active:border-b-0 active:translate-y-1 md:active:translate-y-2 transition-all flex flex-col items-center justify-center min-w-[60px] md:min-w-[80px]">
+                <span class="text-xl md:text-3xl mb-1">⬅️</span>
+                <span class="text-[9px] md:text-[11px] font-bold">GERİ</span>
             </button>
         </div>
 
         <div class="flex justify-between items-start w-full">
-            <div class="bg-purple-100/90 backdrop-blur-sm py-2 px-5 rounded-full shadow-md border-2 border-purple-300">
-                <span id="mode-display" class="text-purple-800 font-bubble text-xl">Mod Adı</span>
+            <div class="bg-purple-100/90 backdrop-blur-sm py-1.5 px-4 md:py-2 md:px-5 rounded-full shadow-md border-2 border-purple-300 pointer-events-auto">
+                <span id="mode-display" class="text-purple-800 font-bubble text-sm md:text-xl">Mod Adı</span>
             </div>
 
-            <div id="combo-container" class="bg-pink-100/90 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border-2 border-pink-400 hidden transform scale-0 transition-transform duration-300 pointer-events-none">
-                <span class="text-pink-600 text-lg font-bold">🔥 ŞAHANE!</span>
-                <span id="combo-display" class="text-2xl font-bubble text-pink-800 ml-2">x2</span>
+            <div id="combo-container" class="bg-pink-100/90 backdrop-blur-sm px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-lg border-2 border-pink-400 hidden transform scale-0 transition-transform duration-300 pointer-events-none">
+                <span class="text-pink-600 text-sm md:text-lg font-bold">🔥 ŞAHANE!</span>
+                <span id="combo-display" class="text-xl md:text-2xl font-bubble text-pink-800 ml-1 md:ml-2">x2</span>
             </div>
         </div>
     </div>
@@ -234,125 +240,124 @@
         <div id="monster-player" class="hidden">👾</div>
     </div>
 
-    <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-center z-50 bg-blue-50/80 backdrop-blur-sm transition-all overflow-y-auto py-4">
+    <div id="start-screen" class="absolute inset-0 flex flex-col items-center justify-start md:justify-center z-50 bg-blue-50/80 backdrop-blur-sm transition-all overflow-y-auto pt-16 md:pt-4 pb-4">
         
-        <!-- ANA SAYFA (EV) BUTONU EKLENDİ -->
-        <a href="index.html" class="absolute top-4 left-4 bg-white/50 hover:bg-white/80 text-blue-600 w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center text-2xl md:text-3xl backdrop-blur-md transition-all border-2 border-blue-300 hover:scale-110 shadow-lg z-[100]" title="Ana Menüye Dön">🏠</a>
+        <a href="index.html" class="absolute top-2 left-2 md:top-4 md:left-4 bg-white/50 hover:bg-white/80 text-blue-600 w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center text-xl md:text-3xl backdrop-blur-md transition-all border-2 border-blue-300 hover:scale-110 shadow-lg z-[100]" title="Ana Menüye Dön">🏠</a>
         
-        <div class="text-center mb-6 mt-4">
-            <h1 class="text-5xl md:text-7xl text-white font-black drop-shadow-[0_5px_5px_rgba(59,130,246,0.8)]" style="-webkit-text-stroke: 2px #2563eb;">MUTLU BALONLAR</h1>
-            <div class="bg-yellow-400 text-yellow-900 inline-block px-6 py-2 rounded-full font-bold text-xl mt-2 transform -rotate-2 shadow-lg border-2 border-white">
-                Fare Okulu 🖱️
+        <div class="text-center mb-4 md:mb-6">
+            <h1 class="text-4xl sm:text-5xl md:text-7xl text-white font-black drop-shadow-[0_5px_5px_rgba(59,130,246,0.8)]" style="-webkit-text-stroke: 1.5px #2563eb;">MUTLU BALONLAR</h1>
+            <div class="bg-yellow-400 text-yellow-900 inline-block px-4 py-1 md:px-6 md:py-2 rounded-full font-bold text-sm md:text-xl mt-2 transform -rotate-2 shadow-lg border-2 border-white">
+                Fare ve Dokunma Okulu 🖱️🖐️
             </div>
         </div>
 
-        <div class="flex flex-col md:flex-row max-w-6xl w-11/12 gap-6 items-center justify-center">
-            <div class="bg-white p-6 rounded-[3rem] shadow-2xl border-4 border-blue-200 flex flex-col items-center w-full md:w-1/3 relative mascot-bounce">
-                <div class="bg-blue-100 p-4 rounded-3xl rounded-br-none mb-4 relative w-full text-center shadow-inner border-2 border-blue-200">
-                    <p id="mascot-text" class="text-blue-800 font-bold text-lg leading-snug">
+        <div class="flex flex-col md:flex-row max-w-6xl w-11/12 gap-4 md:gap-6 items-center justify-center">
+            <div class="bg-white p-4 md:p-6 rounded-[2rem] md:rounded-[3rem] shadow-2xl border-4 border-blue-200 flex flex-col items-center w-full md:w-1/3 relative mascot-bounce shrink-0">
+                <div class="bg-blue-100 p-3 md:p-4 rounded-2xl md:rounded-3xl rounded-br-none mb-2 md:mb-4 relative w-full text-center shadow-inner border-2 border-blue-200">
+                    <p id="mascot-text" class="text-blue-800 font-bold text-sm md:text-lg leading-snug">
                         "Bip bop! Merhaba, ben Robar. 🤖 Oynamak istediğin macerayı seç ve başlayalım!"
                     </p>
                     <div class="absolute -bottom-3 right-8 w-6 h-6 bg-blue-100 border-r-2 border-b-2 border-blue-200 transform rotate-45"></div>
                 </div>
-                <div class="text-8xl filter drop-shadow-lg">🤖</div>
+                <div class="text-6xl md:text-8xl filter drop-shadow-lg">🤖</div>
                 
-                <button id="music-toggle-btn" onclick="toggleMusic()" class="mt-6 bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-6 rounded-full shadow-sm border-2 border-green-300 flex items-center gap-2 transition-all">
-                    <span id="music-icon" class="text-xl">🎵</span> Müzik Açık
+                <button id="music-toggle-btn" onclick="toggleMusic()" class="mt-4 bg-green-100 hover:bg-green-200 text-green-800 font-bold py-2 px-4 md:px-6 rounded-full shadow-sm border-2 border-green-300 flex items-center gap-2 transition-all text-xs md:text-base">
+                    <span id="music-icon" class="text-lg md:text-xl">🎵</span> Müzik Açık
                 </button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full md:w-2/3">
-                <button onmouseenter="mascotSpeak('Sistem devrede! Sol tuşla yükselen rengarenk balonları patlat! Dikkat et, dikenlere dokunma! 🎈')" onmouseleave="mascotReset()" onclick="selectMode('leftClick')" class="mode-card bg-gradient-to-br from-red-100 to-pink-100 border-red-300 p-5 rounded-[2rem] flex items-center gap-5 text-left group">
-                    <div class="text-6xl bg-white p-4 rounded-full shadow-inner border-4 border-red-200 group-hover:scale-110 transition-transform">🖱️</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4 w-full md:w-2/3">
+                <button onmouseenter="mascotSpeak('Sol tuşla yükselen balonları patlat! Mobildeysen sadece üzerine dokun! 🎈')" onmouseleave="mascotReset()" onclick="selectMode('leftClick')" class="mode-card bg-gradient-to-br from-red-100 to-pink-100 border-red-300 p-3 md:p-5 rounded-2xl md:rounded-[2rem] flex items-center gap-3 md:gap-5 text-left group">
+                    <div class="text-4xl md:text-6xl bg-white p-2 md:p-4 rounded-full shadow-inner border-2 md:border-4 border-red-200 group-hover:scale-110 transition-transform">🖱️</div>
                     <div>
-                        <h3 class="font-black text-red-600 text-2xl tracking-wide uppercase">Balon Parkı</h3>
-                        <p class="text-red-800/70 font-bold text-sm mt-1">Sol Tık Eğitimi</p>
+                        <h3 class="font-black text-red-600 text-lg md:text-2xl tracking-wide uppercase">Balon Parkı</h3>
+                        <p class="text-red-800/70 font-bold text-xs md:text-sm mt-0.5 md:mt-1">Sol Tık / Dokunma Eğitimi</p>
                     </div>
                 </button>
 
-                <button onmouseenter="mascotSpeak('Tarama başlatıldı... Ekranda beliren sandıkları açmak için farenin SAĞ tuşuna bas! Sakın sol tıklama! 📦')" onmouseleave="mascotReset()" onclick="selectMode('rightClick')" class="mode-card bg-gradient-to-br from-blue-100 to-cyan-100 border-blue-300 p-5 rounded-[2rem] flex items-center gap-5 text-left group">
-                    <div class="text-6xl bg-white p-4 rounded-full shadow-inner border-4 border-blue-200 group-hover:scale-110 transition-transform relative">
-                        <span class="absolute top-1 right-1 bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-black">SAĞ</span>🖱️
+                <button onmouseenter="mascotSpeak('Sandıkları açmak için farenin SAĞ tuşuna bas! Mobildeysen sandığa BASILI TUT! 📦')" onmouseleave="mascotReset()" onclick="selectMode('rightClick')" class="mode-card bg-gradient-to-br from-blue-100 to-cyan-100 border-blue-300 p-3 md:p-5 rounded-2xl md:rounded-[2rem] flex items-center gap-3 md:gap-5 text-left group">
+                    <div class="text-4xl md:text-6xl bg-white p-2 md:p-4 rounded-full shadow-inner border-2 md:border-4 border-blue-200 group-hover:scale-110 transition-transform relative">
+                        <span class="absolute top-0 right-0 bg-blue-500 text-white text-[9px] md:text-xs px-1.5 py-0.5 rounded-full font-black">SAĞ</span>🖱️
                     </div>
                     <div>
-                        <h3 class="font-black text-blue-600 text-2xl tracking-wide uppercase">Hazine Avı</h3>
-                        <p class="text-blue-800/70 font-bold text-sm mt-1">Sağ Tık Eğitimi</p>
-                    </div>
-                </button>
-
-                <button onmouseenter="mascotSpeak('Aç canavarı besleme zamanı! Şekerleri sol tıkla TUT, canavara doğru SÜRÜKLE ve BIRAK! Acı biberlere dikkat! 🍬👾')" onmouseleave="mascotReset()" onclick="selectMode('dragDrop')" class="mode-card bg-gradient-to-br from-indigo-100 to-purple-100 border-indigo-300 p-5 rounded-[2rem] flex items-center gap-5 text-left group">
-                    <div class="text-6xl bg-white p-4 rounded-full shadow-inner border-4 border-indigo-200 group-hover:scale-110 transition-transform">👉</div>
-                    <div>
-                        <h3 class="font-black text-indigo-600 text-2xl tracking-wide uppercase">Aç Canavar</h3>
-                        <p class="text-indigo-800/70 font-bold text-sm mt-1">Sürükle-Bırak Eğitimi</p>
+                        <h3 class="font-black text-blue-600 text-lg md:text-2xl tracking-wide uppercase">Hazine Avı</h3>
+                        <p class="text-blue-800/70 font-bold text-xs md:text-sm mt-0.5 md:mt-1">Sağ Tık / Basılı Tutma</p>
                     </div>
                 </button>
 
-                <button onmouseenter="mascotSpeak('Dişliler dönüyor! Farenin ortasındaki tekerleği çevirerek sepeti aşağı yukarı hareket ettir ve tatlı elmaları yakala! 🍎')" onmouseleave="mascotReset()" onclick="selectMode('scroll')" class="mode-card bg-gradient-to-br from-green-100 to-emerald-100 border-green-300 p-5 rounded-[2rem] flex items-center gap-5 text-left group">
-                    <div class="text-6xl bg-white p-4 rounded-full shadow-inner border-4 border-green-200 group-hover:scale-110 transition-transform">🎡</div>
+                <button onmouseenter="mascotSpeak('Şekerleri sol tıkla (veya parmağınla) TUT, canavara SÜRÜKLE ve BIRAK! 🍬👾')" onmouseleave="mascotReset()" onclick="selectMode('dragDrop')" class="mode-card bg-gradient-to-br from-indigo-100 to-purple-100 border-indigo-300 p-3 md:p-5 rounded-2xl md:rounded-[2rem] flex items-center gap-3 md:gap-5 text-left group">
+                    <div class="text-4xl md:text-6xl bg-white p-2 md:p-4 rounded-full shadow-inner border-2 md:border-4 border-indigo-200 group-hover:scale-110 transition-transform">👉</div>
                     <div>
-                        <h3 class="font-black text-green-600 text-2xl tracking-wide uppercase">Elma Bahçesi</h3>
-                        <p class="text-green-800/70 font-bold text-sm mt-1">Tekerlek Eğitimi</p>
+                        <h3 class="font-black text-indigo-600 text-lg md:text-2xl tracking-wide uppercase">Aç Canavar</h3>
+                        <p class="text-indigo-800/70 font-bold text-xs md:text-sm mt-0.5 md:mt-1">Sürükle-Bırak Eğitimi</p>
+                    </div>
+                </button>
+
+                <button onmouseenter="mascotSpeak('Farenin tekerleğini çevirerek (veya ekranda parmağını kaydırarak) sepeti hareket ettir! 🍎')" onmouseleave="mascotReset()" onclick="selectMode('scroll')" class="mode-card bg-gradient-to-br from-green-100 to-emerald-100 border-green-300 p-3 md:p-5 rounded-2xl md:rounded-[2rem] flex items-center gap-3 md:gap-5 text-left group">
+                    <div class="text-4xl md:text-6xl bg-white p-2 md:p-4 rounded-full shadow-inner border-2 md:border-4 border-green-200 group-hover:scale-110 transition-transform">🎡</div>
+                    <div>
+                        <h3 class="font-black text-green-600 text-lg md:text-2xl tracking-wide uppercase">Elma Bahçesi</h3>
+                        <p class="text-green-800/70 font-bold text-xs md:text-sm mt-0.5 md:mt-1">Tekerlek / Kaydırma Eğitimi</p>
                     </div>
                 </button>
             </div>
         </div>
 
-        <div class="mt-8">
-            <p class="text-blue-600/60 text-sm font-bold font-bubble tracking-widest bg-white/50 px-6 py-2 rounded-full">
+        <div class="mt-6 mb-4">
+            <p class="text-blue-600/60 text-[10px] md:text-sm font-bold font-bubble tracking-widest bg-white/50 px-4 py-2 rounded-full text-center">
                 GELİŞTİRİCİ: MEHMET BARAN İKİOK 👨‍🏫
             </p>
         </div>
     </div>
 
-    <div id="instruction-modal" class="absolute inset-0 flex flex-col items-center justify-center z-[60] hidden bg-blue-900/70 backdrop-blur-md transition-all">
-        <div class="bg-white p-8 rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-b-[12px] border-blue-400 text-center max-w-lg w-11/12 transform transition-transform animate-bounce-in relative">
+    <div id="instruction-modal" class="absolute inset-0 flex flex-col items-center justify-center z-[60] hidden bg-blue-900/80 backdrop-blur-md transition-all p-4">
+        <div class="bg-white p-6 md:p-8 rounded-3xl md:rounded-[3rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] border-b-8 md:border-b-[12px] border-blue-400 text-center max-w-lg w-full transform transition-transform animate-bounce-in relative">
             
-            <div id="instruction-icon" class="text-8xl mb-2 drop-shadow-md animate-pulse">🎮</div>
-            <h2 id="instruction-title" class="text-4xl text-blue-600 mb-4 font-black uppercase tracking-wide">GÖREV</h2>
+            <div id="instruction-icon" class="text-6xl md:text-8xl mb-2 drop-shadow-md animate-pulse">🎮</div>
+            <h2 id="instruction-title" class="text-2xl md:text-4xl text-blue-600 mb-4 font-black uppercase tracking-wide">GÖREV</h2>
             
-            <div class="bg-blue-50 p-6 rounded-3xl border-4 border-blue-100 mb-8">
-                <p id="instruction-desc" class="text-xl text-gray-700 font-bold leading-relaxed">Görev açıklaması burada yer alacak.</p>
+            <div class="bg-blue-50 p-4 md:p-6 rounded-2xl md:rounded-3xl border-2 md:border-4 border-blue-100 mb-6 md:mb-8">
+                <p id="instruction-desc" class="text-sm md:text-xl text-gray-700 font-bold leading-relaxed">Görev açıklaması burada yer alacak.</p>
             </div>
             
-            <button onclick="startSelectedMode()" class="bg-green-500 hover:bg-green-600 text-white text-3xl font-bubble py-4 px-12 rounded-full shadow-[0_8px_0_#15803d] active:shadow-[0_0px_0_#15803d] active:translate-y-[8px] transform transition-all w-full uppercase tracking-wider">
+            <button onclick="startSelectedMode()" class="bg-green-500 hover:bg-green-600 text-white text-xl md:text-3xl font-bubble py-3 md:py-4 px-8 md:px-12 rounded-full shadow-[0_6px_0_#15803d] md:shadow-[0_8px_0_#15803d] active:shadow-[0_0px_0_#15803d] active:translate-y-[6px] md:active:translate-y-[8px] transform transition-all w-full uppercase tracking-wider">
                 OYUNA BAŞLA!
             </button>
             
-            <button onclick="closeInstructionModal()" class="mt-6 text-gray-400 font-bold hover:text-red-500 transition-colors uppercase tracking-widest text-sm">
+            <button onclick="closeInstructionModal()" class="mt-4 md:mt-6 text-gray-400 font-bold hover:text-red-500 transition-colors uppercase tracking-widest text-[10px] md:text-sm">
                 ❌ İptal Et ve Geri Dön
             </button>
         </div>
     </div>
 
-    <div id="end-screen" class="absolute inset-0 flex flex-col items-center justify-center z-50 hidden bg-black/60 backdrop-blur-md">
+    <div id="end-screen" class="absolute inset-0 flex flex-col items-center justify-center z-50 hidden bg-black/70 backdrop-blur-md p-4 overflow-y-auto">
         <div class="absolute w-full h-full overflow-hidden pointer-events-none flex justify-center items-center">
-            <div class="w-[800px] h-[800px] bg-yellow-400 rounded-full blur-[100px] opacity-20 animate-pulse"></div>
+            <div class="w-[300px] h-[300px] md:w-[800px] md:h-[800px] bg-yellow-400 rounded-full blur-[60px] md:blur-[100px] opacity-20 animate-pulse"></div>
         </div>
 
-        <div class="bg-white p-8 rounded-[3rem] shadow-2xl border-b-[12px] border-blue-400 text-center max-w-lg w-11/12 relative z-10">
-            <h2 class="text-5xl text-blue-500 mb-6 font-black uppercase tracking-wider drop-shadow-sm">Süre Doldu!</h2>
+        <div class="bg-white p-6 md:p-8 rounded-3xl md:rounded-[3rem] shadow-2xl border-b-8 md:border-b-[12px] border-blue-400 text-center max-w-lg w-full relative z-10 my-auto">
+            <h2 class="text-3xl md:text-5xl text-blue-500 mb-4 md:mb-6 font-black uppercase tracking-wider drop-shadow-sm">Süre Doldu!</h2>
             
-            <div class="flex justify-center gap-4 mb-6" id="star-container">
+            <div class="flex justify-center gap-2 md:gap-4 mb-4 md:mb-6" id="star-container">
                 <div class="star-icon star-1">⭐</div>
-                <div class="star-icon star-2" style="transform: translateY(-15px) scale(0.5);">⭐</div>
+                <div class="star-icon star-2" style="transform: translateY(-10px) scale(0.5);">⭐</div>
                 <div class="star-icon star-3">⭐</div>
             </div>
             
-            <div class="bg-blue-50 rounded-3xl p-5 mb-6 border-4 border-blue-100">
-                <p id="final-message" class="text-2xl text-blue-800 font-bold font-bubble">Harika Oyun!</p>
+            <div class="bg-blue-50 rounded-2xl md:rounded-3xl p-3 md:p-5 mb-4 md:mb-6 border-2 md:border-4 border-blue-100">
+                <p id="final-message" class="text-lg md:text-2xl text-blue-800 font-bold font-bubble">Harika Oyun!</p>
             </div>
             
-            <div class="bg-gradient-to-b from-yellow-100 to-yellow-50 py-4 px-8 rounded-[2rem] mb-8 border-4 border-yellow-300 inline-block">
-                <p class="text-yellow-700 text-sm font-black tracking-widest uppercase mb-1">Topladığın Puan</p>
-                <p id="final-score" class="text-7xl font-black text-yellow-500 drop-shadow-md" style="-webkit-text-stroke: 2px #b45309;">0</p>
+            <div class="bg-gradient-to-b from-yellow-100 to-yellow-50 py-3 px-6 md:py-4 md:px-8 rounded-2xl md:rounded-[2rem] mb-6 md:mb-8 border-2 md:border-4 border-yellow-300 inline-block">
+                <p class="text-yellow-700 text-[10px] md:text-sm font-black tracking-widest uppercase mb-1">Topladığın Puan</p>
+                <p id="final-score" class="text-5xl md:text-7xl font-black text-yellow-500 drop-shadow-md" style="-webkit-text-stroke: 1.5px #b45309;">0</p>
             </div>
 
-            <div class="flex flex-col gap-3 w-full">
-                <button onclick="resetGame()" class="bg-green-500 hover:bg-green-600 text-white text-3xl font-bubble py-4 px-12 rounded-full shadow-[0_8px_0_#15803d] active:shadow-[0_0px_0_#15803d] active:translate-y-[8px] transform transition-all w-full uppercase tracking-wider">
+            <div class="flex flex-col gap-2 md:gap-3 w-full">
+                <button onclick="resetGame()" class="bg-green-500 hover:bg-green-600 text-white text-xl md:text-3xl font-bubble py-3 md:py-4 px-8 md:px-12 rounded-full shadow-[0_6px_0_#15803d] md:shadow-[0_8px_0_#15803d] active:shadow-[0_0px_0_#15803d] active:translate-y-[6px] md:active:translate-y-[8px] transform transition-all w-full uppercase tracking-wider">
                     YENİDEN OYNA!
                 </button>
-                <button onclick="returnToMenu()" class="bg-blue-400 hover:bg-blue-500 text-white text-xl font-bubble py-3 px-12 rounded-full shadow-[0_6px_0_#1d4ed8] active:shadow-[0_0px_0_#1d4ed8] active:translate-y-[6px] transform transition-all w-full uppercase tracking-wider mt-1">
+                <button onclick="returnToMenu()" class="bg-blue-400 hover:bg-blue-500 text-white text-base md:text-xl font-bubble py-2.5 md:py-3 px-8 md:px-12 rounded-full shadow-[0_4px_0_#1d4ed8] md:shadow-[0_6px_0_#1d4ed8] active:shadow-[0_0px_0_#1d4ed8] active:translate-y-[4px] md:active:translate-y-[6px] transform transition-all w-full uppercase tracking-wider mt-1">
                     MENÜYE DÖN
                 </button>
             </div>
@@ -376,14 +381,25 @@
         let audioCtx;
         let musicInterval;
         let isMusicMuted = false;
-        let musicOscillators = [];
 
-        // Mod Ayarları, İkonları ve Talimatları
+        // Mod Ayarları, İkonları ve Talimatları (Mobil açıklamalar eklendi)
         const modes = {
-            leftClick: { name: "Balon Parkı", targetEmoji: "🎈", trapEmoji: "🌵", bg: "#74ebd5", bg2: "#ACB6E5", trapPenalty: 5, icon: "🖱️", desc: "Uçan balonları farenin <span class='text-red-500 font-black text-2xl block mt-2'>SOL TUŞU</span> ile tıkla ve patlat! Dikenlere sakın dokunma!" },
-            rightClick: { name: "Hazine Avı", targetEmoji: "📦", trapEmoji: "💣", bg: "#a8c0ff", bg2: "#3f2b96", trapPenalty: 5, icon: "📦", desc: "Hazine sandıklarını açmak için farenin <span class='text-blue-500 font-black text-2xl block mt-2'>SAĞ TUŞUNA</span> bas! Sol tıklarsan sürpriz kaçar." },
-            dragDrop: { name: "Aç Canavar", targetEmoji: "🍬", trapEmoji: "🌶️", bg: "#ff9a9e", bg2: "#fecfef", trapPenalty: 5, icon: "👉", desc: "Tatlıları sol tıkla <span class='text-purple-500 font-black text-2xl block mt-2'>BASILI TUT</span>, canavara sürükle ve bırak! Acı biber yedirme!" },
-            scroll: { name: "Elma Bahçesi", targetEmoji: "🍎", trapEmoji: "🐛", bg: "#56ab2f", bg2: "#a8e063", trapPenalty: 5, icon: "🎡", desc: "Farenin ortasındaki <span class='text-green-500 font-black text-2xl block mt-2'>TEKERLEĞİ ÇEVİREREK</span> sepeti hareket ettir ve düşen elmaları yakala!" }
+            leftClick: { 
+                name: "Balon Parkı", targetEmoji: "🎈", trapEmoji: "🌵", bg: "#74ebd5", bg2: "#ACB6E5", trapPenalty: 5, icon: "🖱️", 
+                desc: "Uçan balonlara <span class='text-red-500 font-black text-xl md:text-2xl block mt-2'>SOL TIKLA VEYA DOKUN!</span><br><span class='text-sm text-gray-500 mt-1 block'>Dikenlere sakın dokunma!</span>" 
+            },
+            rightClick: { 
+                name: "Hazine Avı", targetEmoji: "📦", trapEmoji: "💣", bg: "#a8c0ff", bg2: "#3f2b96", trapPenalty: 5, icon: "📦", 
+                desc: "Hazine sandıklarını açmak için <span class='text-blue-500 font-black text-xl md:text-2xl block mt-2'>SAĞ TIKLA VEYA BASILI TUT!</span><br><span class='text-sm text-gray-500 mt-1 block'>Sadece dokunursan sürpriz kaçar.</span>" 
+            },
+            dragDrop: { 
+                name: "Aç Canavar", targetEmoji: "🍬", trapEmoji: "🌶️", bg: "#ff9a9e", bg2: "#fecfef", trapPenalty: 5, icon: "👉", 
+                desc: "Tatlıları <span class='text-purple-500 font-black text-xl md:text-2xl block mt-2'>TUT, SÜRÜKLE VE BIRAK!</span><br><span class='text-sm text-gray-500 mt-1 block'>Canavarı doyur, acı biber yedirme!</span>" 
+            },
+            scroll: { 
+                name: "Elma Bahçesi", targetEmoji: "🍎", trapEmoji: "🐛", bg: "#56ab2f", bg2: "#a8e063", trapPenalty: 5, icon: "🎡", 
+                desc: "Sepeti hareket ettirmek için <span class='text-green-500 font-black text-xl md:text-2xl block mt-2'>TEKERLEĞİ ÇEVİR YADA EKRANI KAYDIR!</span><br><span class='text-sm text-gray-500 mt-1 block'>Düşen elmaları yakala!</span>" 
+            }
         };
 
         let activeEmojis = ["🎈", "🎁", "⭐", "🍎", "🍉", "🚀", "🐱"]; 
@@ -420,12 +436,12 @@
             for(let i=0; i<6; i++) {
                 const cloud = document.createElement('div');
                 cloud.classList.add('cloud');
-                const size = Math.random() * 150 + 100;
+                const size = Math.random() * 100 + 80;
                 cloud.style.width = size + 'px';
                 cloud.style.height = (size * 0.6) + 'px';
                 cloud.style.top = Math.random() * 60 + '%';
                 cloud.style.left = Math.random() * 100 + '%';
-                cloud.style.animationDuration = Math.random() * 30 + 30 + 's';
+                cloud.style.animationDuration = Math.random() * 20 + 20 + 's';
                 document.body.appendChild(cloud);
             }
         }
@@ -444,7 +460,6 @@
             trail.style.left = e.pageX + 'px';
             trail.style.top = e.pageY + 'px';
             document.body.appendChild(trail);
-            
             setTimeout(() => trail.remove(), 600); 
         });
 
@@ -453,7 +468,7 @@
             if (isPlaying) e.preventDefault();
         });
 
-        // Tekerlek Olayı
+        // Tekerlek Olayı (Mouse Scroll)
         window.addEventListener('wheel', (e) => {
             if (!isPlaying || currentMode !== 'scroll') return;
             const sensitivity = 0.25; 
@@ -463,63 +478,72 @@
             basketPlayer.style.top = basketPosition + '%';
         }, { passive: false }); 
 
+        // Dokunmatik Kaydırma (Touch Swipe / Scroll)
+        let touchStartY = 0;
+        window.addEventListener('touchstart', e => { 
+            if(isPlaying && currentMode === 'scroll') touchStartY = e.touches[0].clientY; 
+        }, {passive: false});
+        
+        window.addEventListener('touchmove', e => {
+            if (!isPlaying || currentMode !== 'scroll') return;
+            e.preventDefault(); // Sayfanın kaymasını engelle
+            let touchY = e.touches[0].clientY;
+            let delta = touchStartY - touchY;
+            basketPosition += delta * 0.2; // Dokunma hassasiyeti
+            if(basketPosition < 10) basketPosition = 10;
+            if(basketPosition > 90) basketPosition = 90;
+            basketPlayer.style.top = basketPosition + '%';
+            touchStartY = touchY;
+        }, {passive: false});
+
         // Maskot Konuşmaları
         const defaultMascotText = "Bip bop! Merhaba, ben Robar. 🤖 Oynamak istediğin macerayı seç ve başlayalım!";
         function mascotSpeak(text) { mascotText.innerText = `"${text}"`; }
         function mascotReset() { mascotText.innerText = `"${defaultMascotText}"`; }
 
-        // --- SÜRÜKLE BIRAK SİSTEMİ ---
+        // --- SÜRÜKLE BIRAK SİSTEMİ (Pointer Events ile Touch/Mouse Birleştirildi) ---
         let activeDragElement = null;
         let dragOffsetX = 0;
         let dragOffsetY = 0;
 
         function startDrag(e, el) {
-            if (e.button !== 0 && e.type.includes('mouse')) return; 
+            // Sadece farenin sol tuşuna veya dokunmaya izin ver
+            if (e.pointerType === 'mouse' && e.button !== 0) return; 
+            
             activeDragElement = el;
             
-            const clientX = e.clientX || e.touches[0].clientX;
-            const clientY = e.clientY || e.touches[0].clientY;
-            
             const rect = el.getBoundingClientRect();
-            dragOffsetX = clientX - rect.left;
-            dragOffsetY = clientY - rect.top;
+            dragOffsetX = e.clientX - rect.left;
+            dragOffsetY = e.clientY - rect.top;
             
             el.classList.add('dragging');
             el.style.zIndex = 1000;
+            el.setPointerCapture(e.pointerId);
         }
 
-        document.addEventListener('mousemove', handleDragMove);
-        document.addEventListener('touchmove', handleDragMove, {passive: false});
-
-        function handleDragMove(e) {
+        document.addEventListener('pointermove', (e) => {
             if (!activeDragElement) return;
             e.preventDefault(); 
             
-            const clientX = e.clientX || e.touches[0].clientX;
-            const clientY = e.clientY || e.touches[0].clientY;
-            
             const gameAreaRect = gameArea.getBoundingClientRect();
-            
-            const newLeft = clientX - gameAreaRect.left - dragOffsetX;
-            const newTop = clientY - gameAreaRect.top - dragOffsetY;
+            const newLeft = e.clientX - gameAreaRect.left - dragOffsetX;
+            const newTop = e.clientY - gameAreaRect.top - dragOffsetY;
             
             activeDragElement.style.left = newLeft + 'px';
             activeDragElement.style.top = newTop + 'px';
-        }
+        });
 
-        document.addEventListener('mouseup', handleDragEnd);
-        document.addEventListener('touchend', handleDragEnd);
-
-        function handleDragEnd() {
+        document.addEventListener('pointerup', (e) => {
             if (!activeDragElement) return;
             
             activeDragElement.classList.remove('dragging');
             activeDragElement.style.zIndex = 10;
+            activeDragElement.releasePointerCapture(e.pointerId);
             
             const monsterRect = monsterPlayer.getBoundingClientRect();
             const elRect = activeDragElement.getBoundingClientRect();
             
-            const mShrink = 30;
+            const mShrink = 20; // Hitbox küçültme
             const targetArea = { 
                 left: monsterRect.left + mShrink, right: monsterRect.right - mShrink, 
                 top: monsterRect.top + mShrink, bottom: monsterRect.bottom - mShrink 
@@ -528,12 +552,11 @@
             if (isColliding(targetArea, elRect)) {
                 monsterPlayer.style.transform = 'translateX(-50%) scale(1.2)';
                 setTimeout(() => monsterPlayer.style.transform = 'translateX(-50%) scale(1)', 200);
-                
                 handleInteraction(activeDragElement);
             }
             
             activeDragElement = null;
-        }
+        });
 
         // --- SES MOTORU ---
         function initAudio() {
@@ -586,12 +609,12 @@
             const btn = document.getElementById('music-toggle-btn');
             
             if(isMusicMuted) {
-                btn.innerHTML = `<span class="text-xl">🔇</span> Sessiz`;
+                btn.innerHTML = `<span class="text-lg md:text-xl">🔇</span> Sessiz`;
                 btn.classList.replace('bg-green-100', 'bg-gray-200');
                 btn.classList.replace('text-green-800', 'text-gray-800');
                 btn.classList.replace('border-green-300', 'border-gray-300');
             } else {
-                btn.innerHTML = `<span class="text-xl">🎵</span> Müzik Açık`;
+                btn.innerHTML = `<span class="text-lg md:text-xl">🎵</span> Müzik Açık`;
                 btn.classList.replace('bg-gray-200', 'bg-green-100');
                 btn.classList.replace('text-gray-800', 'text-green-800');
                 btn.classList.replace('border-gray-300', 'border-green-300');
@@ -636,9 +659,42 @@
             if (musicInterval) clearInterval(musicInterval);
         }
 
+        // --- ROZET (BADGE) SİSTEMİ ---
+        let earnedBadges = new Set();
+        let badgeDetails = [];
+
+        function awardBadge(id, icon, title, desc) {
+            if (earnedBadges.has(id)) return;
+            earnedBadges.add(id);
+            badgeDetails.push({icon, title, desc});
+            playAudio('good'); 
+
+            const badgeEl = document.createElement('div');
+            badgeEl.className = "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-2 md:p-3 rounded-lg shadow-lg transform transition-all translate-x-full border-2 border-yellow-300 flex items-center gap-2 md:gap-3 badge-anim";
+            badgeEl.innerHTML = `<div class="text-2xl md:text-3xl">${icon}</div><div><div class="font-bold text-xs md:text-sm title-font">${title}</div><div class="text-[10px] md:text-xs opacity-90 body-font">${desc}</div></div>`;
+            document.body.appendChild(badgeEl);
+            
+            // Konumlandırma
+            badgeEl.style.position = 'fixed';
+            badgeEl.style.top = '80px';
+            badgeEl.style.right = '10px';
+            badgeEl.style.zIndex = '9999';
+            
+            setTimeout(() => {
+                badgeEl.classList.add('translate-x-[150%]', 'opacity-0');
+                setTimeout(() => badgeEl.remove(), 500);
+            }, 3000);
+        }
+
+        function checkBadges() {
+            if (comboCount >= 10) awardBadge('combo10', '🎯', 'Seri Nişancı', 'Hatasız 10 hedef!');
+            if (comboCount >= 20) awardBadge('combo20', '🔥', 'Durdurulamaz', '20 kombo! Harika odaklanma.');
+            if (score >= 500) awardBadge('score500', '🥉', 'Acemi Çırak', '500 puana ulaştın!');
+            if (score >= 1500) awardBadge('score1500', '⭐', 'Yıldız Oyuncu', '1500 puan! Gerçek bir ustasın.');
+        }
+
         // --- OYUN AKIŞI ---
 
-        // Adım 1: Mod seçildiğinde Pop-up göster
         function selectMode(mode) {
             initAudio(); 
             currentMode = mode;
@@ -661,7 +717,6 @@
             startScreen.classList.remove('hidden');
         }
 
-        // Adım 2: Pop-up'tan "Başla" denince asıl oyuna geç
         function startSelectedMode() {
             instructionModal.classList.add('hidden');
             startGame();
@@ -726,7 +781,7 @@
 
         function scheduleNextSpawn() {
             if (!isPlaying) return;
-            const rate = Math.max(600, 1500 - (score * 2)); 
+            const rate = Math.max(700, 1500 - (score * 1.5)); 
             spawnInterval = setTimeout(() => {
                 spawnObject();
                 scheduleNextSpawn();
@@ -752,7 +807,7 @@
             el.dataset.isTrap = isTrap;
             el.dataset.isBonusTime = isBonusTime;
             
-            const speed = Math.random() * 4 + 3.5; 
+            const speed = Math.random() * 3 + 3.5; // Mobil dostu biraz daha yavaş hızlar
 
             if (isBonusTime) {
                 el.classList.add('bonus-time');
@@ -767,7 +822,11 @@
                 el.style.bottom = '-150px';
                 el.style.animation = `floatUp ${speed}s linear forwards`;
                 
-                el.onmousedown = (e) => { if (e.button === 0) handleInteraction(el); }; 
+                // Pointer Events ile dokunma ve tık aynı anda yönetiliyor
+                el.onpointerdown = (e) => { 
+                    if (e.pointerType === 'mouse' && e.button !== 0) return; // Fareyse sol tık
+                    handleInteraction(el); 
+                }; 
                 el.addEventListener('animationend', () => el.remove());
             } 
             else if (currentMode === 'rightClick') {
@@ -777,9 +836,39 @@
                 el.style.left = Math.random() * 70 + 15 + '%';
                 el.style.top = Math.random() * 60 + 20 + '%';
                 
-                el.oncontextmenu = (e) => { e.preventDefault(); handleInteraction(el); }; 
-                el.onclick = () => { if (el.dataset.isTrap === 'false') handleInteraction(el, true); }; 
+                let pressTimer;
                 
+                // Sağ tık PC için
+                el.oncontextmenu = (e) => { 
+                    e.preventDefault(); 
+                    if(e.pointerType === 'mouse' || !e.pointerType) handleInteraction(el, true); 
+                }; 
+
+                // Yanlış tık (Sol) PC için veya Mobilde kısa dokunma
+                el.onpointerdown = (e) => {
+                    if (e.pointerType === 'mouse') {
+                        if(e.button === 0 && el.dataset.isTrap === 'false') handleInteraction(el, true); // Yanlış tık (Trap simülasyonu)
+                    } else {
+                        // Mobil (Touch) : Uzun basmayı bekleyeceğiz
+                        el.classList.add('long-pressing');
+                        pressTimer = setTimeout(() => {
+                            el.classList.remove('long-pressing');
+                            handleInteraction(el, true); // Başarılı
+                        }, 400); // 400ms basılı tutma
+                    }
+                };
+
+                el.onpointerup = (e) => {
+                    if (e.pointerType !== 'mouse') {
+                        clearTimeout(pressTimer);
+                        el.classList.remove('long-pressing');
+                        // Eğer zamanından önce çekerse ve tuzak değilse hata ver (Yanlış tık muamelesi)
+                        if (el.dataset.isTrap === 'false') handleInteraction(el, true); 
+                    }
+                };
+                
+                el.onpointerleave = () => { clearTimeout(pressTimer); el.classList.remove('long-pressing'); };
+
                 setTimeout(() => {
                     if(el && el.parentElement) {
                         el.style.transform = 'scale(0)';
@@ -796,8 +885,7 @@
                 el.style.left = Math.random() * 70 + 15 + '%';
                 el.style.top = Math.random() * 40 + 10 + '%';
                 
-                el.onmousedown = (e) => startDrag(e, el);
-                el.addEventListener('touchstart', (e) => startDrag(e, el), {passive: false});
+                el.onpointerdown = (e) => startDrag(e, el);
                 
                 setTimeout(() => {
                     if(el && el.parentElement && activeDragElement !== el) {
@@ -824,7 +912,7 @@
                     const pRect = basketPlayer.getBoundingClientRect();
                     const eRect = el.getBoundingClientRect();
                     
-                    const pShrink = 20; const eShrink = 10;
+                    const pShrink = 15; const eShrink = 10;
                     const r1 = { left: pRect.left+pShrink, right: pRect.right-pShrink, top: pRect.top+pShrink, bottom: pRect.bottom-pShrink };
                     const r2 = { left: eRect.left+eShrink, right: eRect.right-eShrink, top: eRect.top+eShrink, bottom: eRect.bottom-eShrink };
 
@@ -886,6 +974,7 @@
                 showFloatingText(x, y, textStr, textColor);
             }
             
+            checkBadges();
             scoreDisplay.classList.add('scale-125');
             setTimeout(() => scoreDisplay.classList.remove('scale-125'), 150);
             

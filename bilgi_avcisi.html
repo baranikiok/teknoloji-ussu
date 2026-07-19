@@ -18,12 +18,13 @@
             margin: 0;
             display: flex;
             flex-direction: column;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
         }
 
-        /* Özel Logo Fontu */
         .font-logo { font-family: 'Nunito', sans-serif; letter-spacing: -2px; }
 
-        .search-container { position: relative; width: 100%; max-w: 600px; z-index: 100; }
+        .search-container { position: relative; width: 100%; max-width: 600px; z-index: 100; margin: 0 auto; }
         
         .search-box {
             border: 1px solid #dfe1e5;
@@ -48,7 +49,6 @@
 
         .search-input { outline: none; border: none; background: transparent; width: 100%; font-size: 16px; }
 
-        /* Otomatik Tamamlama (Arama Önerileri) */
         .autocomplete-list {
             position: absolute; top: 100%; left: 0; right: 0;
             background: #fff; border: 1px solid transparent;
@@ -59,37 +59,34 @@
         .search-container.active .autocomplete-list { display: flex; }
         
         .suggestion-item {
-            padding: 8px 16px; display: flex; align-items: center; gap: 12px;
+            padding: 12px 16px; display: flex; align-items: center; gap: 12px;
             cursor: pointer; font-size: 15px; color: #202124;
         }
         .suggestion-item:hover { background-color: #f1f3f4; }
         .suggestion-icon { color: #9aa0a6; font-size: 14px; }
 
-        /* Arama Butonları */
         .btn-search {
             background-color: #f8f9fa; border: 1px solid #f8f9fa; border-radius: 4px;
             color: #3c4043; font-size: 14px; margin: 11px 4px; padding: 0 16px;
             height: 36px; cursor: pointer; transition: all 0.2s;
+            outline: none;
         }
-        .btn-search:hover { box-shadow: 0 1px 1px rgba(0,0,0,.1); background-color: #f8f9fa; border: 1px solid #dadce0; color: #202124; }
+        .btn-search:hover, .btn-search:active { box-shadow: 0 1px 1px rgba(0,0,0,.1); background-color: #f8f9fa; border: 1px solid #dadce0; color: #202124; }
 
         .result-item { margin-bottom: 28px; max-width: 650px; }
-        .result-url { color: #202124; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
-        .result-title { color: #1a0dab; font-size: 20px; font-weight: 400; text-decoration: none; display: inline-block; margin-bottom: 4px; line-height: 1.2; }
+        .result-url { color: #202124; font-size: 12px; md:font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; word-break: break-all; }
+        .result-title { color: #1a0dab; font-size: 18px; md:font-size: 20px; font-weight: 400; text-decoration: none; display: inline-block; margin-bottom: 4px; line-height: 1.2; }
         .result-title:hover { text-decoration: underline; }
-        .result-desc { color: #4d5156; font-size: 14px; line-height: 1.58; }
+        .result-desc { color: #4d5156; font-size: 13px; md:font-size: 14px; line-height: 1.58; }
         
-        /* Sponsorlu (Reklam) Etiketi */
         .sponsored-tag { font-size: 12px; font-weight: 700; color: #202124; margin-right: 8px; }
         
-        /* Bilgi Panosu (Sağ Kısım) */
         .knowledge-panel {
             border: 1px solid #ebebeb; border-radius: 16px; padding: 20px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05); width: 100%; max-width: 350px;
-            align-self: flex-start; display: none;
+            align-self: flex-start; display: none; margin-bottom: 20px;
         }
 
-        /* Yükleme Animasyonu */
         .loader {
             border: 4px solid #f3f3f3; border-top: 4px solid #4285f4;
             border-radius: 50%; width: 40px; height: 40px;
@@ -97,16 +94,13 @@
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-        /* Sekmeler (Tümü, Görseller vb.) */
-        .nav-tabs { border-bottom: 1px solid #ebebeb; padding-left: 160px; display: flex; gap: 24px; margin-top: 8px; }
-        @media (max-width: 768px) { .nav-tabs { padding-left: 16px; overflow-x: auto; } }
+        .nav-tabs { border-bottom: 1px solid #ebebeb; padding-left: 16px; md:padding-left: 160px; display: flex; gap: 24px; margin-top: 8px; overflow-x: auto; scrollbar-width: none; }
+        .nav-tabs::-webkit-scrollbar { display: none; }
         .tab-item { padding: 10px 0; font-size: 14px; color: #5f6368; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; }
         .tab-item.active { color: #1a73e8; border-bottom-color: #1a73e8; font-weight: bold; }
 
-        /* Görev Paneli */
         .task-panel { background: #fff; border-bottom: 1px solid #ebebeb; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 200; }
         
-        /* Renkler */
         .logo-c1 { color: #4285f4; } .logo-c2 { color: #ea4335; } .logo-c3 { color: #fbbc05; }
         .logo-c4 { color: #4285f4; } .logo-c5 { color: #34a853; } .logo-c6 { color: #ea4335; } .logo-c7 { color: #fbbc05; }
         
@@ -116,104 +110,92 @@
 </head>
 <body>
 
-    <!-- Üst Görev Paneli -->
-    <div class="task-panel w-full px-4 md:px-8 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
-        <div class="flex items-center gap-3">
-            <!-- Ana Sayfaya Dön Butonu Eklendi -->
-            <a href="index.html" class="bg-slate-100 hover:bg-slate-200 text-slate-700 w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center text-lg transition-colors border border-slate-300" title="Ana Menüye Dön">🏠</a>
+    <div class="task-panel w-full px-2 md:px-8 py-2 md:py-3 flex justify-between items-center gap-2">
+        <div class="flex items-center gap-2 md:gap-3">
+            <a href="index.html" class="bg-slate-100 hover:bg-slate-200 text-slate-700 w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center text-lg transition-colors border border-slate-300 outline-none" title="Ana Menüye Dön">🏠</a>
             
-            <span class="bg-blue-600 text-white font-black px-3 py-1 rounded-md text-sm whitespace-nowrap">SEVİYE <span id="level-display">1</span></span>
-            <h2 id="task-title" class="font-bold text-slate-800 text-sm md:text-lg">Görev Başlığı</h2>
+            <span class="bg-blue-600 text-white font-black px-2 md:px-3 py-1 rounded-md text-xs md:text-sm whitespace-nowrap">SEVİYE <span id="level-display">1</span></span>
+            <h2 id="task-title" class="font-bold text-slate-800 text-xs md:text-lg truncate max-w-[120px] md:max-w-[300px]">Görev Başlığı</h2>
         </div>
-        <div class="flex gap-2">
-            <button onclick="showTaskDetail()" class="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors border border-slate-300 px-4 py-1.5 rounded-full bg-slate-50 flex items-center gap-2">
-                <span>📋</span> Görevi Oku
-            </button>
-        </div>
+        <button onclick="showTaskDetail()" class="text-xs md:text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors border border-slate-300 px-3 md:px-4 py-1.5 rounded-full bg-slate-50 flex items-center gap-1 md:gap-2 outline-none whitespace-nowrap">
+            <span>📋</span> <span class="hidden md:inline">Görevi Oku</span>
+        </button>
     </div>
 
-    <!-- Görev Detay Modalı -->
     <div id="task-modal" class="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
         <div class="bg-white p-6 md:p-8 rounded-3xl max-w-lg w-full text-center shadow-2xl anim-fade border-t-8 border-blue-500">
             <div class="text-6xl mb-4">🕵️‍♂️</div>
             <h2 class="text-2xl font-black text-slate-800 mb-4" id="modal-title">Görevin</h2>
-            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-left mb-6">
-                <p id="modal-desc" class="text-slate-700 text-lg font-medium leading-relaxed">Görev açıklaması.</p>
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-left mb-6 max-h-[40vh] overflow-y-auto">
+                <p id="modal-desc" class="text-slate-700 text-base md:text-lg font-medium leading-relaxed">Görev açıklaması.</p>
             </div>
-            <button onclick="document.getElementById('task-modal').classList.add('hidden')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors text-lg">
+            <button onclick="document.getElementById('task-modal').classList.add('hidden')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-colors text-lg outline-none">
                 Araştırmaya Başla 🔍
             </button>
         </div>
     </div>
 
-    <!-- ANA ARAMA EKRANI -->
-    <div id="search-view" class="flex-1 flex flex-col items-center justify-center p-4 min-h-[60vh] mt-[-5vh]">
+    <div id="search-view" class="flex-1 flex flex-col items-center justify-center p-4 min-h-[60vh] mt-[-5vh] w-full">
         
-        <div class="font-logo font-bold text-7xl md:text-[90px] mb-8 select-none tracking-tighter">
+        <div class="font-logo font-bold text-6xl md:text-[90px] mb-8 select-none tracking-tighter">
             <span class="logo-c1">B</span><span class="logo-c2">i</span><span class="logo-c3">l</span><span class="logo-c4">g</span><span class="logo-c5">i</span><span class="logo-c6">B</span><span class="logo-c7">u</span><span class="logo-c5">l</span>
         </div>
 
         <div class="search-container" id="search-container-main">
-            <div class="search-box">
+            <!-- Form etiketi kullanıldı: Mobil klavyelerde "Ara/Git" butonunun çıkması için -->
+            <form onsubmit="event.preventDefault(); performSearch();" class="search-box">
                 <span class="text-slate-400 text-xl mr-3">🔍</span>
-                <input type="text" id="search-input" class="search-input text-slate-800" placeholder="İnternette arama yapın" autocomplete="off">
-                <button id="clear-btn" onclick="clearSearch()" class="text-slate-400 hover:text-slate-600 text-xl ml-2 hidden">✖</button>
-            </div>
-            <!-- Otomatik Tamamlama Menüsü -->
+                <input type="text" id="search-input" class="search-input text-slate-800" placeholder="İnternette arama yapın" autocomplete="off" enterkeyhint="search">
+                <button type="button" id="clear-btn" onclick="clearSearch()" class="text-slate-400 hover:text-slate-600 text-xl ml-2 hidden outline-none">✖</button>
+            </form>
             <div class="autocomplete-list" id="autocomplete-list">
                 <!-- JS ile dolacak -->
             </div>
         </div>
 
-        <div class="flex gap-3 mt-6">
+        <div class="flex flex-wrap justify-center gap-3 mt-6">
             <button onclick="performSearch()" class="btn-search font-bold">BilgiBul'da Ara</button>
             <button onclick="document.getElementById('task-modal').classList.remove('hidden')" class="btn-search">Görevi Hatırlat</button>
         </div>
 
-        <!-- Geliştirici İmzası Eklendi -->
-        <div class="mt-16 text-slate-400 font-bold text-xs tracking-widest uppercase">
+        <div class="mt-16 text-slate-400 font-bold text-[10px] md:text-xs tracking-widest uppercase text-center px-4">
             Geliştirici: Mehmet Baran İKİOK
         </div>
     </div>
 
-    <!-- YÜKLEME EKRANI (Gerçekçilik için) -->
-    <div id="loading-view" class="hidden flex-1 flex flex-col items-center justify-center p-4">
+    <div id="loading-view" class="hidden flex-1 flex flex-col items-center justify-center p-4 w-full">
         <div class="loader"></div>
         <p class="text-slate-500 font-bold mt-4 animate-pulse">Sunucularda aranıyor...</p>
     </div>
 
-    <!-- SONUÇ EKRANI -->
     <div id="results-view" class="hidden flex-1 flex flex-col w-full">
         
-        <!-- Üst Bar (Küçük Arama) -->
-        <div class="flex items-center gap-4 md:gap-8 pt-4 pb-2 px-4 md:px-8 w-full border-b border-transparent">
-            <div class="font-logo font-bold text-3xl select-none cursor-pointer" onclick="backToSearch()">
+        <div class="flex items-center gap-3 md:gap-8 pt-4 pb-2 px-2 md:px-8 w-full border-b border-transparent">
+            <div class="font-logo font-bold text-2xl md:text-3xl select-none cursor-pointer hidden sm:block" onclick="backToSearch()">
                 <span class="logo-c1">B</span><span class="logo-c2">i</span><span class="logo-c3">l</span><span class="logo-c4">g</span><span class="logo-c5">i</span><span class="logo-c6">B</span><span class="logo-c7">u</span><span class="logo-c5">l</span>
             </div>
-            <div class="search-box flex-1 max-w-2xl px-4 py-2" style="border-radius: 24px; box-shadow: 0 1px 6px rgba(32,33,36,.28);">
-                <input type="text" id="result-search-input" class="search-input text-slate-800" readonly>
-                <button onclick="backToSearch()" class="text-blue-500 hover:text-blue-700 text-xl font-bold ml-2">✖</button>
-            </div>
+            <a href="javascript:void(0)" onclick="backToSearch()" class="sm:hidden text-2xl font-black text-blue-500 px-2 outline-none">⬅️</a>
+            
+            <form onsubmit="event.preventDefault(); backToSearch();" class="search-box flex-1 max-w-2xl px-3 md:px-4 py-1.5 md:py-2" style="border-radius: 24px; box-shadow: 0 1px 6px rgba(32,33,36,.28);">
+                <input type="text" id="result-search-input" class="search-input text-slate-800 text-sm md:text-base" readonly>
+                <button type="button" onclick="backToSearch()" class="text-blue-500 hover:text-blue-700 text-lg md:text-xl font-bold ml-2 outline-none">✖</button>
+            </form>
         </div>
 
-        <!-- Sekmeler -->
         <div class="nav-tabs">
             <div class="tab-item active">🔍 Tümü</div>
             <div class="tab-item">🖼️ Görseller</div>
             <div class="tab-item">▶️ Videolar</div>
             <div class="tab-item">📰 Haberler</div>
-            <div class="tab-item hidden md:block">📚 Kitaplar</div>
+            <div class="tab-item">📚 Kitaplar</div>
         </div>
 
-        <!-- Sonuç Alanı -->
-        <div class="flex flex-col lg:flex-row w-full max-w-6xl mx-auto px-4 md:px-8 py-4 gap-12 pb-20">
+        <div class="flex flex-col-reverse lg:flex-row w-full max-w-6xl mx-auto px-4 md:px-8 py-4 gap-6 lg:gap-12 pb-20">
             
-            <!-- Sol: Linkler -->
-            <div class="flex-1 max-w-2xl">
-                <div class="text-slate-500 text-sm mb-6">Yaklaşık <span id="result-count">0</span> sonuç bulundu (0.34 saniye)</div>
+            <div class="flex-1 max-w-2xl w-full">
+                <div class="text-slate-500 text-xs md:text-sm mb-4 md:mb-6">Yaklaşık <span id="result-count">0</span> sonuç bulundu (0.34 saniye)</div>
                 
-                <!-- Did you mean? -->
-                <div id="did-you-mean" class="hidden mb-6 text-red-600 font-medium italic text-lg">
+                <div id="did-you-mean" class="hidden mb-6 text-red-600 font-medium italic text-base md:text-lg">
                     Bunu mu demek istediniz: <a href="javascript:void(0)" class="text-blue-600 font-bold hover:underline" id="correction-text" onclick="applyCorrection()">Düzeltme</a>
                 </div>
 
@@ -222,7 +204,6 @@
                 </div>
             </div>
 
-            <!-- Sağ: Bilgi Panosu (Knowledge Panel) SADECE DOĞRUYSA AÇILIR -->
             <div id="knowledge-panel" class="knowledge-panel anim-fade">
                 <!-- JS ile dolacak -->
             </div>
@@ -230,13 +211,12 @@
         </div>
     </div>
 
-    <!-- Başarı Modalı -->
     <div id="success-modal" class="fixed inset-0 z-[400] hidden bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-white p-8 md:p-10 rounded-3xl max-w-md w-full text-center shadow-2xl border-t-8 border-green-500 anim-fade">
             <div class="text-7xl mb-4 animate-bounce">🥇</div>
             <h2 class="text-3xl font-black text-slate-800 mb-2">Doğru Sonuç!</h2>
-            <p class="text-slate-600 mb-6 font-bold" id="success-desc">Arama operatörünü doğru kullandın ve bilgi kirliliğini filtreleyerek en temiz bilgiye ulaştın.</p>
-            <button onclick="nextLevel()" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-xl transition-colors text-xl shadow-lg">
+            <p class="text-slate-600 mb-6 font-bold text-sm md:text-base" id="success-desc">Arama operatörünü doğru kullandın ve bilgi kirliliğini filtreleyerek en temiz bilgiye ulaştın.</p>
+            <button onclick="nextLevel()" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-xl transition-colors text-xl shadow-lg outline-none">
                 Sıradaki Görev ➡️
             </button>
         </div>
@@ -402,10 +382,6 @@
             }
         });
 
-        searchInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') performSearch();
-        });
-
         function clearSearch() {
             searchInput.value = '';
             clearBtn.classList.add('hidden');
@@ -417,7 +393,6 @@
             const task = TASKS[currentLevel];
             autocompleteList.innerHTML = '';
             
-            // Gerçekçi olması için yazılana benzer öneriler
             const matchedSuggestions = task.suggestions.filter(s => s.toLowerCase().includes(query.toLowerCase()));
             const toShow = matchedSuggestions.length > 0 ? matchedSuggestions : task.suggestions.slice(0,3);
 
@@ -452,8 +427,6 @@
             document.getElementById('search-view').classList.add('flex');
             
             clearSearch();
-            
-            // İlk açılışta görevi göster
             document.getElementById('task-modal').classList.remove('hidden');
         }
 
@@ -469,7 +442,6 @@
             document.getElementById('search-view').classList.add('hidden');
             document.getElementById('search-view').classList.remove('flex');
             
-            // Fake Loading
             const loader = document.getElementById('loading-view');
             loader.classList.remove('hidden');
             loader.classList.add('flex');
@@ -485,7 +457,7 @@
                 document.getElementById('result-search-input').value = query;
                 
                 evaluateQuery(query);
-            }, 800); // 800ms loading effect
+            }, 800); 
         }
 
         function evaluateQuery(query) {
@@ -498,15 +470,12 @@
             
             listEl.innerHTML = '';
             
-            // Sonuç Sayısı
             const count = isSuccess ? Math.floor(Math.random() * 500) + 120 : Math.floor(Math.random() * 9000000) + 1000000;
             document.getElementById('result-count').innerText = count.toLocaleString('tr-TR');
 
             if (isSuccess) {
-                // BAŞARILI DURUM
                 didYouMeanEl.classList.add('hidden');
                 
-                // Bilgi Panosunu Doldur
                 kpEl.style.display = 'block';
                 kpEl.innerHTML = `
                     <div class="flex items-center gap-4 mb-4">
@@ -516,7 +485,6 @@
                     <p class="text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-4">${task.successData.panel.desc}</p>
                 `;
 
-                // Linkleri Bas
                 task.successData.results.forEach((item, i) => {
                     listEl.innerHTML += `
                         <div class="result-item anim-fade" style="animation-delay: ${i * 0.1}s">
@@ -530,7 +498,6 @@
                     `;
                 });
 
-                // Başarı Modalı
                 document.getElementById('success-desc').innerText = task.successData.msg;
                 if (window.confetti) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
                 
@@ -539,16 +506,13 @@
                 }, 1500);
 
             } else {
-                // BAŞARISIZ DURUM (BİLGİ KİRLİLİĞİ)
                 kpEl.style.display = 'none';
                 
-                // Bunu mu demek istediniz? (Eğer tamamen yanlış bir şey yazmadıysa)
                 if(query.toLowerCase() !== 'hayır' && currentLevel !== 4) {
                     didYouMeanEl.classList.remove('hidden');
                     document.getElementById('correction-text').innerText = task.correction;
                 }
 
-                // Uyarı
                 if (currentLevel !== 4) {
                     listEl.innerHTML += `
                         <div class="bg-red-50 border border-red-200 p-4 rounded-xl mb-8">
@@ -558,7 +522,6 @@
                     `;
                 }
 
-                // Linkleri Bas (Sponsorlularla)
                 task.failData.forEach((item, i) => {
                     listEl.innerHTML += `
                         <div class="result-item anim-fade" style="animation-delay: ${i * 0.1}s">
@@ -601,7 +564,7 @@
             loadLevel();
         }
 
-        // Oyunu Başlat
+        // Başlat
         loadLevel();
 
     </script>

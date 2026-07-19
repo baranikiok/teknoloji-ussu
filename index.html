@@ -2,7 +2,8 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Mobil cihazlarda kusursuz görünüm için viewport ayarı -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Baran Hoca'nın Teknoloji Üssü</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -17,8 +18,13 @@
                 radial-gradient(circle at 85% 30%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
             color: #f8fafc;
             min-height: 100vh;
+            /* Mobilde tarayıcı çubuğu hesaba katılarak tam yükseklik */
+            min-height: 100dvh;
             display: flex;
             flex-direction: column;
+            overflow-x: hidden; /* Yatay kaymayı kesin engelle */
+            touch-action: pan-y; /* Sadece dikey kaydırmaya izin ver */
+            -webkit-tap-highlight-color: transparent; /* Mobilde tıklama parlaklığını kaldır */
         }
 
         .font-fredoka { font-family: 'Fredoka One', cursive; }
@@ -26,17 +32,41 @@
         .glass-panel {
             background: rgba(30, 41, 59, 0.7);
             backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px); /* Safari desteği */
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
         }
 
         .game-card {
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            /* Mobilde sürükleme vs olaylarını etkisizleştir */
+            user-select: none;
+            -webkit-user-select: none;
         }
-        .game-card:hover {
-            transform: translateY(-10px) scale(1.02);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-            border-color: rgba(255, 255, 255, 0.3);
+        
+        /* Hover efekti mobilde (dokunmada) bazen takılı kalır, bu yüzden sadece hover destekleyen cihazlarda çalışması iyidir ama basitlik için genel bıraktık, active ile destekledik */
+        @media (hover: hover) {
+            .game-card:hover {
+                transform: translateY(-10px) scale(1.02);
+                box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+                border-color: rgba(255, 255, 255, 0.3);
+            }
+            .link-card:hover {
+                background: rgba(30, 41, 59, 0.9);
+                border-color: rgba(56, 189, 248, 0.5);
+                transform: translateY(-3px);
+                box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            }
+        }
+
+        /* Mobilde dokunma (active) efekti */
+        .game-card:active {
+            transform: scale(0.98);
+            border-color: rgba(56, 189, 248, 0.5);
+        }
+        .link-card:active {
+            transform: scale(0.98);
+            background: rgba(30, 41, 59, 0.9);
         }
 
         .link-card {
@@ -49,12 +79,7 @@
             gap: 1rem;
             transition: all 0.2s;
             text-decoration: none;
-        }
-        .link-card:hover {
-            background: rgba(30, 41, 59, 0.9);
-            border-color: rgba(56, 189, 248, 0.5);
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            user-select: none;
         }
 
         .text-gradient {
@@ -67,83 +92,94 @@
 </head>
 <body class="relative">
 
-    <header class="glass-panel sticky top-0 z-50 w-full px-4 md:px-8 py-4 flex flex-col md:flex-row justify-between items-center gap-4 border-b border-white/10">
-        <div class="flex items-center gap-4">
-            <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-3xl shadow-lg shadow-blue-500/30">
+    <!-- HEADER: Mobilde butonları alta almak veya küçültmek için flex yapısı düzenlendi -->
+    <header class="glass-panel sticky top-0 z-50 w-full px-3 md:px-8 py-3 md:py-4 flex flex-col sm:flex-row justify-between items-center gap-3 md:gap-4 border-b border-white/10">
+        
+        <div class="flex items-center gap-3 w-full sm:w-auto justify-center sm:justify-start">
+            <div class="w-12 h-12 md:w-14 md:h-14 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center text-2xl md:text-3xl shadow-lg shadow-blue-500/30 shrink-0">
                 🚀
             </div>
-            <div>
-                <h1 class="text-2xl md:text-3xl font-fredoka text-white tracking-wide">Baran Hoca'nın <span class="text-blue-400">Teknoloji Üssü</span></h1>
-                <p class="text-slate-400 font-bold text-xs uppercase tracking-widest mt-1">Bilişim Teknolojileri Laboratuvarı</p>
+            <div class="text-center sm:text-left">
+                <h1 class="text-xl md:text-3xl font-fredoka text-white tracking-wide leading-tight">Baran Hoca'nın <span class="text-blue-400">Teknoloji Üssü</span></h1>
+                <p class="text-slate-400 font-bold text-[10px] md:text-xs uppercase tracking-widest mt-0.5">Bilişim Teknolojileri Laboratuvarı</p>
             </div>
         </div>
 
-        <div class="flex gap-3">
-             <button onclick="showGames()" id="btn-games" class="whitespace-nowrap bg-blue-600 hover:bg-blue-500 text-white font-bold px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/30 active:scale-95">🎮 Tüm Oyunlar</button>
-             <button onclick="showUsefulLinks()" id="btn-links" class="whitespace-nowrap bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-6 py-2.5 rounded-xl border border-slate-600 transition-all flex items-center gap-2 active:scale-95">🔗 Yararlı Linkler</button>
+        <div class="flex gap-2 md:gap-3 w-full sm:w-auto">
+             <button onclick="showGames()" id="btn-games" class="flex-1 sm:flex-none justify-center whitespace-nowrap bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 md:px-6 py-2 md:py-2.5 rounded-xl transition-all shadow-lg shadow-blue-500/30 active:scale-95 text-xs md:text-base flex items-center gap-1 md:gap-2">
+                 <span>🎮</span> <span class="hidden sm:inline">Tüm </span>Oyunlar
+             </button>
+             <button onclick="showUsefulLinks()" id="btn-links" class="flex-1 sm:flex-none justify-center whitespace-nowrap bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold px-3 md:px-6 py-2 md:py-2.5 rounded-xl border border-slate-600 transition-all flex items-center gap-1 md:gap-2 active:scale-95 text-xs md:text-base">
+                 <span>🔗</span> <span class="hidden sm:inline">Yararlı </span>Linkler
+             </button>
         </div>
     </header>
 
-    <main id="games-container" class="flex-1 max-w-[1400px] mx-auto px-4 md:px-8 py-8 w-full">
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6" id="games-grid">
+    <!-- OYUNLAR BÖLÜMÜ -->
+    <main id="games-container" class="flex-1 max-w-[1400px] mx-auto px-3 md:px-8 py-6 md:py-8 w-full">
+        <!-- Mobilde tek kolon, tablette 2, büyük ekranda 3 veya 4 kolon -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6" id="games-grid">
             <!-- Oyunlar JS ile buraya yüklenecek -->
         </div>
     </main>
 
-    <main id="links-container" class="flex-1 max-w-[1200px] mx-auto px-4 md:px-8 py-10 w-full hidden">
-        <div class="text-center mb-12">
-            <h2 class="text-4xl md:text-5xl font-fredoka text-blue-400 mb-4">Yararlı Linkler</h2>
-            <p class="text-slate-400 font-bold text-lg">Derslerde kullanacağımız platformlara ve yapay zeka araçlarına buradan ulaşabilirsin.</p>
+    <!-- LİNKLER BÖLÜMÜ -->
+    <main id="links-container" class="flex-1 max-w-[1200px] mx-auto px-4 md:px-8 py-6 md:py-10 w-full hidden">
+        <div class="text-center mb-8 md:mb-12">
+            <h2 class="text-3xl md:text-5xl font-fredoka text-blue-400 mb-2 md:mb-4">Yararlı Linkler</h2>
+            <p class="text-slate-400 font-bold text-sm md:text-lg">Derslerde kullanacağımız platformlara ve yapay zeka araçlarına buradan ulaşabilirsin.</p>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="links-grid">
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" id="links-grid">
             <!-- Linkler JS ile buraya yüklenecek -->
         </div>
     </main>
 
+    <!-- LİNK DETAY MODALI -->
     <div id="link-modal" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 hidden opacity-0 transition-opacity duration-300">
-        <div class="glass-panel p-8 md:p-10 max-w-md w-full text-center rounded-3xl border-4 border-blue-500 relative transform transition-transform scale-95" id="link-modal-content">
-            <button onclick="closeLinkModal()" class="absolute top-4 right-4 bg-slate-800 hover:bg-red-500 text-white w-10 h-10 rounded-xl font-bold flex items-center justify-center transition-colors">✖</button>
+        <div class="glass-panel p-6 md:p-10 max-w-md w-full text-center rounded-3xl border-4 border-blue-500 relative transform transition-transform scale-95" id="link-modal-content">
+            <button onclick="closeLinkModal()" class="absolute top-2 right-2 md:top-4 md:right-4 bg-slate-800 hover:bg-red-500 text-white w-8 h-8 md:w-10 md:h-10 rounded-xl font-bold flex items-center justify-center transition-colors text-xl">✖</button>
             
-            <div class="mb-4">
-                <span id="link-modal-icon" class="text-7xl drop-shadow-lg">🔗</span>
+            <div class="mb-2 md:mb-4 mt-2 md:mt-0">
+                <span id="link-modal-icon" class="text-6xl md:text-7xl drop-shadow-lg">🔗</span>
             </div>
             
-            <h3 id="link-modal-title" class="text-3xl font-fredoka text-white mb-2">Platform Adı</h3>
+            <h3 id="link-modal-title" class="text-2xl md:text-3xl font-fredoka text-white mb-2 leading-tight">Platform Adı</h3>
             
-            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 mb-8 mt-4 text-left">
-                <p class="text-blue-400 font-black text-sm uppercase tracking-wider mb-2 border-b border-slate-700 pb-2">Burada Neler Yapabiliriz?</p>
-                <p id="link-modal-desc" class="text-slate-300 font-medium text-base md:text-lg leading-relaxed">Açıklama metni.</p>
+            <div class="bg-slate-800 p-4 rounded-2xl border border-slate-700 mb-6 md:mb-8 mt-4 text-left max-h-[40vh] overflow-y-auto">
+                <p class="text-blue-400 font-black text-xs md:text-sm uppercase tracking-wider mb-2 border-b border-slate-700 pb-2 sticky top-0 bg-slate-800">Burada Neler Yapabiliriz?</p>
+                <p id="link-modal-desc" class="text-slate-300 font-medium text-sm md:text-base leading-relaxed">Açıklama metni.</p>
             </div>
             
-            <button id="link-modal-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black text-xl py-4 rounded-xl shadow-[0_6px_0_#1d4ed8] active:translate-y-2 active:shadow-none transition-all flex justify-center items-center gap-2">
+            <button id="link-modal-btn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-black text-lg md:text-xl py-3 md:py-4 rounded-xl shadow-[0_6px_0_#1d4ed8] active:translate-y-2 active:shadow-none transition-all flex justify-center items-center gap-2">
                 <span>🚀</span> SİTEYE GİT
             </button>
         </div>
     </div>
 
-    <footer class="w-full bg-slate-900/80 border-t border-slate-800 py-6 mt-auto">
-        <div class="text-center">
-            <p class="text-slate-400 font-bold text-sm">
-                Tasarım ve Geliştirme: <span class="text-gradient font-black text-base tracking-wider ml-1">MEHMET BARAN İKİOK</span>
+    <!-- FOOTER -->
+    <footer class="w-full bg-slate-900/80 border-t border-slate-800 py-4 md:py-6 mt-auto">
+        <div class="text-center px-4">
+            <p class="text-slate-400 font-bold text-xs md:text-sm flex flex-col sm:flex-row items-center justify-center gap-1">
+                <span>Tasarım ve Geliştirme:</span> 
+                <span class="text-gradient font-black text-sm md:text-base tracking-wider">MEHMET BARAN İKİOK</span>
             </p>
         </div>
     </footer>
 
     <script>
-        // Oyun listesi klasördeki dosyalara göre güncellendi
         const gamesList = [
             { id: 'galaktik_klasör', title: "Galaktik Klavye", desc: "Meteorlar şehre çarpmadan kelimeleri klavyenle hızlıca yaz!", icon: '⌨️', color: 'from-slate-700 to-slate-900', tags: ['Klavye'], fileUrl: 'Galaktik_Klavye.html' },
             { id: 'mutlu_balonlar', title: "Mutlu Balonlar", desc: "Fare kullanımını geliştirmek için balonları patlat.", icon: '🎈', color: 'from-pink-500 to-rose-600', tags: ['Fare Kullanımı'], fileUrl: 'mutlu_balonlar.html' },
             { id: 'minik_kodlayicilar', title: "Minik Kodlayıcılar", desc: "Kodlamaya atılan ilk adımlar için eğlenceli görevler.", icon: '👶', color: 'from-yellow-400 to-orange-500', tags: ['Temel Kodlama'], fileUrl: 'Minik_Kodlayicilar.html' },
-            { id: 'akilli_klasorler', title: "Akıllı Klasörler", desc: "Masaüstü birbirine girmiş! Dosya türlerine dikkat ederek klasörlere taşı.", icon: '📁', color: 'from-violet-500 to-fuchsia-700', tags: ['İşletim Sistemi'], fileUrl: 'akilli_klasorler.html' },
+            { id: 'akilli_klasorler', title: "Akıllı Klasörler", desc: "Masaüstü birbirine girmiş! Dosya türlerine dikkat ederek taşı.", icon: '📁', color: 'from-violet-500 to-fuchsia-700', tags: ['İşletim Sistemi'], fileUrl: 'akilli_klasorler.html' },
             { id: 'algoritma_gezgini', title: "Algoritma Gezgini", desc: "Kod bloklarını kullanarak karakterini hedefe ulaştır.", icon: '🧭', color: 'from-teal-500 to-emerald-700', tags: ['Kodlama'], fileUrl: 'Algoritma_Gezgini.html' },
             { id: 'algoritma_treni', title: "Algoritma Treni", desc: "Vagonlara resimleri doğru sırayla yerleştir, treni hareket ettir!", icon: '🚂', color: 'from-sky-500 to-blue-700', tags: ['Algoritma'], fileUrl: 'algoritma_treni.html' },
             { id: 'algorota', title: "AlgoRota", desc: "Mantıksal adımları takip ederek en doğru yolu çiz.", icon: '🗺️', color: 'from-green-500 to-teal-700', tags: ['Problem Çözme'], fileUrl: 'Algotora.html' },
             { id: 'belge_fabrikasi', title: "Belge Fabrikası", desc: "Banttan gelen belgeleri Word araçlarını kullanarak düzelt!", icon: '🏭', color: 'from-yellow-500 to-orange-700', tags: ['Kelime İşlemci'], fileUrl: 'belge_fabrikasi.html' },
             { id: 'bilgi_avcisi', title: "Bilgi Avcısı", desc: "Arama motoru operatörlerini kullanarak doğru bilgiye ulaş!", icon: '🔍', color: 'from-red-500 to-rose-800', tags: ['Araştırma'], fileUrl: 'bilgi_avcisi.html' },
-            { id: 'bilgisayarimi_topluyorum', title: "Bilgisayarımı Topluyorum", desc: "Bilgisayar parçalarını nerede duruyorsa o gölgeye sürükle!", icon: '🛠️', color: 'from-indigo-500 to-blue-800', tags: ['Donanım'], fileUrl: 'bilgisayarimi_topluyorum.html' },
+            { id: 'bilgisayarimi_topluyorum', title: "Bilgisayarımı Topluyorum", desc: "Bilgisayar parçalarını gölgelerine sürükle!", icon: '🛠️', color: 'from-indigo-500 to-blue-800', tags: ['Donanım'], fileUrl: 'bilgisayarimi_topluyorum.html' },
             { id: 'bilisim_galaksisi', title: "Bilişim Galaksisi", desc: "3D Uzay ortamında donanım ve yazılım parçalarını keşfet.", icon: '🌌', color: 'from-blue-600 to-indigo-900', tags: ['Keşif'], fileUrl: 'Bilisim_Galaksisi.html' },
-            { id: 'dijital_dedektif', title: "Dijital Dedektif", desc: "İnternetteki iyi ve kötü davranışları bul, kararını ver!", icon: '🕵️‍♂️', color: 'from-slate-600 to-slate-800', tags: ['Güvenli İnternet'], fileUrl: 'dijital_dedektif.html' },
+            { id: 'dijital_dedektif', title: "Dijital Dedektif", desc: "İnternetteki davranışları bul, kararını ver!", icon: '🕵️‍♂️', color: 'from-slate-600 to-slate-800', tags: ['Güvenli İnternet'], fileUrl: 'dijital_dedektif.html' },
             { id: 'piksel_sanat_atolyesi', title: "Piksel Sanat Atölyesi", desc: "Renkleri eşleştir, 50 farklı görevi tamamla!", icon: '🎨', color: 'from-emerald-400 to-teal-700', tags: ['Tasarım'], fileUrl: 'piksel_sanat_atolyesi.html' },
             { id: 'sihirli_sifre_satosu', title: "Sihirli Şifre Şatosu", desc: "Şatonun hazinesini korumak için sihirli şifreler yarat!", icon: '🏰', color: 'from-emerald-600 to-green-900', tags: ['Siber Güvenlik'], fileUrl: 'sihirli_sifre_satosu.html' }
         ];
@@ -219,23 +255,24 @@
             grid.innerHTML = '';
 
             gamesList.forEach(game => {
-                const tagsHtml = game.tags.map(tag => `<span class="bg-black/30 text-white/90 text-[10px] font-bold px-2 py-1 rounded border border-white/10 backdrop-blur-sm">${tag}</span>`).join('');
+                const tagsHtml = game.tags.map(tag => `<span class="bg-black/30 text-white/90 text-[9px] md:text-[10px] font-bold px-2 py-1 rounded border border-white/10 backdrop-blur-sm whitespace-nowrap">${tag}</span>`).join('');
 
                 const cardHTML = `
-                    <a href="${game.fileUrl}" class="game-card glass-panel rounded-3xl p-6 flex flex-col relative overflow-hidden group block cursor-pointer outline-none">
-                        <div class="absolute -right-6 -top-6 w-32 h-32 bg-gradient-to-br ${game.color} rounded-full opacity-20 blur-2xl group-hover:opacity-40 transition-opacity"></div>
+                    <a href="${game.fileUrl}" class="game-card glass-panel rounded-2xl md:rounded-3xl p-4 md:p-6 flex flex-col relative overflow-hidden group block cursor-pointer outline-none h-full min-h-[160px]">
+                        <div class="absolute -right-6 -top-6 w-24 h-24 md:w-32 md:h-32 bg-gradient-to-br ${game.color} rounded-full opacity-20 blur-2xl group-hover:opacity-40 transition-opacity"></div>
                         
-                        <div class="w-16 h-16 rounded-2xl bg-gradient-to-br ${game.color} flex items-center justify-center text-4xl shadow-lg mb-4 transform group-hover:scale-110 group-hover:rotate-6 transition-all border border-white/20">
-                            ${game.icon}
+                        <div class="flex items-start gap-4 mb-3 md:mb-4">
+                            <div class="w-14 h-14 md:w-16 md:h-16 rounded-xl md:rounded-2xl bg-gradient-to-br ${game.color} flex items-center justify-center text-3xl md:text-4xl shadow-lg transform group-hover:scale-110 group-hover:rotate-6 transition-all border border-white/20 shrink-0">
+                                ${game.icon}
+                            </div>
+                            <h3 class="text-lg md:text-xl font-fredoka text-white leading-tight group-hover:text-blue-300 transition-colors pt-1">${game.title}</h3>
                         </div>
                         
-                        <h3 class="text-xl font-fredoka text-white mb-2 leading-tight group-hover:text-blue-300 transition-colors">${game.title}</h3>
-                        
-                        <p class="text-slate-400 text-sm font-bold leading-relaxed mb-6 flex-1">
+                        <p class="text-slate-400 text-xs md:text-sm font-bold leading-relaxed mb-4 flex-1 line-clamp-3">
                             ${game.desc}
                         </p>
                         
-                        <div class="flex flex-wrap gap-2 mt-auto">
+                        <div class="flex flex-wrap gap-1.5 md:gap-2 mt-auto">
                             ${tagsHtml}
                         </div>
                     </a>
@@ -250,11 +287,11 @@
 
             linksList.forEach((link, index) => {
                 const cardHTML = `
-                    <div onclick="openLinkModal(${index})" class="link-card group cursor-pointer">
-                        <div class="w-16 h-16 ${link.bgColor} ${link.textColor} rounded-xl flex items-center justify-center text-4xl group-hover:scale-110 transition-transform">${link.icon}</div>
-                        <div class="flex-1 text-left">
-                            <h3 class="text-xl font-black text-white group-hover:${link.textColor} transition-colors">${link.title}</h3>
-                            <p class="text-xs text-slate-400 font-bold mt-1">${link.shortDesc}</p>
+                    <div onclick="openLinkModal(${index})" class="link-card group cursor-pointer h-full">
+                        <div class="w-12 h-12 md:w-16 md:h-16 ${link.bgColor} ${link.textColor} rounded-xl flex items-center justify-center text-2xl md:text-4xl group-hover:scale-110 transition-transform shrink-0">${link.icon}</div>
+                        <div class="flex-1 text-left min-w-0">
+                            <h3 class="text-lg md:text-xl font-black text-white group-hover:${link.textColor} transition-colors truncate">${link.title}</h3>
+                            <p class="text-[10px] md:text-xs text-slate-400 font-bold mt-0.5 md:mt-1 truncate">${link.shortDesc}</p>
                         </div>
                     </div>
                 `;

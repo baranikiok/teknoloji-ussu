@@ -2,15 +2,17 @@
 <html lang="tr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Mobil cihazlar için hayati olan viewport ayarları (Yakınlaştırmayı engeller) -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Galaktik Klavye: Evrensel Akademi</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Roboto+Mono:wght@400;700&family=Fredoka+One&family=Nunito:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* */
         body {
             overflow: hidden;
             user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
             transition: background 0.5s ease, color 0.5s ease;
             width: 100vw;
             height: 100vh;
@@ -23,6 +25,8 @@
             top: 0;
             left: 0;
             z-index: 1;
+            width: 100%;
+            height: 100%;
         }
 
         .ui-layer {
@@ -39,7 +43,6 @@
 
         .hidden { display: none !important; }
 
-        /* */
         body.theme-commander {
             background: radial-gradient(circle at bottom, #160f2e 0%, #020205 100%);
             color: #e0e0e0;
@@ -58,7 +61,6 @@
         .theme-commander .k-key { border: 1px solid #333; background: rgba(20,20,35,0.8); color: #00ffcc; border-radius: 6px; box-shadow: inset 0 0 8px rgba(0,255,204,0.1); }
         .theme-commander .k-key.active { border-color: #ff00ff; background: rgba(255,0,255,0.25); color: #fff; box-shadow: 0 0 20px #ff00ff, inset 0 0 15px #ff00ff; text-shadow: 0 0 8px #fff; }
 
-        /* */
         body.theme-kids {
             background: linear-gradient(135deg, #1e3a8a 0%, #7e22ce 50%, #db2777 100%);
             color: #fff;
@@ -87,7 +89,6 @@
             box-shadow: 0 0 25px #f472b6, inset 0 4px 15px rgba(255,255,255,0.4);
         }
 
-        /* */
         @keyframes float { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
         .floating { animation: float 3s ease-in-out infinite; }
         @keyframes pulse-red { 0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
@@ -95,184 +96,216 @@
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .badge-anim { animation: slideIn 0.3s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
-        /* */
-        .keyboard-row { display: flex; justify-content: center; gap: 6px; margin-bottom: 6px; }
-        .k-key { width: 45px; height: 45px; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: all 0.1s; font-size: 14px; }
-        .k-wide { width: 70px; } .k-xwide { width: 100px; } .k-space { width: 300px; }
+        .keyboard-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 4px; }
+        .k-key { 
+            width: 30px; 
+            height: 35px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-weight: bold; 
+            transition: all 0.1s; 
+            font-size: 10px; 
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .k-wide { width: 45px; } .k-xwide { width: 60px; } .k-space { width: 150px; }
+
+        @media (min-width: 640px) {
+            .keyboard-row { gap: 6px; margin-bottom: 6px; }
+            .k-key { width: 45px; height: 45px; font-size: 14px; }
+            .k-wide { width: 70px; } .k-xwide { width: 100px; } .k-space { width: 300px; }
+        }
+
+        #mobile-input-area {
+            position: absolute;
+            bottom: -100px;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        .mobile-keyboard-toggle {
+            display: none;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-keyboard-toggle {
+                display: flex;
+            }
+        }
     </style>
 </head>
 <body class="theme-commander">
 
     <canvas id="game-canvas"></canvas>
+    
+    <!-- Mobil Native Klavye Tetikleyici (Görünmez Input) -->
+    <input type="text" id="mobile-input-area" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 
     <!-- Rozet Bildirim Alanı -->
     <div id="badge-container" class="fixed top-20 right-4 flex flex-col gap-3 z-50 pointer-events-none"></div>
 
     <!-- UI Katmanı -->
-    <div class="ui-layer flex flex-col justify-between p-4">
+    <div class="ui-layer flex flex-col justify-between p-2 md:p-4">
         
-        <!-- HUD -->
         <div id="hud" class="hidden flex justify-between items-start w-full">
-            <div class="flex flex-col gap-2 w-1/3">
-                <div class="text-2xl font-bold text-cyan-400 title-font">SKOR: <span id="score-display">0</span></div>
-                <div class="text-sm text-purple-400 font-bold tracking-widest body-font">GÖREV: <span id="level-name">BAŞLANGIÇ</span></div>
+            <div class="flex flex-col gap-1 md:gap-2 w-1/3">
+                <div class="text-base md:text-2xl font-bold text-cyan-400 title-font">SKOR: <span id="score-display">0</span></div>
+                <div class="text-[10px] md:text-sm text-purple-400 font-bold tracking-widest body-font">GÖREV: <span id="level-name">BAŞLANGIÇ</span></div>
             </div>
             
             <div class="flex flex-col items-center w-1/3">
-                <div class="text-5xl font-black text-yellow-400 italic title-font transition-transform" id="combo-display">x1</div>
-                <div class="h-2 w-32 bg-gray-800 rounded-full mt-1 overflow-hidden border border-white/10">
+                <div class="text-3xl md:text-5xl font-black text-yellow-400 italic title-font transition-transform" id="combo-display">x1</div>
+                <div class="h-1.5 md:h-2 w-20 md:w-32 bg-gray-800 rounded-full mt-1 overflow-hidden border border-white/10">
                     <div id="progress-bar" class="h-full bg-gradient-to-r from-blue-500 to-purple-500 w-0 transition-all duration-300"></div>
                 </div>
-                <div class="text-[10px] text-gray-400 mt-1 body-font">İLERLEME</div>
+                <div class="text-[8px] md:text-[10px] text-gray-400 mt-1 body-font">İLERLEME</div>
             </div>
 
-            <div class="flex flex-col gap-2 items-end w-1/3 interactive-ui">
-                <button onclick="quitToMenu()" class="px-3 py-1 border border-red-500 text-red-500 hover:bg-red-900/50 rounded text-xs mb-2 transition-colors body-font font-bold">
+            <div class="flex flex-col gap-1 md:gap-2 items-end w-1/3 interactive-ui">
+                <button onclick="quitToMenu()" class="px-2 md:px-3 py-1 border border-red-500 text-red-500 hover:bg-red-900/50 rounded text-[10px] md:text-xs mb-1 md:mb-2 transition-colors body-font font-bold">
                     ÇIKIŞ
                 </button>
-                <div class="text-xl text-red-500 font-bold title-font" id="lives-container">CAN: <span id="lives-display">❤️❤️❤️</span></div>
-                <div class="text-xs text-green-400 body-font">HIZ: <span id="wpm-display">0</span> WPM</div>
+                <div class="text-sm md:text-xl text-red-500 font-bold title-font" id="lives-container">CAN: <span id="lives-display">❤️❤️❤️</span></div>
+                <div class="text-[10px] md:text-xs text-green-400 body-font hidden md:block">HIZ: <span id="wpm-display">0</span> WPM</div>
+                <!-- Mobil Kullanıcılar için Manuel Klavye Açma Butonu -->
+                <button onclick="focusMobileInput()" class="mobile-keyboard-toggle px-3 py-2 bg-blue-600/80 hover:bg-blue-500 text-white rounded-lg text-xs font-bold border border-blue-400 shadow-lg mt-2">
+                    ⌨️ KLAVYE AÇ
+                </button>
             </div>
         </div>
     </div>
 
-    <!-- Tema Seçim Ekranı (İlk Ekran) -->
-    <div id="theme-selection-screen" class="ui-layer interactive-ui flex items-center justify-center bg-black/95 backdrop-blur-md z-50">
+    <div id="theme-selection-screen" class="ui-layer interactive-ui flex items-center justify-center bg-black/95 backdrop-blur-md z-50 overflow-y-auto py-8">
         
-        <!-- Ana Menüye Dön (Ev) Butonu -->
-        <a href="index.html" class="absolute top-4 left-4 bg-gray-800/80 hover:bg-gray-700 text-cyan-400 w-12 h-12 rounded-2xl flex items-center justify-center text-2xl backdrop-blur-md transition-all border border-cyan-500/50 hover:scale-110 shadow-[0_0_15px_rgba(34,211,238,0.3)] z-[100]" title="Ana Menüye Dön">🏠</a>
+        <a href="index.html" class="absolute top-4 left-4 bg-gray-800/80 hover:bg-gray-700 text-cyan-400 w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center text-xl md:text-2xl backdrop-blur-md transition-all border border-cyan-500/50 hover:scale-110 shadow-[0_0_15px_rgba(34,211,238,0.3)] z-[100]" title="Ana Menüye Dön">🏠</a>
 
-        <div class="text-center max-w-5xl p-8 w-full">
-            <h1 class="text-5xl md:text-6xl font-black text-white mb-12 tracking-widest neon-text" style="font-family: 'Orbitron', sans-serif;">KİMLİĞİNİ SEÇ</h1>
+        <div class="text-center max-w-5xl p-4 md:p-8 w-full mt-10 md:mt-0">
+            <h1 class="text-3xl md:text-6xl font-black text-white mb-8 md:mb-12 tracking-widest neon-text" style="font-family: 'Orbitron', sans-serif;">KİMLİĞİNİ SEÇ</h1>
             
-            <div class="flex flex-col md:flex-row gap-8 justify-center">
-                <button onclick="chooseTheme('commander')" class="flex-1 bg-[#0a0f1e] border-2 border-[#00ffcc] hover:bg-[#00ffcc]/10 rounded-3xl p-10 transition-all transform hover:-translate-y-2 shadow-[0_0_30px_rgba(0,255,204,0.2)] group text-left relative overflow-hidden">
-                    <div class="absolute -right-10 -top-10 text-9xl opacity-10 group-hover:opacity-20 transition-opacity">🚀</div>
-                    <div class="text-6xl mb-6">🕶️</div>
-                    <h2 class="text-3xl md:text-4xl font-bold text-[#00ffcc] mb-3" style="font-family: 'Orbitron', sans-serif;">KOMUTAN</h2>
-                    <p class="text-gray-400 text-sm md:text-base" style="font-family: 'Roboto Mono', monospace;">Siber güvenlik, kod parçacıkları ve zorlu görevler. Ciddi pilotlar için neon evren.</p>
+            <div class="flex flex-col md:flex-row gap-4 md:gap-8 justify-center px-4">
+                <button onclick="chooseTheme('commander')" class="flex-1 bg-[#0a0f1e] border-2 border-[#00ffcc] hover:bg-[#00ffcc]/10 rounded-2xl md:rounded-3xl p-6 md:p-10 transition-all transform hover:-translate-y-2 shadow-[0_0_30px_rgba(0,255,204,0.2)] group text-left relative overflow-hidden">
+                    <div class="absolute -right-5 -top-5 md:-right-10 md:-top-10 text-7xl md:text-9xl opacity-10 group-hover:opacity-20 transition-opacity">🚀</div>
+                    <div class="text-4xl md:text-6xl mb-4 md:mb-6">🕶️</div>
+                    <h2 class="text-2xl md:text-4xl font-bold text-[#00ffcc] mb-2 md:mb-3" style="font-family: 'Orbitron', sans-serif;">KOMUTAN</h2>
+                    <p class="text-gray-400 text-xs md:text-base leading-relaxed" style="font-family: 'Roboto Mono', monospace;">Siber güvenlik, kod parçacıkları ve zorlu görevler. Ciddi pilotlar için neon evren.</p>
                 </button>
 
-                <button onclick="chooseTheme('kids')" class="flex-1 bg-gradient-to-b from-[#4c1d95] to-[#7e22ce] border-4 border-[#fde047] hover:from-[#5b21b6] hover:to-[#9333ea] rounded-3xl p-10 transition-all transform hover:-translate-y-2 shadow-[0_0_30px_rgba(253,224,71,0.3)] group text-left relative overflow-hidden">
-                    <div class="absolute -right-10 -top-10 text-9xl opacity-20 group-hover:opacity-30 transition-opacity">⭐</div>
-                    <div class="text-6xl mb-6">🧸</div>
-                    <h2 class="text-3xl md:text-4xl font-bold text-[#fde047] mb-3 tracking-wide" style="font-family: 'Fredoka One', cursive;">MİNİK ASTRONOT</h2>
-                    <p class="text-pink-100 text-sm md:text-base font-bold" style="font-family: 'Nunito', sans-serif;">Renkli gezegenler, tatlı uzaylılar ve eğlenceli harf avı! Küçük kaşifler buraya.</p>
+                <button onclick="chooseTheme('kids')" class="flex-1 bg-gradient-to-b from-[#4c1d95] to-[#7e22ce] border-4 border-[#fde047] hover:from-[#5b21b6] hover:to-[#9333ea] rounded-2xl md:rounded-3xl p-6 md:p-10 transition-all transform hover:-translate-y-2 shadow-[0_0_30px_rgba(253,224,71,0.3)] group text-left relative overflow-hidden">
+                    <div class="absolute -right-5 -top-5 md:-right-10 md:-top-10 text-7xl md:text-9xl opacity-20 group-hover:opacity-30 transition-opacity">⭐</div>
+                    <div class="text-4xl md:text-6xl mb-4 md:mb-6">🧸</div>
+                    <h2 class="text-2xl md:text-4xl font-bold text-[#fde047] mb-2 md:mb-3 tracking-wide" style="font-family: 'Fredoka One', cursive;">MİNİK ASTRONOT</h2>
+                    <p class="text-pink-100 text-xs md:text-base font-bold leading-relaxed" style="font-family: 'Nunito', sans-serif;">Renkli gezegenler, tatlı uzaylılar ve eğlenceli harf avı! Küçük kaşifler buraya.</p>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Başlangıç Ekranı -->
-    <div id="start-screen" class="ui-layer interactive-ui hidden flex items-center justify-center bg-black/80 backdrop-blur-sm">
+    <div id="start-screen" class="ui-layer interactive-ui hidden flex items-center justify-center bg-black/80 backdrop-blur-sm overflow-y-auto">
         
-        <!-- Ana Menüye Dön (Ev) Butonu -->
-        <a href="index.html" class="absolute top-4 left-4 bg-gray-800/80 hover:bg-gray-700 text-cyan-400 w-12 h-12 rounded-2xl flex items-center justify-center text-2xl backdrop-blur-md transition-all border border-cyan-500/50 hover:scale-110 shadow-[0_0_15px_rgba(34,211,238,0.3)] z-[100]" title="Ana Menüye Dön">🏠</a>
+        <a href="index.html" class="absolute top-4 left-4 bg-gray-800/80 hover:bg-gray-700 text-cyan-400 w-10 h-10 md:w-12 md:h-12 rounded-xl md:rounded-2xl flex items-center justify-center text-xl md:text-2xl backdrop-blur-md transition-all border border-cyan-500/50 hover:scale-110 shadow-[0_0_15px_rgba(34,211,238,0.3)] z-[100]" title="Ana Menüye Dön">🏠</a>
 
-        <div class="text-center max-w-4xl p-10 main-box rounded-2xl floating relative">
+        <div class="text-center max-w-4xl p-6 md:p-10 mx-4 main-box rounded-2xl floating relative mt-10 md:mt-0">
             
             <div class="absolute top-4 left-4">
-                <button onclick="backToThemeSelection()" class="px-4 py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-sm border border-gray-500 text-gray-300 transition-all body-font font-bold shadow-md ml-14">
+                <button onclick="backToThemeSelection()" class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg bg-gray-800/50 hover:bg-gray-700/50 text-xs md:text-sm border border-gray-500 text-gray-300 transition-all body-font font-bold shadow-md ml-12 md:ml-14">
                     ⬅️ GERİ
                 </button>
             </div>
 
-            <h1 id="game-title" class="text-6xl md:text-8xl mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-500 font-black neon-text title-font">KOMUTAN</h1>
-            <p id="game-subtitle" class="text-cyan-200 mb-10 text-xl tracking-widest body-font">GALAKTİK SAVUNMA SİSTEMİ</p>
+            <h1 id="game-title" class="text-4xl sm:text-5xl md:text-8xl mb-2 md:mb-4 mt-8 md:mt-0 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-500 font-black neon-text title-font">KOMUTAN</h1>
+            <p id="game-subtitle" class="text-cyan-200 mb-6 md:mb-10 text-sm md:text-xl tracking-widest body-font">GALAKTİK SAVUNMA SİSTEMİ</p>
 
-            <div class="flex flex-col md:flex-row gap-6 justify-center mb-8">
-                <button onclick="startTraining()" class="px-8 py-6 border-2 border-green-500 hover:bg-green-900/40 rounded-xl group transition-all w-full md:w-64 body-font">
-                    <div class="text-4xl mb-2">🛠️</div>
-                    <div class="text-xl font-bold text-green-400 group-hover:text-white">EĞİTİM</div>
-                    <div class="text-xs text-gray-400 mt-2">Tuşları Tanı & Egzersiz</div>
+            <div class="flex flex-col sm:flex-row gap-4 md:gap-6 justify-center mb-6 md:mb-8">
+                <button onclick="startTraining()" class="px-4 md:px-8 py-4 md:py-6 border-2 border-green-500 hover:bg-green-900/40 rounded-xl group transition-all w-full sm:w-64 body-font">
+                    <div class="text-3xl md:text-4xl mb-1 md:mb-2">🛠️</div>
+                    <div class="text-lg md:text-xl font-bold text-green-400 group-hover:text-white">EĞİTİM</div>
+                    <div class="text-[10px] md:text-xs text-gray-400 mt-1 md:mt-2">Tuşları Tanı & Egzersiz</div>
                 </button>
 
-                <button onclick="startStoryMode()" class="px-8 py-6 bg-gradient-to-b from-purple-900 to-purple-700 hover:from-purple-700 hover:to-purple-500 border-2 border-purple-400 rounded-xl group transition-all w-full md:w-64 shadow-[0_0_20px_rgba(168,85,247,0.5)] body-font">
-                    <div class="text-4xl mb-2">🚀</div>
-                    <div class="text-xl font-bold text-white">GÖREV BAŞLA</div>
-                    <div class="text-xs text-purple-200 mt-2">Sefer Modu (4 Seviye)</div>
+                <button onclick="startStoryMode()" class="px-4 md:px-8 py-4 md:py-6 bg-gradient-to-b from-purple-900 to-purple-700 hover:from-purple-700 hover:to-purple-500 border-2 border-purple-400 rounded-xl group transition-all w-full sm:w-64 shadow-[0_0_20px_rgba(168,85,247,0.5)] body-font">
+                    <div class="text-3xl md:text-4xl mb-1 md:mb-2">🚀</div>
+                    <div class="text-lg md:text-xl font-bold text-white">GÖREV BAŞLA</div>
+                    <div class="text-[10px] md:text-xs text-purple-200 mt-1 md:mt-2">Sefer Modu (4 Seviye)</div>
                 </button>
             </div>
             
-            <div class="mt-8 pt-4 border-t border-gray-500/30">
-                <p class="text-sm text-cyan-400 font-bold tracking-wider body-font">Geliştirici: Mehmet Baran İKİOK</p>
-                <p class="text-[10px] text-gray-500 uppercase body-font">Bilişim Teknolojileri Öğretmeni</p>
+            <div class="mt-4 md:mt-8 pt-4 border-t border-gray-500/30">
+                <p class="text-xs md:text-sm text-cyan-400 font-bold tracking-wider body-font">Geliştirici: Mehmet Baran İKİOK</p>
+                <p class="text-[9px] md:text-[10px] text-gray-500 uppercase body-font mt-1">Bilişim Teknolojileri Öğretmeni</p>
             </div>
-            <p class="text-[10px] text-gray-500 mt-2 body-font">v5.0 - Rozetler, Bonuslar ve Kısayol Ustası!</p>
+            <p class="text-[9px] md:text-[10px] text-gray-500 mt-2 body-font">v5.0 - Mobil Uyumluluk Güncellemesi!</p>
         </div>
     </div>
 
-    <!-- Yeni Eğitim Modu Ekranı -->
-    <div id="training-screen" class="ui-layer interactive-ui hidden flex flex-col items-center justify-center bg-black/95 z-50 p-4">
-        <h2 class="text-3xl text-green-400 font-bold mb-4 neon-text title-font">DONANIM TESPİTİ VE EGZERSİZ</h2>
+    <div id="training-screen" class="ui-layer interactive-ui hidden flex flex-col items-center justify-start md:justify-center bg-black/95 z-50 p-2 md:p-4 overflow-y-auto">
+        <h2 class="text-xl md:text-3xl text-green-400 font-bold mb-2 md:mb-4 mt-4 md:mt-0 neon-text title-font text-center">DONANIM TESPİTİ VE EGZERSİZ</h2>
         
-        <div class="flex flex-col md:flex-row gap-4 mb-6 w-full max-w-4xl">
-            <div class="bg-gray-900/80 border border-green-500/50 p-4 rounded-lg flex-1 text-center min-h-[120px] flex flex-col justify-center backdrop-blur-sm relative">
-                <div class="absolute top-2 left-0 w-full text-xs text-green-500/70 font-bold body-font tracking-widest">SERBEST KEŞİF</div>
-                <div class="text-3xl md:text-4xl font-bold text-white mt-4 mb-2 title-font" id="key-name-display">KLAVYE HAZIR</div>
-                <div class="text-green-400 text-sm body-font" id="key-desc-display">Bir tuşa basarak görevini öğren.</div>
+        <div class="flex flex-col md:flex-row gap-2 md:gap-4 mb-4 md:mb-6 w-full max-w-4xl">
+            <div class="bg-gray-900/80 border border-green-500/50 p-3 md:p-4 rounded-lg flex-1 text-center min-h-[100px] md:min-h-[120px] flex flex-col justify-center backdrop-blur-sm relative">
+                <div class="absolute top-2 left-0 w-full text-[9px] md:text-xs text-green-500/70 font-bold body-font tracking-widest">SERBEST KEŞİF</div>
+                <div class="text-2xl md:text-4xl font-bold text-white mt-4 md:mt-4 mb-1 md:mb-2 title-font" id="key-name-display">KLAVYE HAZIR</div>
+                <div class="text-green-400 text-xs md:text-sm body-font px-2" id="key-desc-display">Gerçek klavyenden veya sanal klavyeden bir tuşa bas.</div>
             </div>
             
-            <div class="bg-blue-900/40 border border-blue-500/50 p-4 rounded-lg flex-1 text-center min-h-[120px] flex flex-col justify-center backdrop-blur-sm relative overflow-hidden">
-                <div class="absolute top-2 left-0 w-full text-xs text-blue-400/70 font-bold body-font tracking-widest">PARMAK EGZERSİZİ</div>
-                <div class="text-3xl font-mono font-bold text-white tracking-[0.2em] mt-4 mb-3" id="training-drill-display">A S D F</div>
-                <button onclick="startTrainingDrill()" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-full transition-colors body-font inline-block mx-auto border border-blue-400 shadow-[0_0_10px_rgba(37,99,235,0.5)]">EGZERSİZİ BAŞLAT</button>
+            <div class="bg-blue-900/40 border border-blue-500/50 p-3 md:p-4 rounded-lg flex-1 text-center min-h-[100px] md:min-h-[120px] flex flex-col justify-center backdrop-blur-sm relative overflow-hidden">
+                <div class="absolute top-2 left-0 w-full text-[9px] md:text-xs text-blue-400/70 font-bold body-font tracking-widest">PARMAK EGZERSİZİ</div>
+                <div class="text-2xl md:text-3xl font-mono font-bold text-white tracking-[0.2em] mt-3 md:mt-4 mb-2 md:mb-3" id="training-drill-display">A S D F</div>
+                <button onclick="startTrainingDrill()" class="px-4 md:px-6 py-1.5 md:py-2 bg-blue-600 hover:bg-blue-500 text-white text-[10px] md:text-xs font-bold rounded-full transition-colors body-font inline-block mx-auto border border-blue-400 shadow-[0_0_10px_rgba(37,99,235,0.5)]">EGZERSİZİ BAŞLAT</button>
             </div>
         </div>
 
-        <div id="virtual-keyboard" class="mb-4 select-none transform scale-90 md:scale-100 origin-top"></div>
-        <button onclick="quitToMenu()" class="px-8 py-3 border border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-full font-bold transition-colors body-font mt-2">EĞİTİMİ BİTİR</button>
+        <div id="virtual-keyboard" class="mb-4 select-none w-full max-w-3xl overflow-x-auto pb-2" style="touch-action: pan-x;"></div>
+        
+        <button onclick="quitToMenu()" class="px-6 md:px-8 py-2 md:py-3 border border-red-500 text-red-500 hover:bg-red-500 hover:text-white rounded-full font-bold transition-colors body-font text-sm mt-2 mb-4">EĞİTİMİ BİTİR</button>
     </div>
 
-    <!-- Hikaye/Level Geçiş Modalı -->
-    <div id="story-modal" class="ui-layer interactive-ui hidden flex items-center justify-center bg-black/90 z-40 backdrop-blur-lg">
-        <div class="max-w-2xl w-full p-8 main-box rounded-xl text-center">
-            <h2 class="text-3xl font-bold text-purple-400 mb-4 title-font" id="story-title">BÖLÜM 1</h2>
-            <div class="w-full h-px bg-purple-500/50 mb-6"></div>
-            <p class="text-lg text-gray-200 mb-8 leading-relaxed body-font" id="story-text">Hikaye metni...</p>
-            <button onclick="nextLevel()" class="px-10 py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded shadow-[0_0_15px_rgba(147,51,234,0.6)] transition-all transform hover:scale-105 body-font">BAŞLAT</button>
+    <div id="story-modal" class="ui-layer interactive-ui hidden flex items-center justify-center bg-black/90 z-40 backdrop-blur-lg px-4">
+        <div class="max-w-2xl w-full p-6 md:p-8 main-box rounded-xl text-center">
+            <h2 class="text-2xl md:text-3xl font-bold text-purple-400 mb-2 md:mb-4 title-font" id="story-title">BÖLÜM 1</h2>
+            <div class="w-full h-px bg-purple-500/50 mb-4 md:mb-6"></div>
+            <p class="text-sm md:text-lg text-gray-200 mb-6 md:mb-8 leading-relaxed body-font" id="story-text">Hikaye metni...</p>
+            <button onclick="nextLevel()" class="px-8 md:px-10 py-3 md:py-4 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded shadow-[0_0_15px_rgba(147,51,234,0.6)] transition-all transform hover:scale-105 body-font w-full md:w-auto">BAŞLAT</button>
+            <p class="text-[10px] text-gray-400 mt-4 md:hidden">Telefon/Tablette oynuyorsanız, oyuna başladıktan sonra sağ üstteki "KLAVYE AÇ" butonunu kullanın.</p>
         </div>
     </div>
 
-    <!-- Oyun Sonu Ekranı -->
-    <div id="game-over-screen" class="ui-layer interactive-ui hidden flex items-center justify-center bg-red-950/90 backdrop-blur-md">
-        <div class="text-center p-12 border-4 border-red-600 rounded-3xl bg-black shadow-2xl max-w-2xl w-full relative overflow-hidden main-box" style="background: black;">
+    <div id="game-over-screen" class="ui-layer interactive-ui hidden flex items-center justify-center bg-red-950/90 backdrop-blur-md px-4">
+        <div class="text-center p-6 md:p-12 border-4 border-red-600 rounded-2xl md:rounded-3xl bg-black shadow-2xl max-w-2xl w-full relative overflow-hidden main-box" style="background: black;">
             
-            <h2 class="text-6xl font-black text-white mb-2 neon-text title-font">GÖREV SONU</h2>
-            <div class="text-xl text-red-400 mb-6 tracking-widest font-bold body-font" id="mission-status">BAŞARISIZ</div>
+            <h2 class="text-4xl md:text-6xl font-black text-white mb-1 md:mb-2 neon-text title-font">GÖREV SONU</h2>
+            <div class="text-lg md:text-xl text-red-400 mb-4 md:mb-6 tracking-widest font-bold body-font" id="mission-status">BAŞARISIZ</div>
             
-            <div class="bg-gray-900 p-4 rounded-xl mb-4 border border-gray-700">
-                <div class="text-gray-400 text-sm mb-1 body-font">KAZANILAN ÜNVAN</div>
-                <div class="text-3xl md:text-4xl font-black text-yellow-400 py-1 title-font" id="final-rank">ACEMİ PİLOT</div>
+            <div class="bg-gray-900 p-3 md:p-4 rounded-xl mb-3 md:mb-4 border border-gray-700">
+                <div class="text-gray-400 text-xs md:text-sm mb-1 body-font">KAZANILAN ÜNVAN</div>
+                <div class="text-2xl sm:text-3xl md:text-4xl font-black text-yellow-400 py-1 title-font" id="final-rank">ACEMİ PİLOT</div>
             </div>
 
-            <div class="grid grid-cols-2 gap-4 text-left mb-6">
-                <div class="bg-gray-800 p-4 rounded">
-                    <div class="text-xs text-gray-400 body-font">TOPLAM SKOR</div>
-                    <div class="text-2xl text-white font-bold title-font" id="final-score">0</div>
+            <div class="grid grid-cols-2 gap-3 md:gap-4 text-left mb-4 md:mb-6">
+                <div class="bg-gray-800 p-3 md:p-4 rounded">
+                    <div class="text-[10px] md:text-xs text-gray-400 body-font">TOPLAM SKOR</div>
+                    <div class="text-xl md:text-2xl text-white font-bold title-font" id="final-score">0</div>
                 </div>
-                <div class="bg-gray-800 p-4 rounded">
-                    <div class="text-xs text-gray-400 body-font">MAX KOMBO</div>
-                    <div class="text-2xl text-yellow-400 font-bold title-font" id="final-combo">0</div>
+                <div class="bg-gray-800 p-3 md:p-4 rounded">
+                    <div class="text-[10px] md:text-xs text-gray-400 body-font">MAX KOMBO</div>
+                    <div class="text-xl md:text-2xl text-yellow-400 font-bold title-font" id="final-combo">0</div>
                 </div>
             </div>
 
-            <!-- ROZETLER BÖLÜMÜ -->
-            <div class="mb-8 border-t border-gray-800 pt-4">
-                <div class="text-xs text-gray-400 mb-3 body-font tracking-widest">KAZANILAN ROZETLER</div>
-                <div id="final-badges-container" class="flex flex-wrap justify-center gap-3">
-                    <!-- Rozetler buraya js ile eklenecek -->
+            <div class="mb-4 md:mb-8 border-t border-gray-800 pt-3 md:pt-4">
+                <div class="text-[10px] md:text-xs text-gray-400 mb-2 md:mb-3 body-font tracking-widest">KAZANILAN ROZETLER</div>
+                <div id="final-badges-container" class="flex flex-wrap justify-center gap-2 md:gap-3">
                 </div>
             </div>
 
             <div class="flex gap-3 justify-center">
-                <button onclick="quitToMenu()" class="px-8 py-4 bg-white text-black font-bold rounded hover:bg-gray-200 transition-colors text-lg body-font w-full">ANA MENÜ</button>
+                <button onclick="quitToMenu()" class="px-6 md:px-8 py-3 md:py-4 bg-white text-black font-bold rounded hover:bg-gray-200 transition-colors text-base md:text-lg body-font w-full">ANA MENÜ</button>
             </div>
         </div>
     </div>
 
     <script>
-        // --- TEMA YÖNETİMİ ---
         let currentTheme = 'commander';
 
         function chooseTheme(theme) {
@@ -290,101 +323,94 @@
             
             if (theme === 'kids') {
                 title.innerHTML = "GALAKTİK<br>KLAVYE";
-                title.className = "text-5xl md:text-7xl mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-blue-300 font-black neon-text title-font";
+                title.className = "text-4xl sm:text-5xl md:text-7xl mb-2 md:mb-4 mt-8 md:mt-0 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-blue-300 font-black neon-text title-font";
                 subtitle.innerText = "MİNİK ASTRONOTLAR İÇİN";
-                subtitle.className = "text-white mb-10 text-xl font-bold body-font";
+                subtitle.className = "text-white mb-6 md:mb-10 text-sm md:text-xl font-bold body-font";
             } else {
                 title.innerText = "KOMUTAN";
-                title.className = "text-6xl md:text-8xl mb-4 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-fuchsia-500 font-black neon-text title-font";
+                title.className = "text-4xl sm:text-5xl md:text-8xl mb-2 md:mb-4 mt-8 md:mt-0 text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-fuchsia-500 font-black neon-text title-font";
                 subtitle.innerText = "GALAKTİK SAVUNMA SİSTEMİ";
-                subtitle.className = "text-cyan-200 mb-10 text-xl tracking-widest body-font";
+                subtitle.className = "text-cyan-200 mb-6 md:mb-10 text-sm md:text-xl tracking-widest body-font";
             }
             
             initStars();
             if(gameState === 'training') renderVirtualKeyboard();
         }
 
-        // --- SES MOTORU ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         function playSound(type) {
             if (audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            const t = audioCtx.currentTime;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                const t = audioCtx.currentTime;
 
-            let typeWave = currentTheme === 'kids' ? 'sine' : 'square';
-            if (type === 'explosion') typeWave = currentTheme === 'kids' ? 'triangle' : 'sawtooth';
-            if (type === 'bonus') typeWave = 'triangle'; // Bonus için özel dalga
+                let typeWave = currentTheme === 'kids' ? 'sine' : 'square';
+                if (type === 'explosion') typeWave = currentTheme === 'kids' ? 'triangle' : 'sawtooth';
+                if (type === 'bonus') typeWave = 'triangle';
 
-            if (type === 'shoot') {
-                osc.type = typeWave; osc.frequency.setValueAtTime(800, t); osc.frequency.exponentialRampToValueAtTime(200, t + 0.1);
-                gainNode.gain.setValueAtTime(0.05, t); gainNode.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
-                osc.start(); osc.stop(t + 0.1);
-            } else if (type === 'explosion') {
-                osc.type = typeWave; osc.frequency.setValueAtTime(100, t); osc.frequency.exponentialRampToValueAtTime(10, t + 0.4);
-                gainNode.gain.setValueAtTime(0.1, t); gainNode.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
-                osc.start(); osc.stop(t + 0.4);
-            } else if (type === 'training') {
-                osc.type = 'sine'; osc.frequency.setValueAtTime(600, t);
-                gainNode.gain.setValueAtTime(0.1, t); gainNode.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
-                osc.start(); osc.stop(t + 0.15);
-            } else if (type === 'bonus') {
-                osc.type = typeWave; osc.frequency.setValueAtTime(440, t); osc.frequency.linearRampToValueAtTime(880, t + 0.2);
-                gainNode.gain.setValueAtTime(0.1, t); gainNode.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
-                osc.start(); osc.stop(t + 0.3);
-            }
+                if (type === 'shoot') {
+                    osc.type = typeWave; osc.frequency.setValueAtTime(800, t); osc.frequency.exponentialRampToValueAtTime(200, t + 0.1);
+                    gainNode.gain.setValueAtTime(0.05, t); gainNode.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+                    osc.start(); osc.stop(t + 0.1);
+                } else if (type === 'explosion') {
+                    osc.type = typeWave; osc.frequency.setValueAtTime(100, t); osc.frequency.exponentialRampToValueAtTime(10, t + 0.4);
+                    gainNode.gain.setValueAtTime(0.1, t); gainNode.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+                    osc.start(); osc.stop(t + 0.4);
+                } else if (type === 'training') {
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(600, t);
+                    gainNode.gain.setValueAtTime(0.1, t); gainNode.gain.exponentialRampToValueAtTime(0.001, t + 0.15);
+                    osc.start(); osc.stop(t + 0.15);
+                } else if (type === 'bonus') {
+                    osc.type = typeWave; osc.frequency.setValueAtTime(440, t); osc.frequency.linearRampToValueAtTime(880, t + 0.2);
+                    gainNode.gain.setValueAtTime(0.1, t); gainNode.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+                    osc.start(); osc.stop(t + 0.3);
+                }
+            } catch(e) { console.warn("Ses hatası (muhtemelen kullanıcı etkileşimi yok)"); }
         }
 
-        // --- VERİLER VE SEVİYELER ---
         const levels = [
             {
                 name: "SEVİYE 1: METEOR YAĞMURU",
                 desc: "Komutan! Uzay istasyonumuza yaklaşan küçük meteorlar tespit ettik. Savunma sistemlerini ısıtmak için bunları yok et. Sadece küçük harflerle başla.",
-                speedBase: 0.35, spawnRate: 4000,
+                speedBase: 0.25, spawnRate: 4500, // Mobilde hızı tolere etmek için biraz yavaşlatıldı
                 words: [
                     "uzay", "yıldız", "gezegen", "uydu", "meteor", "robot", "lazer", "pilot", "gemı", "radar", 
                     "hız", "güç", "kalkan", "rota", "mars", "dünya", "ay", "kedi", "köpek", "masa", 
                     "elma", "su", "ev", "araba", "okul", "kalem", "kitap", "yol", "kuş", "ağaç", 
-                    "çiçek", "deniz", "kum", "güneş", "bulut", "rüzgar", "ayna", "cam", "kapı", "duvar", 
-                    "çatı", "oda", "halı", "soba", "kış", "yaz", "bahar", "güz", "renk", "sarı", 
-                    "mavi", "yeşil", "mor", "pembe", "beyaz", "siyah", "gri", "sayı", "bir", "iki", 
-                    "üç", "dört", "beş", "altı", "yedi", "sekiz", "dokuz", "on", "yüz", "bin"
+                    "çiçek", "deniz", "kum", "güneş", "bulut", "rüzgar", "ayna", "cam", "kapı", "duvar"
                 ],
                 reqScore: 1000
             },
             {
                 name: "SEVİYE 2: İLETİŞİM KOPUKLUĞU",
-                desc: "Harika işti! Şimdi düşman frekanslarımızı bozuyor. Şehir isimleri ve büyük harfler kullanarak sinyali düzelt. DİKKAT: Shift tuşunu kullanman gerekecek.",
-                speedBase: 0.6, spawnRate: 3000,
+                desc: "Harika işti! Şimdi düşman frekanslarımızı bozuyor. Şehir isimleri ve büyük harfler kullanarak sinyali düzelt. DİKKAT: Büyük harf kullanman gerekecek.",
+                speedBase: 0.4, spawnRate: 3500,
                 words: [
                     "Ankara", "İstanbul", "İzmir", "Antalya", "Samsun", "Van", "Rize", "Bursa", "Konya", "Adana", 
                     "Türkiye", "Avrupa", "Asya", "Merkür", "Jüpiter", "Satürn", "Uranüs", "Neptün", "Plüton", "Galaksi",
-                    "Diyarbakır", "Erzurum", "Trabzon", "Gaziantep", "Kayseri", "Mersin", "Eskişehir", "Denizli", "Balıkesir", "Malatya",
-                    "Bilgisayar", "Teknoloji", "İnternet", "Yazılım", "Donanım", "Klavye", "Monitör", "Astronot", "Evren",
-                    "Yıldızlar", "Teleskop", "Mühendis", "Öğretmen", "Doktor", "Avukat", "Mimar", "Öğrenci", "Okul", "Eğitim",
-                    "Cumhuriyet", "Demokrasi", "Özgürlük", "Adalet", "Barış", "Sevgi", "Saygı", "Hoşgörü", "Yardımlaşma", "Dayanışma"
+                    "Bilgisayar", "Teknoloji", "İnternet", "Yazılım", "Donanım", "Klavye", "Monitör", "Astronot", "Evren"
                 ],
                 reqScore: 2500
             },
             {
                 name: "SEVİYE 3: KOMUTAN MODU",
                 desc: "DİKKAT! Ana bilgisayara siber saldırı başladı! Kod parçacıkları yağıyor. Sembolleri ve sayıları kullan!",
-                speedBase: 1.2, spawnRate: 2000,
+                speedBase: 0.8, spawnRate: 2500,
                 words: [
                     "12345", "%100", "user_id", "#hashtag", "mail@me", "(parantez)", "[köşeli]", 
                     "{süslü}", "x=y+2", "3.14", "7/24", "Kod:88", "Error404", "System.out", "<div>", "True/False", "192.168.1.1",
-                    "function()", "console.log()", "class=\"\"", "id=\"\"", "margin:0;", "padding:10px;", "let x=5;", "const PI=3.14;", "if(a>b)", "return true;",
-                    "border:none;", "[1,2,3]", "https://", "!important", "&&", "||", "===", "=>", "+=", "-=", 
-                    "<h1>Başlık</h1>", "<!--Yorum-->", "/*Stil*/", "background-color", "width:100%", "display:flex", "justify-content", "align-items", "font-weight", "text-align"
+                    "function()", "class=\"\"", "margin:0;", "let x=5;", "if(a>b)",
+                    "border:none;", "[1,2,3]", "https://", "&&", "||", "===", "=>", "+="
                 ],
                 reqScore: 5000
             },
             {
                 name: "SEVİYE 4: KISAYOL USTASI",
-                desc: "Sistem çöküyor! Kodu kurtarmak için gerçek klavye kısayollarını kullan. 'CTRL' tuşuna basılı tutarak istenen harfe bas!",
-                speedBase: 0.8, spawnRate: 2500,
+                desc: "Sistem çöküyor! Kodu kurtarmak için kısayolları kullan. Telefon/Tablette oynuyorsan sadece harfe basman yeterli!",
+                speedBase: 0.6, spawnRate: 3000,
                 words: [
                     { display: "KOPYALA (Ctrl+C)", key: "c", mod: "ctrl" },
                     { display: "YAPIŞTIR (Ctrl+V)", key: "v", mod: "ctrl" },
@@ -407,9 +433,9 @@
             [{key:"Ctrl", code:"ControlLeft", w:"k-wide"}, {key:"Alt", code:"AltLeft", w:"k-wide"}, {key:"BOŞLUK", code:"Space", w:"k-space"}, {key:"Alt Gr", code:"AltRight", w:"k-wide"}, {key:"Ctrl", code:"ControlRight", w:"k-wide"}]
         ];
 
-        // --- OYUN DEĞİŞKENLERİ ---
         const canvas = document.getElementById('game-canvas');
         const ctx = canvas.getContext('2d');
+        const mobileInput = document.getElementById('mobile-input-area');
         
         let gameState = 'menu'; 
         let currentLevelIndex = 0;
@@ -419,16 +445,18 @@
         let maxCombo = 0;
         let activeWords = [];
         let particles = []; 
-        let floatingTexts = []; // Uçan yazılar (HATA, KOMBOS vb)
+        let floatingTexts = []; 
         let stars = []; 
         let lastTime = 0;
         let spawnTimer = 0;
         let targetWordIndex = -1;
-        let errorFlashFrames = 0; // Ekran kırmızı parlama süresi
+        let errorFlashFrames = 0; 
         
-        // --- ROZET (BADGE) SİSTEMİ ---
         let earnedBadges = new Set();
         let badgeDetails = [];
+
+        // Mobil cihaz tespiti
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
         function awardBadge(id, icon, title, desc) {
             if (earnedBadges.has(id)) return;
@@ -437,8 +465,8 @@
             playSound('bonus'); 
 
             const badgeEl = document.createElement('div');
-            badgeEl.className = "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-3 rounded-lg shadow-lg transform transition-all translate-x-full border-2 border-yellow-300 flex items-center gap-3 badge-anim";
-            badgeEl.innerHTML = `<div class="text-3xl">${icon}</div><div><div class="font-bold text-sm title-font">${title}</div><div class="text-xs opacity-90 body-font">${desc}</div></div>`;
+            badgeEl.className = "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-2 md:p-3 rounded-lg shadow-lg transform transition-all translate-x-full border-2 border-yellow-300 flex items-center gap-2 md:gap-3 badge-anim";
+            badgeEl.innerHTML = `<div class="text-2xl md:text-3xl">${icon}</div><div><div class="font-bold text-xs md:text-sm title-font">${title}</div><div class="text-[10px] md:text-xs opacity-90 body-font">${desc}</div></div>`;
             document.getElementById('badge-container').appendChild(badgeEl);
             
             setTimeout(() => {
@@ -454,17 +482,17 @@
             if (score >= 5000) awardBadge('score5k', '⭐', 'Yıldız Pilot', '5000 puan! Gerçek bir ustasın.');
         }
 
-        // --- EĞİTİM MODU DEĞİŞKENLERİ ---
         let trainingDrillActive = false;
-        let trainingDrills = ["ASDF", "JKLŞ", "QWER", "UIOP", "ZXCV", "NMÖÇ", "GH", "TY", "ASDF JKLŞ", "QAZ WSX", "EDC RFV", "TGB YHN", "UJM IKÖ", "OLÇ PŞĞ"];
+        let trainingDrills = ["ASDF", "JKLŞ", "QWER", "UIOP", "ZXCV", "NMÖÇ", "GH", "TY", "ASDF JKLŞ", "QAZ WSX", "EDC RFV"];
         let currentDrill = "";
         let currentDrillIndex = 0;
         
-        // --- YILDIZ EFEKTİ ---
         function initStars() {
             stars = [];
-            for(let i=0; i<200; i++) stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 2, speed: (Math.random() * 0.5 + 0.1) * (gameState === 'playing' && currentLevelIndex >= 2 ? 5 : 1) });
+            let starCount = isMobile ? 80 : 200; // Mobilde performans için daha az yıldız
+            for(let i=0; i<starCount; i++) stars.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, size: Math.random() * 2, speed: (Math.random() * 0.5 + 0.1) * (gameState === 'playing' && currentLevelIndex >= 2 ? 5 : 1) });
         }
+
         function drawStars() {
             if(currentTheme !== 'kids') ctx.fillStyle = '#050505'; 
             
@@ -472,29 +500,34 @@
             stars.forEach(star => {
                 ctx.globalAlpha = Math.random() * 0.5 + 0.3;
                 ctx.beginPath(); ctx.arc(star.x, star.y, star.size, 0, Math.PI*2); ctx.fill();
-                let speedMult = (currentLevelIndex >= 2 && gameState === 'playing') ? 8 : 1;
+                let speedMult = (currentLevelIndex >= 2 && gameState === 'playing') ? (isMobile? 5 : 8) : 1;
                 star.y += star.speed * speedMult;
                 if(star.y > canvas.height) { star.y = 0; star.x = Math.random() * canvas.width; }
             });
             ctx.globalAlpha = 1;
         }
 
-        // --- CLASSLAR ---
         class Word {
             constructor(data) {
-                this.x = Math.random() * (canvas.width - 250) + 50;
+                // Ekrana sığması için padding (Responsive)
+                let margin = isMobile ? 20 : 50;
+                let wordWidth = isMobile ? 100 : 250;
+                this.x = Math.random() * (canvas.width - wordWidth - margin*2) + margin;
                 this.y = -50;
                 this.progress = 0;
                 this.shake = 0;
                 this.isTarget = false;
                 let lvl = levels[currentLevelIndex];
-                this.speed = lvl.speedBase + (Math.random() * 0.2);
+                
+                // Cihaz bazlı hız ayarı
+                let speedMult = isMobile ? 0.7 : 1.0;
+                this.speed = (lvl.speedBase + (Math.random() * 0.2)) * speedMult;
 
                 if (typeof data === 'string') {
                     if (data === 'BONUS_CAN') {
                         this.text = "💖BONUS";
                         this.isBonus = true;
-                        this.speed *= 1.2; // Bonus biraz hızlı düşer
+                        this.speed *= 1.2; 
                     } else {
                         this.text = data;
                         this.isBonus = false;
@@ -510,7 +543,11 @@
             }
             update() { this.y += this.speed; if(this.shake > 0) this.shake--; }
             draw() {
-                ctx.font = currentTheme === 'kids' ? "bold 28px 'Fredoka One'" : "bold 26px 'Roboto Mono'";
+                // Responsive Font Boyutu
+                let fontSize = isMobile ? 18 : 26;
+                if (currentTheme === 'kids') fontSize += 2;
+                
+                ctx.font = currentTheme === 'kids' ? `bold ${fontSize}px 'Fredoka One'` : `bold ${fontSize}px 'Roboto Mono'`;
                 let shakeX = (Math.random() - 0.5) * this.shake;
                 let totalWidth = ctx.measureText(this.text).width;
                 
@@ -519,34 +556,34 @@
                     else { ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); }
                 };
 
-                // Arkaplan Rengi (Shortcut ve Bonus için özel renkler)
+                let boxPaddingX = isMobile ? 5 : 10;
+                let boxPaddingY = isMobile ? 20 : 30;
+                let boxHeight = isMobile ? 28 : 40;
+
                 if (currentTheme === 'kids') {
-                    if (this.isBonus) ctx.fillStyle = 'rgba(250, 204, 21, 0.8)'; // Altın
-                    else if (this.isShortcut) ctx.fillStyle = 'rgba(168, 85, 247, 0.8)'; // Mor
+                    if (this.isBonus) ctx.fillStyle = 'rgba(250, 204, 21, 0.8)'; 
+                    else if (this.isShortcut) ctx.fillStyle = 'rgba(168, 85, 247, 0.8)'; 
                     else ctx.fillStyle = 'rgba(255,255,255,0.3)'; 
-                    ctx.beginPath(); drawSafeRoundRect(this.x - 10 + shakeX, this.y - 30, totalWidth + 20, 40, 15); ctx.fill();
+                    ctx.beginPath(); drawSafeRoundRect(this.x - boxPaddingX + shakeX, this.y - boxPaddingY, totalWidth + boxPaddingX*2, boxHeight, 10); ctx.fill();
                 } else {
                     if (this.isBonus) ctx.fillStyle = 'rgba(202, 138, 4, 0.9)'; 
                     else if (this.isShortcut) ctx.fillStyle = 'rgba(147, 51, 234, 0.9)';
                     else ctx.fillStyle = 'rgba(10,15,30,0.85)'; 
-                    ctx.fillRect(this.x - 5 + shakeX, this.y - 25, totalWidth + 10, 35);
+                    ctx.fillRect(this.x - boxPaddingX/2 + shakeX, this.y - boxPaddingY + 5, totalWidth + boxPaddingX, boxHeight-5);
                 }
 
-                // Hedef Çerçevesi
                 if(this.isTarget) {
                     ctx.strokeStyle = currentTheme === 'kids' ? '#fde047' : '#ff00ff'; 
-                    ctx.lineWidth = currentTheme === 'kids' ? 4 : 3; 
+                    ctx.lineWidth = currentTheme === 'kids' ? 3 : 2; 
                     if (currentTheme === 'kids') {
-                         ctx.beginPath(); drawSafeRoundRect(this.x - 10 + shakeX, this.y - 30, totalWidth + 20, 40, 15); ctx.stroke();
+                         ctx.beginPath(); drawSafeRoundRect(this.x - boxPaddingX + shakeX, this.y - boxPaddingY, totalWidth + boxPaddingX*2, boxHeight, 10); ctx.stroke();
                     } else {
-                         ctx.strokeRect(this.x - 5 + shakeX, this.y - 25, totalWidth + 10, 35);
+                         ctx.strokeRect(this.x - boxPaddingX/2 + shakeX, this.y - boxPaddingY + 5, totalWidth + boxPaddingX, boxHeight-5);
                          ctx.beginPath(); ctx.moveTo(this.x + totalWidth/2, this.y); ctx.lineTo(canvas.width/2, canvas.height); ctx.strokeStyle = 'rgba(255,0,255,0.2)'; ctx.stroke();
                     }
                 }
                 
-                // Metin Çizimi
                 if (this.isShortcut || this.isBonus) {
-                    // Kısayol ve bonuslarda progress yoktur, kelime direkt yazılır
                     ctx.fillStyle = '#ffffff';
                     ctx.fillText(this.text, this.x + shakeX, this.y);
                 } else {
@@ -565,13 +602,13 @@
         }
         
         class Particle {
-            constructor(x, y, color) { this.x = x; this.y = y; this.vx = (Math.random() - 0.5) * 12; this.vy = (Math.random() - 0.5) * 12; this.life = 1.0; this.color = color; }
+            constructor(x, y, color) { this.x = x; this.y = y; this.vx = (Math.random() - 0.5) * (isMobile ? 8 : 12); this.vy = (Math.random() - 0.5) * (isMobile ? 8 : 12); this.life = 1.0; this.color = color; }
             update() { this.x += this.vx; this.y += this.vy; this.life -= 0.04; }
             draw() { 
                 ctx.globalAlpha = Math.max(0, this.life); ctx.fillStyle = this.color; 
                 ctx.beginPath(); 
-                if (currentTheme === 'kids') ctx.arc(this.x, this.y, 5, 0, Math.PI*2); 
-                else ctx.rect(this.x, this.y, 3, 3);
+                if (currentTheme === 'kids') ctx.arc(this.x, this.y, isMobile?3:5, 0, Math.PI*2); 
+                else ctx.rect(this.x, this.y, isMobile?2:3, isMobile?2:3);
                 ctx.fill(); ctx.globalAlpha = 1; 
             }
         }
@@ -581,14 +618,18 @@
             update() { this.y += this.vy; this.life -= 0.02; }
             draw() { 
                 ctx.globalAlpha = Math.max(0, this.life); ctx.fillStyle = this.color; 
-                ctx.font = "bold 24px 'Orbitron', sans-serif"; 
+                ctx.font = `bold ${isMobile ? 16 : 24}px 'Orbitron', sans-serif`; 
                 ctx.textAlign = "center";
                 ctx.fillText(this.text, this.x, this.y); 
                 ctx.globalAlpha = 1; ctx.textAlign = "left";
             }
         }
 
-        // --- ANA OYUN MANTIĞI ---
+        function focusMobileInput() {
+            mobileInput.focus();
+            mobileInput.click();
+        }
+
         function startTraining() { 
             gameState = 'training'; 
             trainingDrillActive = false;
@@ -597,6 +638,20 @@
             document.getElementById('start-screen').classList.add('hidden'); 
             document.getElementById('training-screen').classList.remove('hidden'); 
             renderVirtualKeyboard(); 
+            
+            // Eğitim klavyesi için dokunmatik (tıklama) eventleri ekle
+            setTimeout(() => {
+                document.querySelectorAll('.k-key').forEach(key => {
+                    key.addEventListener('click', function() {
+                        if(gameState !== 'training') return;
+                        let char = this.dataset.char;
+                        let code = this.dataset.code;
+                        if(char || code) {
+                            simulateKeyPress(char, code);
+                        }
+                    });
+                });
+            }, 100);
         }
 
         function startTrainingDrill() {
@@ -611,18 +666,19 @@
             let html = "";
             for (let i = 0; i < currentDrill.length; i++) {
                 if (i < currentDrillIndex) html += `<span class="text-green-500">${currentDrill[i]}</span>`;
-                else if (i === currentDrillIndex) html += `<span class="text-yellow-400 border-b-4 border-yellow-400 animate-pulse pb-1">${currentDrill[i]}</span>`; 
+                else if (i === currentDrillIndex) html += `<span class="text-yellow-400 border-b-2 md:border-b-4 border-yellow-400 animate-pulse pb-1">${currentDrill[i]}</span>`; 
                 else html += `<span class="opacity-50">${currentDrill[i]}</span>`;
             }
             display.innerHTML = html;
 
-            document.querySelectorAll('.k-key.ring-4').forEach(el => el.classList.remove('ring-4', 'ring-yellow-400', 'ring-pink-500', 'animate-pulse'));
+            document.querySelectorAll('.k-key.ring-2, .k-key.ring-4').forEach(el => el.classList.remove('ring-2', 'ring-4', 'ring-yellow-400', 'ring-pink-500', 'animate-pulse'));
             if (currentDrillIndex < currentDrill.length) {
                 let targetChar = currentDrill[currentDrillIndex];
                 let targetCode = targetChar === " " ? "Space" : "";
                 let visualKey = document.querySelector(`.k-key[data-char="${targetChar}"]`) || (targetCode ? document.querySelector(`.k-key[data-code="${targetCode}"]`) : null);
                 let ringColor = currentTheme === 'kids' ? 'ring-pink-500' : 'ring-yellow-400';
-                if (visualKey) visualKey.classList.add('ring-4', ringColor, 'animate-pulse');
+                let ringSize = isMobile ? 'ring-2' : 'ring-4';
+                if (visualKey) visualKey.classList.add(ringSize, ringColor, 'animate-pulse');
             }
         }
 
@@ -640,7 +696,7 @@
         
         function startStoryMode() {
             gameState = 'story_modal'; currentLevelIndex = 0; score = 0; lives = 3; combo = 0; maxCombo = 0;
-            earnedBadges.clear(); badgeDetails = []; // Rozetleri sıfırla
+            earnedBadges.clear(); badgeDetails = []; 
             document.getElementById('start-screen').classList.add('hidden'); 
             showStoryModal();
         }
@@ -653,7 +709,7 @@
                 if(currentLevelIndex === 0) document.getElementById('story-text').innerText = "Uzay gezgini! Küçük meteorlar geliyor. Onları harflerle yakala!";
                 else if(currentLevelIndex === 1) document.getElementById('story-text').innerText = "Şimdi büyük harfleri (Shift) kullanma zamanı. Şehirlerimizi koru!";
                 else if(currentLevelIndex === 2) document.getElementById('story-text').innerText = "Dikkat! Kodlar karıştı. Sembolleri ve sayıları kullanabilir misin?";
-                else if(currentLevelIndex === 3) document.getElementById('story-text').innerText = "Sihirli Kısayollar! Ekranda çıkan görevi yapmak için 'Ctrl' tuşuna basılı tutarak harfe bas!";
+                else if(currentLevelIndex === 3) document.getElementById('story-text').innerText = "Sihirli Kısayollar! Ekranda çıkan görevi yapmak için 'Ctrl' tuşuna basılı tutarak harfe bas! (Telefonda isen sadece harfe bas)";
             } else {
                 document.getElementById('story-text').innerText = lvl.desc;
             }
@@ -663,9 +719,16 @@
         }
         
         function nextLevel() {
-            document.getElementById('story-modal').classList.add('hidden'); document.getElementById('hud').classList.remove('hidden');
+            document.getElementById('story-modal').classList.add('hidden'); 
+            document.getElementById('hud').classList.remove('hidden');
             activeWords = []; particles = []; floatingTexts = []; targetWordIndex = -1; gameState = 'playing'; updateHUD();
-            if(currentLevelIndex === 2) lives = 5; updateLivesVisual();
+            
+            // Mobilde oyuna başlar başlamaz klavyeyi odakla
+            if(isMobile) {
+                setTimeout(focusMobileInput, 500);
+            }
+
+            if(currentLevelIndex === 2) { lives = 5; updateLivesVisual(); }
         }
         
         function checkLevelProgress() {
@@ -674,7 +737,12 @@
             if(currentLevelIndex > 0) { let prevScore = levels[currentLevelIndex-1].reqScore; progress = Math.min(100, ((score - prevScore) / (lvl.reqScore - prevScore)) * 100); }
             document.getElementById('progress-bar').style.width = `${progress}%`;
             if(score >= lvl.reqScore) {
-                if(currentLevelIndex < levels.length - 1) { currentLevelIndex++; gameState = 'story_modal'; setTimeout(() => { showStoryModal(); playSound('training'); }, 1000); }
+                if(currentLevelIndex < levels.length - 1) { 
+                    currentLevelIndex++; 
+                    gameState = 'story_modal'; 
+                    mobileInput.blur(); // Level geçişinde klavyeyi kapat
+                    setTimeout(() => { showStoryModal(); playSound('training'); }, 1000); 
+                }
                 else { gameOver(true); }
             }
         }
@@ -686,6 +754,7 @@
 
         function quitToMenu() { 
             gameState = 'menu'; activeWords = []; particles = []; floatingTexts = []; targetWordIndex = -1;
+            mobileInput.blur();
             document.getElementById('training-screen').classList.add('hidden');
             document.getElementById('hud').classList.add('hidden');
             document.getElementById('game-over-screen').classList.add('hidden');
@@ -694,58 +763,71 @@
         }
 
         function gameOver(isVictory = false) {
-            gameState = 'gameover'; document.getElementById('hud').classList.add('hidden'); document.getElementById('game-over-screen').classList.remove('hidden');
-            document.getElementById('final-score').innerText = score; document.getElementById('final-combo').innerText = maxCombo;
+            gameState = 'gameover'; 
+            mobileInput.blur(); // Oyunda bitince klavyeyi kapat
+            document.getElementById('hud').classList.add('hidden'); 
+            document.getElementById('game-over-screen').classList.remove('hidden');
+            document.getElementById('final-score').innerText = score; 
+            document.getElementById('final-combo').innerText = maxCombo;
             
             let rankText = currentTheme === 'kids' ? "YENİ YILDIZ" : "ACEMİ"; 
             let statusText = isVictory ? (currentTheme === 'kids' ? "HARİKA İŞ!" : "GÖREV BAŞARILI") : (currentTheme === 'kids' ? "İYİ DENEME!" : "SİSTEM ÇÖKTÜ");
             document.getElementById('mission-status').innerText = statusText;
-            document.getElementById('mission-status').className = isVictory ? "text-xl text-green-400 mb-6 tracking-widest font-bold body-font" : "text-xl text-red-400 mb-6 tracking-widest font-bold body-font";
+            document.getElementById('mission-status').className = isVictory ? "text-lg md:text-xl text-green-400 mb-4 md:mb-6 tracking-widest font-bold body-font" : "text-lg md:text-xl text-red-400 mb-4 md:mb-6 tracking-widest font-bold body-font";
             if(score > 5000) rankText = currentTheme === 'kids' ? "SÜPER KAHRAMAN" : "EVRENİN KORUYUCUSU";
             else if(score > 1000) rankText = currentTheme === 'kids' ? "UZAY KAŞİFİ" : "SİBER SAVAŞÇI";
             document.getElementById('final-rank').innerText = rankText; 
 
-            // Rozetleri Yazdır
             const badgesDiv = document.getElementById('final-badges-container');
             badgesDiv.innerHTML = '';
             if (badgeDetails.length === 0) {
-                badgesDiv.innerHTML = '<span class="text-gray-600 text-sm">Henüz rozet kazanılmadı.</span>';
+                badgesDiv.innerHTML = '<span class="text-gray-600 text-[10px] md:text-sm">Henüz rozet kazanılmadı.</span>';
             } else {
                 badgeDetails.forEach(b => {
-                    badgesDiv.innerHTML += `<div class="bg-gray-800 border border-yellow-500/50 p-2 rounded flex items-center gap-2" title="${b.desc}"><span class="text-2xl">${b.icon}</span><span class="text-white text-xs font-bold">${b.title}</span></div>`;
+                    badgesDiv.innerHTML += `<div class="bg-gray-800 border border-yellow-500/50 p-1.5 md:p-2 rounded flex items-center gap-1.5 md:gap-2" title="${b.desc}"><span class="text-xl md:text-2xl">${b.icon}</span><span class="text-white text-[10px] md:text-xs font-bold">${b.title}</span></div>`;
                 });
             }
         }
 
         function createExplosion(x, y, type = 'normal') { 
+            let particleCount = isMobile ? (type === 'bonus' ? 15 : 10) : (type === 'bonus' ? 30 : 20);
+
             if (type === 'error') {
-                for(let i=0; i<20; i++) particles.push(new Particle(x, y, '#ef4444')); // Kırmızı
+                for(let i=0; i<particleCount; i++) particles.push(new Particle(x, y, '#ef4444'));
                 return;
             }
             if (type === 'bonus') {
-                for(let i=0; i<30; i++) particles.push(new Particle(x, y, '#fde047')); // Altın
+                for(let i=0; i<particleCount; i++) particles.push(new Particle(x, y, '#fde047'));
                 return;
             }
             if (currentTheme === 'kids') {
                 const colors = ['#f472b6', '#34d399', '#fbbf24', '#a78bfa', '#38bdf8'];
-                for(let i=0; i<30; i++) particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)])); 
+                for(let i=0; i<particleCount; i++) particles.push(new Particle(x, y, colors[Math.floor(Math.random() * colors.length)])); 
             } else {
-                for(let i=0; i<15; i++) particles.push(new Particle(x, y, '#ff0055')); 
-                for(let i=0; i<15; i++) particles.push(new Particle(x, y, '#ffffff')); 
+                for(let i=0; i<particleCount/2; i++) particles.push(new Particle(x, y, '#ff0055')); 
+                for(let i=0; i<particleCount/2; i++) particles.push(new Particle(x, y, '#ffffff')); 
             }
         }
 
-        function updateLivesVisual() { document.getElementById('lives-display').innerText = '❤️'.repeat(Math.max(0, lives)); if(lives === 1) document.getElementById('lives-container').classList.add('critical-health'); else document.getElementById('lives-container').classList.remove('critical-health'); }
-        function updateHUD() { document.getElementById('score-display').innerText = score; document.getElementById('level-name').innerText = levels[currentLevelIndex].name.split(':')[0]; 
+        function updateLivesVisual() { 
+            document.getElementById('lives-display').innerText = '❤️'.repeat(Math.max(0, lives)); 
+            if(lives === 1) document.getElementById('lives-container').classList.add('critical-health'); 
+            else document.getElementById('lives-container').classList.remove('critical-health'); 
+        }
+        
+        function updateHUD() { 
+            document.getElementById('score-display').innerText = score; 
+            document.getElementById('level-name').innerText = levels[currentLevelIndex].name.split(':')[0]; 
             let comboEl = document.getElementById('combo-display');
             comboEl.innerText = 'x' + (combo > 1 ? combo : 1); 
-            comboEl.style.transform = 'scale(1.2)'; setTimeout(()=> comboEl.style.transform = 'scale(1)', 100);
+            comboEl.style.transform = 'scale(1.2)'; 
+            setTimeout(()=> comboEl.style.transform = 'scale(1)', 100);
             updateLivesVisual(); 
         }
 
         function triggerError(index = -1) {
             combo = 0; updateHUD(); playSound('explosion');
-            errorFlashFrames = 5; // Ekranı kırmızı parlat
+            errorFlashFrames = 5; 
             
             if(index !== -1 && activeWords[index]) {
                 activeWords[index].shake = 20;
@@ -754,49 +836,31 @@
             } else {
                 floatingTexts.push(new FloatingText(canvas.width/2, canvas.height/2, "KOMBO KIRILDI!", "#ef4444"));
             }
+            mobileInput.value = ""; // Hata sonrası inputu temizle
         }
 
         function getTrainingDescription(key, code) {
-            if (code === 'Space') return "Boşluk (Space). Kelimeler arasında boşluk bırakmanı sağlar."; 
+            if (!code) code = "";
+            if (code === 'Space' || key === "BOŞLUK" || key === " ") return "Boşluk (Space). Kelimeler arasında boşluk bırakmanı sağlar."; 
             if (code === 'Enter') return "Giriş (Enter). Komutları onaylar veya alt satıra geçer."; 
-            if (code === 'Backspace') return "Silme (Backspace). İmlecin solundaki karakteri siler.";
+            if (code === 'Backspace' || key === "←") return "Silme (Backspace). İmlecin solundaki karakteri siler.";
             if (code === 'Tab') return "Sekme (Tab). Paragraf başı bırakır veya menüler arası atlar.";
             if (code === 'Escape') return "İptal (ESC). Menüleri kapatır veya devam eden işlemi iptal eder.";
-            if (code.includes('Shift')) return "Üst Karakter (Shift). Basılı tutarak büyük harf veya üstteki sembolleri yazarsın."; 
-            if (code.includes('Control')) return "Kontrol (Ctrl). Kısayollar için kullanılır (Örn: Ctrl+C kopyalar)."; 
-            if (code.includes('AltLeft') || code === 'Alt') return "Alternatif (Alt). Menü kısayolları için kullanılır."; 
-            if (code.includes('AltRight')) return "Alt Gr (Alternatif Grafik). Tuşların sağ altındaki 3. sembolleri (örn: @, #, €) çıkartır.";
-            if (code === 'CapsLock') return "Büyük Harf Kilidi (Caps Lock). Sürekli büyük/küçük harf yazma modunu değiştirir.";
+            if (code.includes('Shift') || key === "SHIFT") return "Üst Karakter (Shift). Basılı tutarak büyük harf veya üstteki sembolleri yazarsın."; 
+            if (code.includes('Control') || key === "CTRL") return "Kontrol (Ctrl). Kısayollar için kullanılır (Örn: Ctrl+C kopyalar)."; 
+            if (code.includes('AltLeft') || key === "ALT") return "Alternatif (Alt). Menü kısayolları için kullanılır."; 
+            if (code.includes('AltRight') || key === "ALT GR") return "Alt Gr. Tuşların sağ altındaki 3. sembolleri çıkartır.";
+            if (code === 'CapsLock' || key === "CAPS") return "Büyük Harf Kilidi (Caps Lock). Sürekli büyük/küçük harf yazma modunu değiştirir.";
             
-            if (code.includes('Arrow')) {
-                if (key === 'ArrowUp') return "Yukarı Yön Tuşu. Sayfayı veya karakteri yukarı yönlendirir.";
-                if (key === 'ArrowDown') return "Aşağı Yön Tuşu. Sayfayı veya karakteri aşağı yönlendirir.";
-                if (key === 'ArrowLeft') return "Sol Yön Tuşu. İmleci sola kaydırır.";
-                if (key === 'ArrowRight') return "Sağ Yön Tuşu. İmleci sağa kaydırır.";
-            }
-
             const symbols = {
                 '.': "Nokta. Cümle sonlarında veya ondalık sayılarda kullanılır.",
                 ',': "Virgül. Cümle içinde kelimeleri ayırır.",
-                ';': "Noktalı Virgül. Birbirine bağlı bağımsız cümleleri ayırır.",
-                ':': "İki Nokta. Açıklama veya örneklerden önce gelir.",
-                '!': "Ünlem. Şaşkınlık, heyecan veya uyarı cümlelerinde kullanılır.",
-                '?': "Soru İşareti. Soru cümlelerinin sonuna konur.",
                 '-': "Tire / Eksi. Kelimeleri ayırır veya çıkarma işlemi yapar.",
-                '_': "Alt Çizgi. Genellikle internet veya mail adreslerinde boşluk yerine kullanılır.",
-                '@': "Kuyruklu A (Et). E-posta adreslerinde kullanılır. (Alt Gr + Q ile yazılır).",
-                '#': "Kare (Hashtag). Etiket oluşturmak için kullanılır. (Alt Gr + 3 ile yazılır).",
-                '$': "Dolar. Para birimi sembolüdür.",
-                '%': "Yüzde. Matematikte yüzdelik dilimi belirtir.",
-                '&': "Ve (Ampersand). 'Ve' kelimesi yerine kullanılır.",
-                '*': "Yıldız. Matematikte çarpma işlemi veya şifre gizleme için kullanılır.",
-                '(': "Sol Parantez. Açıklama eklemek için açılır.",
-                ')': "Sağ Parantez. Açıklamayı kapatmak için kullanılır.",
+                '@': "Kuyruklu A (Et). E-posta adreslerinde kullanılır.",
+                '#': "Kare (Hashtag). Etiket oluşturmak için kullanılır.",
                 '<': "Küçüktür. Matematikte veya yazılım kodlamalarında (HTML) kullanılır.",
                 '>': "Büyüktür. Matematikte veya yazılım kodlamalarında (HTML) kullanılır.",
-                '+': "Artı. Toplama işlemi yapar.",
-                '=': "Eşittir. Sonuç belirtir veya kodlamada değer atar.",
-                '"': "Tırnak. Alıntıları belirtmek için kullanılır."
+                '*': "Yıldız. Matematikte çarpma işlemi veya şifre gizleme için kullanılır."
             };
 
             if (symbols[key]) return symbols[key];
@@ -805,29 +869,78 @@
             return "Özel Tuş. Sistem fonksiyonları veya özel kısayollar için kullanılır.";
         }
 
-        // --- INPUT & LOOP ---
+        
+        // Mobil Klavye Yakalayıcı (Input event ile)
+        mobileInput.addEventListener('input', (e) => {
+            if(gameState !== 'playing') {
+                mobileInput.value = "";
+                return;
+            }
+            
+            let val = mobileInput.value;
+            if(val.length > 0) {
+                let char = val[val.length - 1]; // Son girilen karakteri al
+                simulateKeyPress(char, "");
+                mobileInput.value = ""; // İşledikten sonra temizle
+            }
+        });
+        
+        // Masaüstü Klavye Yakalayıcı
         window.addEventListener('keydown', (e) => {
+            if(gameState === 'menu' || gameState === 'gameover' || gameState === 'story_modal') return;
+            
             if(gameState === 'training') {
                 e.preventDefault(); 
-                const keyName = e.key === " " ? "BOŞLUK" : e.key.toLocaleUpperCase('tr-TR'); const code = e.code;
+                simulateKeyPress(e.key, e.code);
+                return;
+            }
+            
+            if(gameState === 'playing') {
+                if(e.key === "Tab") e.preventDefault(); 
+                
+                // Masaüstünde Kısayol Modu (Seviye 4) Kontrolü (Sadece PC'de ctrl+ basılırsa)
+                if (e.ctrlKey && e.key !== 'Control') {
+                    e.preventDefault(); 
+                    let hitFound = false;
+                    for(let i=0; i<activeWords.length; i++) {
+                        if(activeWords[i].isShortcut && activeWords[i].expectedMod === 'ctrl' && activeWords[i].expectedKey === e.key.toLowerCase()) {
+                            processHit(i, true); 
+                            hitFound = true; break;
+                        }
+                    }
+                    if(!hitFound) triggerError();
+                    return;
+                }
+                
+                // Normal tuş basımı
+                simulateKeyPress(e.key, e.code);
+            }
+        });
+
+        // Ortak Tuş İşleme Fonksiyonu (Hem PC hem Mobil buradan geçer)
+        function simulateKeyPress(key, code) {
+            if(gameState === 'training') {
+                const keyName = key === " " ? "BOŞLUK" : (key.length === 1 ? key.toLocaleUpperCase('tr-TR') : key); 
+                
                 document.getElementById('key-name-display').innerText = keyName; 
-                document.getElementById('key-desc-display').innerText = getTrainingDescription(e.key, code);
+                document.getElementById('key-desc-display').innerText = getTrainingDescription(keyName, code);
+                
                 let visualKey = document.querySelector(`.k-key[data-code="${code}"]`) || document.querySelector(`.k-key[data-char="${keyName}"]`);
                 document.querySelectorAll('.k-key.active').forEach(el => el.classList.remove('active'));
                 if (visualKey) visualKey.classList.add('active'); 
 
                 if (trainingDrillActive && currentDrillIndex < currentDrill.length) {
                     let expectedChar = currentDrill[currentDrillIndex];
-                    let inputChar = e.key.toLocaleUpperCase('tr-TR');
+                    let inputChar = keyName;
                     
-                    if (inputChar === expectedChar || (expectedChar === " " && e.key === " ")) {
+                    if (inputChar === expectedChar || (expectedChar === " " && (key === " " || key === "BOŞLUK"))) {
                         currentDrillIndex++; playSound('shoot'); updateDrillDisplay();
                         if (currentDrillIndex >= currentDrill.length) {
                             setTimeout(() => {
                                 document.getElementById('training-drill-display').innerHTML = "HARİKA!";
                                 document.getElementById('training-drill-display').classList.replace('text-white', 'text-green-400');
                                 playSound('bonus');
-                                document.querySelectorAll('.k-key.ring-4').forEach(el => el.classList.remove('ring-4', 'ring-yellow-400', 'animate-pulse'));
+                                document.querySelectorAll('.k-key.ring-2, .k-key.ring-4').forEach(el => el.classList.remove('ring-2', 'ring-4', 'ring-yellow-400', 'animate-pulse'));
                                 setTimeout(() => startTrainingDrill(), 1000); 
                             }, 200);
                         }
@@ -838,43 +951,52 @@
                 } else playSound('training'); 
                 return;
             }
-            if(gameState !== 'playing') return;
-            if(e.key === "Tab") e.preventDefault(); 
 
-            // Kısayol Modu Kontrolü (Seviye 4)
-            if (e.ctrlKey && e.key !== 'Control') {
-                e.preventDefault(); // Tarayıcı kısayollarını engelle (örn: ctrl+s kaydetme menüsü)
+            if(gameState !== 'playing') return;
+            if(key === "Shift" || key === "Control" || key === "Alt" || key === "CapsLock" || key === "Unidentified") return;
+
+            // Mobilde kısayol seviyesi (Seviye 4) için kolaylaştırma: Ctrl basılı olmasa da harfi kabul et
+            if(isMobile && currentLevelIndex === 3) {
                 let hitFound = false;
+                let lowerKey = key.toLowerCase();
                 for(let i=0; i<activeWords.length; i++) {
-                    if(activeWords[i].isShortcut && activeWords[i].expectedMod === 'ctrl' && activeWords[i].expectedKey === e.key.toLowerCase()) {
-                        processHit(i, true); // True: Anında yok et (isShortcut)
+                    if(activeWords[i].isShortcut && activeWords[i].expectedKey === lowerKey) {
+                        processHit(i, true); 
                         hitFound = true; break;
                     }
                 }
-                if(!hitFound) triggerError();
-                return;
+                if(hitFound) return;
             }
 
-            const key = e.key;
-            if(key === "Shift" || key === "Control" || key === "Alt" || key === "CapsLock") return;
-
             let hitFound = false;
+            
+            // Eğer kelime seçilmediyse ilk eşleşeni bul
             if(targetWordIndex === -1) {
                 let bestIndex = -1; let maxY = -999;
                 for(let i=0; i<activeWords.length; i++) {
                     let word = activeWords[i];
-                    if(!word.isShortcut && word.text[0] === key) { if(word.y > maxY) { maxY = word.y; bestIndex = i; } }
+                    if(!word.isShortcut && word.text[0] === key) { 
+                        if(word.y > maxY) { maxY = word.y; bestIndex = i; } 
+                    }
                 }
-                if(bestIndex !== -1) { targetWordIndex = bestIndex; activeWords[targetWordIndex].isTarget = true; processHit(targetWordIndex); hitFound = true; }
+                if(bestIndex !== -1) { 
+                    targetWordIndex = bestIndex; 
+                    activeWords[targetWordIndex].isTarget = true; 
+                    processHit(targetWordIndex); 
+                    hitFound = true; 
+                }
             } else {
                 let word = activeWords[targetWordIndex];
-                if(word && !word.isShortcut && word.text[word.progress] === key) { processHit(targetWordIndex); hitFound = true; }
+                if(word && !word.isShortcut && word.text[word.progress] === key) { 
+                    processHit(targetWordIndex); 
+                    hitFound = true; 
+                }
             }
             
             if(!hitFound) { 
                 triggerError(targetWordIndex); 
             }
-        });
+        }
 
         function processHit(index, isInstant = false) {
             let word = activeWords[index]; 
@@ -884,14 +1006,13 @@
             else playSound('shoot');
 
             if(word.progress >= word.text.length || isInstant) {
-                // BONUS CAN KAZANMA
                 if (word.isBonus) {
-                    lives = Math.min(lives + 1, 5); // Max 5 can
+                    lives = Math.min(lives + 1, 5); 
                     awardBadge('bonus', '💖', 'Cankurtaran', 'Bonus can yakaladın!');
                     floatingTexts.push(new FloatingText(word.x + 30, word.y, "+1 CAN!", "#fde047"));
                     createExplosion(word.x + 30, word.y, 'bonus');
                 } else {
-                    createExplosion(word.x + 20, word.y); 
+                    createExplosion(word.x + (isMobile?10:20), word.y); 
                 }
 
                 activeWords.splice(index, 1); targetWordIndex = -1; combo++; 
@@ -905,10 +1026,13 @@
         }
 
         function gameLoop(timestamp) {
-            if (!lastTime) lastTime = timestamp; const deltaTime = timestamp - lastTime; lastTime = timestamp;
-            ctx.clearRect(0, 0, canvas.width, canvas.height); drawStars();
+            if (!lastTime) lastTime = timestamp; 
+            const deltaTime = timestamp - lastTime; 
+            lastTime = timestamp;
             
-            // Ekran Kırmızı Parlaması (Hata)
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            drawStars();
+            
             if (errorFlashFrames > 0) {
                 ctx.fillStyle = currentTheme === 'kids' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255, 0, 0, 0.3)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -918,11 +1042,10 @@
             if(gameState === 'playing') {
                 let lvl = levels[currentLevelIndex]; spawnTimer += deltaTime;
                 let currentSpawnRate = lvl.spawnRate; 
-                if(currentLevelIndex >= 2) currentSpawnRate = Math.max(600, lvl.spawnRate - (combo * 20)); // Zor modlarda hızlanır
+                if(currentLevelIndex >= 2) currentSpawnRate = Math.max(isMobile?1000:600, lvl.spawnRate - (combo * 20));
                 
                 if(spawnTimer > currentSpawnRate) {
                     let wordData = lvl.words[Math.floor(Math.random() * lvl.words.length)];
-                    // %5 İhtimalle Bonus Can Düşsün (Kısayol bölümü hariç veya dahil olabilir)
                     if (Math.random() < 0.05) wordData = 'BONUS_CAN';
                     
                     activeWords.push(new Word(wordData)); spawnTimer = 0;
@@ -931,11 +1054,10 @@
                 for(let i = activeWords.length - 1; i >= 0; i--) {
                     let word = activeWords[i]; word.update(); word.draw();
                     if(word.y > canvas.height) { 
-                        // Bonus kelimeler yere düşünce can götürmesin (cezası olmasın)
                         if (!word.isBonus) {
                             lives--; combo = 0; targetWordIndex = -1; playSound('explosion'); updateLivesVisual(); 
                             if(lives <= 0) gameOver(false);
-                            else triggerError(); // Kırmızı parlasın
+                            else triggerError(); 
                         }
                         activeWords.splice(i, 1); 
                     }
@@ -948,12 +1070,24 @@
             requestAnimationFrame(gameLoop);
         }
         
-        // Setup Resize Listener
-        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
-        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        window.addEventListener('resize', () => { 
+            canvas.width = window.innerWidth; 
+            canvas.height = window.innerHeight; 
+        });
         
-        // Initialization
-        initStars(); requestAnimationFrame(gameLoop);
+        // Başlangıç boyutlarını ayarla
+        canvas.width = window.innerWidth; 
+        canvas.height = window.innerHeight;
+        
+        initStars(); 
+        requestAnimationFrame(gameLoop);
+
+        // Ekran tıklandığında (mobil klavye kapandığında) focusu kaybetmemesi için canvas alanına tıklama ekle
+        canvas.addEventListener('click', () => {
+            if(gameState === 'playing' && isMobile) {
+                focusMobileInput();
+            }
+        });
     </script>
 </body>
 </html>

@@ -23,7 +23,8 @@
             margin: 0;
             overflow: hidden;
             user-select: none;
-            touch-action: none;
+            touch-action: none; /* Mobilde kaydırmayı tamamen engeller */
+            -webkit-tap-highlight-color: transparent;
         }
 
         .font-fredoka { font-family: 'Fredoka One', cursive; }
@@ -56,18 +57,17 @@
             background-color: #f8fafc;
         }
 
-        /* ÇEVRE TASARIMLARI (Environment Art) */
         .env-layer {
             position: absolute;
             inset: 0;
             z-index: 1;
-            pointer-events: none; /* Çocuklar arka plana tıklamasın */
+            pointer-events: none; 
         }
 
         .dropzone {
             position: absolute;
             transform: translate(-50%, -50%);
-            width: 80px; height: 80px;
+            width: 60px; height: 60px; /* Mobilde daha küçük gölgeler */
             background: rgba(255, 255, 255, 0.4);
             border: 4px dashed rgba(0, 0, 0, 0.4);
             border-radius: 1rem;
@@ -97,10 +97,10 @@
 
         .draggable-item {
             cursor: grab;
-            width: 70px; height: 70px;
+            width: 65px; height: 65px; /* Mobilde daha küçük */
             background: white;
             border: 4px solid #cbd5e1;
-            border-bottom-width: 8px;
+            border-bottom-width: 6px;
             border-radius: 1rem;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             box-shadow: 0 5px 15px rgba(0,0,0,0.15);
@@ -110,7 +110,7 @@
         }
 
         @media (min-width: 768px) {
-            .draggable-item { width: 100px; height: 100px; border-radius: 1.5rem; }
+            .draggable-item { width: 100px; height: 100px; border-radius: 1.5rem; border-bottom-width: 8px; }
         }
 
         .draggable-item:active, .draggable-item.dragging {
@@ -133,16 +133,17 @@
             filter: drop-shadow(0 10px 10px rgba(0,0,0,0.4));
         }
 
-        .item-icon { font-size: 2.5rem; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); pointer-events: none; }
-        .locked .item-icon { font-size: 3.5rem; filter: none; }
+        .item-icon { font-size: 1.8rem; filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); pointer-events: none; }
+        .locked .item-icon { font-size: 2.5rem; filter: none; }
         
         @media (min-width: 768px) {
             .item-icon { font-size: 3.5rem; }
             .locked .item-icon { font-size: 5rem; }
         }
 
-        .item-name { font-size: 0.6rem; font-weight: 900; color: #475569; text-transform: uppercase; margin-top: 2px; text-align: center; line-height: 1; pointer-events: none; }
+        .item-name { font-size: 0.5rem; font-weight: 900; color: #475569; text-transform: uppercase; margin-top: 2px; text-align: center; line-height: 1; pointer-events: none; }
         .locked .item-name { display: none; } 
+        @media (min-width: 768px) { .item-name { font-size: 0.6rem; } }
 
         .tray {
             background: rgba(255, 255, 255, 0.2);
@@ -162,11 +163,11 @@
 </head>
 <body class="relative flex flex-col h-[100dvh]">
 
+    <!-- STREAMING_CHUNK:Başlangıç Ekranı -->
     <div class="bg-pattern"></div>
 
     <div id="start-screen" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 transition-opacity duration-500">
         
-        <!-- Ana Sayfaya Dön Butonu (Sol Üst) -->
         <a href="index.html" class="absolute top-4 left-4 bg-white/10 hover:bg-white/30 text-white w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center text-2xl md:text-3xl backdrop-blur-md transition-all border border-white/20 hover:scale-110 shadow-lg" title="Ana Menüye Dön">🏠</a>
 
         <div class="glass-panel p-6 md:p-10 max-w-2xl w-full text-center anim-pop">
@@ -181,11 +182,11 @@
         </div>
     </div>
 
+    <!-- STREAMING_CHUNK:Oyun Ekranı -->
     <div id="game-screen" class="hidden flex-1 flex flex-col z-10 opacity-0 transition-opacity duration-500 h-full p-2 md:p-4 gap-2 md:gap-4">
         
         <div class="glass-panel px-4 py-2 md:py-3 flex justify-between items-center shrink-0">
             <div class="flex items-center gap-2">
-                <!-- Ana Sayfaya Dön Butonu (Oyun İçi) -->
                 <a href="index.html" class="bg-slate-200 hover:bg-indigo-400 hover:text-white text-slate-600 w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold flex items-center justify-center transition-colors border-2 border-slate-300 text-lg md:text-xl" title="Ana Menüye Dön">🏠</a>
                 <button onclick="showStartScreen()" class="bg-slate-200 hover:bg-red-400 hover:text-white text-slate-600 w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold flex items-center justify-center transition-colors border-2 border-slate-300" title="Bölüm Menüsüne Dön">
                     ✖
@@ -194,7 +195,7 @@
             
             <div class="flex flex-col items-center">
                 <span class="text-[10px] md:text-xs font-black text-indigo-400 tracking-widest uppercase" id="level-subtitle">Seviye 1/5</span>
-                <h2 class="text-lg md:text-2xl font-fredoka text-indigo-700 leading-none" id="level-title">Temel Donanımlar</h2>
+                <h2 class="text-sm md:text-2xl font-fredoka text-indigo-700 leading-none truncate w-[140px] md:w-auto text-center" id="level-title">Temel Donanımlar</h2>
             </div>
             <button id="sound-btn" onclick="toggleSound()" class="bg-slate-200 hover:bg-slate-300 text-slate-600 w-10 h-10 md:w-12 md:h-12 rounded-xl text-xl md:text-2xl flex items-center justify-center transition-colors border-2 border-slate-300">🔊</button>
         </div>
@@ -211,7 +212,7 @@
 
     </div>
 
-    <!-- Başarı Modalı -->
+    <!-- STREAMING_CHUNK:Başarı Modalı -->
     <div id="success-modal" class="absolute inset-0 z-[60] hidden bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
         <div class="glass-panel p-8 md:p-10 max-w-lg w-full text-center anim-pop border-4 border-green-400">
             <div class="text-8xl mb-4 drop-shadow-xl animate-bounce">🌟</div>
@@ -224,6 +225,7 @@
     </div>
 
     <script>
+        // STREAMING_CHUNK:JS Mantığı
         let audioCtx;
         let isSoundEnabled = true;
 
@@ -271,105 +273,90 @@
             if(isSoundEnabled) initAudio();
         }
 
-        // ÇEVRE ÇİZİMLERİ İLE GÜNCELLENMİŞ SEVİYELER (Müthiş Gerçeklik Hissi)
         const LEVELS = [
             {
-                title: "Temel Donanımlar", subtitle: "Masaüstü Kurulumu", bg: "#bae6fd", // Açık Mavi Oda
+                title: "Temel Donanımlar", subtitle: "Masaüstü Kurulumu", bg: "#bae6fd", 
                 envHTML: `
                     <div class="env-layer">
-                        <!-- Duvar Çizgisi -->
                         <div class="absolute bottom-[30%] w-full border-t-4 border-blue-200"></div>
-                        <!-- Ahşap Masa Yüzeyi -->
                         <div class="absolute bottom-[28%] left-[5%] w-[90%] h-[25px] bg-amber-700 rounded-lg shadow-xl border-b-4 border-amber-900 z-10"></div>
-                        <!-- Masa Ayakları -->
                         <div class="absolute bottom-0 left-[10%] w-[20px] h-[28%] bg-slate-800 rounded-t-sm z-0 shadow-md"></div>
                         <div class="absolute bottom-0 right-[10%] w-[20px] h-[28%] bg-slate-800 rounded-t-sm z-0 shadow-md"></div>
-                        <!-- Duvarda Pano (Süs) -->
                         <div class="absolute top-[10%] left-[10%] w-[100px] h-[60px] bg-yellow-100 border-4 border-yellow-200 rounded-md shadow-sm transform -rotate-2 opacity-50"></div>
                     </div>
                 `,
                 items: [
-                    { id: "monitor", name: "Monitör", icon: "🖥️", targetX: 50, targetY: 45 }, // Masanın üstü, tam orta
-                    { id: "kasa", name: "Kasa", icon: "🗄️", targetX: 80, targetY: 82 }, // Masanın altı, sağ zemin
-                    { id: "klavye", name: "Klavye", icon: "⌨️", targetX: 50, targetY: 85 }, // Masanın önü (Hocanın hayalinde çocuğu masaya yaklaştırmak var)
-                    { id: "fare", name: "Fare", icon: "🖱️", targetX: 68, targetY: 85 } // Klavyenin sağı
+                    { id: "monitor", name: "Monitör", icon: "🖥️", targetX: 50, targetY: 45 }, 
+                    { id: "kasa", name: "Kasa", icon: "🗄️", targetX: 80, targetY: 82 }, 
+                    { id: "klavye", name: "Klavye", icon: "⌨️", targetX: 45, targetY: 85 }, 
+                    { id: "fare", name: "Fare", icon: "🖱️", targetX: 70, targetY: 85 } 
                 ]
             },
             {
-                title: "Kasa İçi Parçalar", subtitle: "Sistemin Beyni", bg: "#334155", // Koyu Gri Kasa İçi
+                title: "Kasa İçi Parçalar", subtitle: "Sistemin Beyni", bg: "#334155", 
                 envHTML: `
                     <div class="env-layer">
-                        <!-- Kasa Çerçevesi -->
                         <div class="absolute inset-[5%] border-[12px] border-slate-800 rounded-2xl shadow-[inset_0_0_50px_rgba(0,0,0,0.8)] z-0"></div>
-                        <!-- Dev Anakart (Yeşil) -->
-                        <div class="absolute top-[15%] left-[15%] w-[50%] h-[70%] bg-emerald-800 border-4 border-emerald-900 rounded-xl shadow-2xl z-0 overflow-hidden">
-                            <!-- Anakart Devre Çizgileri -->
+                        <div class="absolute top-[15%] left-[15%] w-[60%] h-[70%] bg-emerald-800 border-4 border-emerald-900 rounded-xl shadow-2xl z-0 overflow-hidden">
                             <div class="w-full h-full opacity-20" style="background-image: repeating-linear-gradient(45deg, #000 0, #000 2px, transparent 2px, transparent 10px);"></div>
                         </div>
-                        <!-- Kasa İçi Güç Kaynağı Bölümü (Süs) -->
-                        <div class="absolute bottom-[5%] right-[5%] w-[30%] h-[25%] bg-slate-900 border-t-4 border-l-4 border-slate-700 rounded-tl-xl z-0"></div>
+                        <div class="absolute bottom-[5%] right-[5%] w-[25%] h-[25%] bg-slate-900 border-t-4 border-l-4 border-slate-700 rounded-tl-xl z-0"></div>
                     </div>
                 `,
                 items: [
-                    { id: "anakart", name: "Anakart", icon: "🟩", targetX: 40, targetY: 50 }, // Büyük yeşil alan
-                    { id: "cpu", name: "İşlemci", icon: "🧠", targetX: 40, targetY: 35 }, // Anakartın üst ortası
-                    { id: "ram", name: "RAM", icon: "📏", targetX: 55, targetY: 45 }, // İşlemcinin sağı
-                    { id: "hdd", name: "Sabit Disk", icon: "💾", targetX: 80, targetY: 50 } // Anakartın dışı, kasanın sağı
+                    { id: "anakart", name: "Anakart", icon: "🟩", targetX: 45, targetY: 50 }, 
+                    { id: "cpu", name: "İşlemci", icon: "🧠", targetX: 45, targetY: 35 }, 
+                    { id: "ram", name: "RAM", icon: "📏", targetX: 65, targetY: 45 }, 
+                    { id: "hdd", name: "Sabit Disk", icon: "💾", targetX: 85, targetY: 50 } 
                 ]
             },
             {
-                title: "Çevre Birimleri", subtitle: "Aksesuarlar", bg: "#fce7f3", // Pembe Oda
+                title: "Çevre Birimleri", subtitle: "Aksesuarlar", bg: "#fce7f3", 
                 envHTML: `
                     <div class="env-layer">
-                        <!-- Masa ve Monitör Silüeti (Çocukların referansı) -->
                         <div class="absolute bottom-[20%] left-[5%] w-[90%] h-[15px] bg-pink-300 rounded-full shadow-md z-0"></div>
-                        <div class="absolute bottom-[20%] left-[50%] transform -translate-x-1/2 w-[180px] h-[120px] bg-slate-800 opacity-20 rounded-lg border-b-4 border-slate-900 z-0"></div>
-                        <!-- Raf -->
+                        <div class="absolute bottom-[20%] left-[50%] transform -translate-x-1/2 w-[150px] h-[100px] bg-slate-800 opacity-20 rounded-lg border-b-4 border-slate-900 z-0"></div>
                         <div class="absolute top-[20%] left-[10%] w-[30%] h-[10px] bg-pink-200 rounded shadow-sm z-0"></div>
                     </div>
                 `,
                 items: [
-                    { id: "webcam", name: "Kamera", icon: "📷", targetX: 50, targetY: 40 }, // Monitör silüetinin tepesi
-                    { id: "hoparlor", name: "Hoparlör", icon: "🔊", targetX: 20, targetY: 65 }, // Monitörün solu, masanın üstü
-                    { id: "kulaklik", name: "Kulaklık", icon: "🎧", targetX: 80, targetY: 65 }, // Monitörün sağı, masanın üstü
-                    { id: "yazici", name: "Yazıcı", icon: "🖨️", targetX: 25, targetY: 15 } // Rafın üstü
+                    { id: "webcam", name: "Kamera", icon: "📷", targetX: 50, targetY: 40 }, 
+                    { id: "hoparlor", name: "Hoparlör", icon: "🔊", targetX: 20, targetY: 65 }, 
+                    { id: "kulaklik", name: "Kulaklık", icon: "🎧", targetX: 80, targetY: 65 }, 
+                    { id: "yazici", name: "Yazıcı", icon: "🖨️", targetX: 25, targetY: 15 } 
                 ]
             },
             {
-                title: "Taşınabilir Cihazlar", subtitle: "Mobil Dünya", bg: "#fef08a", // Sarı Oturma Odası
+                title: "Taşınabilir Cihazlar", subtitle: "Mobil Dünya", bg: "#fef08a", 
                 envHTML: `
                     <div class="env-layer">
-                        <!-- Sehpa -->
-                        <div class="absolute bottom-[10%] left-[50%] transform -translate-x-1/2 w-[60%] h-[120px] bg-orange-200 border-4 border-orange-300 rounded-[40px] shadow-xl z-0 transform perspective-[500px] rotateX(20deg)"></div>
-                        <!-- Şarj Kablosu Silüeti -->
-                        <div class="absolute bottom-[30%] left-[20%] w-[100px] h-[4px] bg-gray-400 transform rotate-45 rounded-full z-0 opacity-50"></div>
+                        <div class="absolute bottom-[10%] left-[50%] transform -translate-x-1/2 w-[70%] h-[120px] bg-orange-200 border-4 border-orange-300 rounded-[40px] shadow-xl z-0 transform perspective-[500px] rotateX(20deg)"></div>
+                        <div class="absolute bottom-[30%] left-[20%] w-[80px] h-[4px] bg-gray-400 transform rotate-45 rounded-full z-0 opacity-50"></div>
                     </div>
                 `,
                 items: [
-                    { id: "tablet", name: "Tablet", icon: "📱", targetX: 50, targetY: 65 }, // Sehpanın ortası
-                    { id: "telefon", name: "Telefon", icon: "📲", targetX: 70, targetY: 70 }, // Sehpanın sağı
-                    { id: "sarj", name: "Şarj Aleti", icon: "🔌", targetX: 30, targetY: 85 }, // Kablonun ucu
-                    { id: "saat", name: "Akıllı Saat", icon: "⌚", targetX: 50, targetY: 25 } // Sehpanın uzağı/havada asılı
+                    { id: "tablet", name: "Tablet", icon: "📱", targetX: 50, targetY: 65 }, 
+                    { id: "telefon", name: "Telefon", icon: "📲", targetX: 75, targetY: 70 }, 
+                    { id: "sarj", name: "Şarj Aleti", icon: "🔌", targetX: 30, targetY: 80 }, 
+                    { id: "saat", name: "Akıllı Saat", icon: "⌚", targetX: 50, targetY: 25 } 
                 ]
             },
             {
-                title: "Depolama Birimleri", subtitle: "Veri Saklama", bg: "#e0f2fe", // Bulutlu Gökyüzü ve Çalışma Alanı
+                title: "Depolama Birimleri", subtitle: "Veri Saklama", bg: "#e0f2fe", 
                 envHTML: `
                     <div class="env-layer">
-                        <!-- Pencere ve Gökyüzü -->
                         <div class="absolute top-[5%] right-[5%] w-[40%] h-[40%] bg-blue-300 border-8 border-white shadow-inner rounded-xl z-0 overflow-hidden">
-                            <div class="absolute top-[20%] left-[20%] text-6xl opacity-30">☁️</div>
+                            <div class="absolute top-[20%] left-[20%] text-5xl md:text-6xl opacity-30">☁️</div>
                         </div>
-                        <!-- Laptop Silüeti -->
-                        <div class="absolute bottom-[15%] left-[20%] w-[160px] h-[10px] bg-slate-400 rounded-t-lg shadow-xl z-0"></div>
-                        <div class="absolute bottom-[15%] left-[25%] w-[120px] h-[80px] bg-slate-500 rounded-t-lg z-0 opacity-50 transform origin-bottom -skew-x-12"></div>
+                        <div class="absolute bottom-[15%] left-[20%] w-[120px] h-[10px] bg-slate-400 rounded-t-lg shadow-xl z-0"></div>
+                        <div class="absolute bottom-[15%] left-[25%] w-[100px] h-[60px] bg-slate-500 rounded-t-lg z-0 opacity-50 transform origin-bottom -skew-x-12"></div>
                     </div>
                 `,
                 items: [
-                    { id: "bulut", name: "Bulut Depolama", icon: "☁️", targetX: 75, targetY: 25 }, // Pencerenin içi (Gökyüzü)
-                    { id: "flash", name: "Flash Bellek", icon: "🖊️", targetX: 10, targetY: 75 }, // Laptop'un sol yanı
-                    { id: "disk", name: "Harici Disk", icon: "💽", targetX: 45, targetY: 80 }, // Laptop'un sağı
-                    { id: "cd", name: "CD/DVD", icon: "💿", targetX: 30, targetY: 50 } // Laptop ekranına doğru
+                    { id: "bulut", name: "Bulut Depolama", icon: "☁️", targetX: 75, targetY: 25 }, 
+                    { id: "flash", name: "Flash Bellek", icon: "🖊️", targetX: 15, targetY: 75 }, 
+                    { id: "disk", name: "Harici Disk", icon: "💽", targetX: 45, targetY: 80 }, 
+                    { id: "cd", name: "CD/DVD", icon: "💿", targetX: 30, targetY: 50 } 
                 ]
             }
         ];
@@ -413,7 +400,6 @@
             board.innerHTML = '';
             tray.innerHTML = '';
             
-            // Arkaplan rengi ve Çevre Tasarımını (HTML) yükle
             board.style.backgroundColor = levelData.bg;
             if (levelData.envHTML) {
                 board.innerHTML += levelData.envHTML;
@@ -421,7 +407,6 @@
 
             const shuffledItems = [...levelData.items].sort(() => Math.random() - 0.5);
 
-            // Gölgeleri (Dropzones) oluştur ve Çevre Tasarımının üstüne koy
             levelData.items.forEach(item => {
                 const dropzone = document.createElement('div');
                 dropzone.className = 'dropzone';
@@ -429,11 +414,10 @@
                 dropzone.style.left = `${item.targetX}%`;
                 dropzone.style.top = `${item.targetY}%`;
                 
-                dropzone.innerHTML = `<span class="text-4xl md:text-5xl opacity-30 filter grayscale">${item.icon}</span>`;
+                dropzone.innerHTML = `<span class="text-3xl md:text-5xl opacity-30 filter grayscale pointer-events-none">${item.icon}</span>`;
                 board.appendChild(dropzone);
             });
 
-            // Sürüklenebilir Öğeleri oluştur
             shuffledItems.forEach((item, index) => {
                 const dragItem = document.createElement('div');
                 dragItem.className = 'draggable-item floating anim-pop';
