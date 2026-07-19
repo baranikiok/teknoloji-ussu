@@ -23,8 +23,6 @@
                 radial-gradient(circle at 10% 20%, rgba(255, 255, 255, 0.05) 0%, transparent 20%),
                 radial-gradient(circle at 90% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 20%);
             color: #f8fafc;
-            /* 100dvh ile mobil tarayıcı barlarına tam uyum */
-            min-height: 100dvh; 
             height: 100dvh;
             margin: 0;
             display: flex;
@@ -32,7 +30,7 @@
             overflow: hidden;
             user-select: none;
             touch-action: manipulation;
-            -webkit-tap-highlight-color: transparent; 
+            -webkit-tap-highlight-color: transparent;
         }
 
         .font-fredoka { font-family: 'Fredoka One', cursive; }
@@ -56,7 +54,6 @@
             position: relative;
             box-shadow: inset 0 10px 20px rgba(0,0,0,0.5);
             animation: moveBelt 1.5s linear infinite;
-            flex-shrink: 0; /* Küçülmesini engelle */
         }
         .conveyor-belt.paused { animation-play-state: paused; }
         @keyframes moveBelt { 0% { background-position: 0 0; } 100% { background-position: 80px 0; } }
@@ -109,8 +106,10 @@
         }
         .dropdown-select:active { transform: translateY(2px); border-bottom-width: 2px; }
 
+        /* Kağıt alanı responsive olarak düzenlendi */
         .paper-container {
-            width: 90vw; max-width: 450px; height: 220px;
+            width: 90vw; max-width: 450px; 
+            min-height: 180px; height: 25vh; max-height: 250px;
             background: #ffffff; border-radius: 4px;
             box-shadow: 2px 2px 10px rgba(0,0,0,0.2), inset 0 0 50px rgba(0,0,0,0.02);
             position: relative; padding: 20px;
@@ -160,14 +159,11 @@
         }
         #target-text.bullet-list { display: list-item; list-style-type: disc; list-style-position: inside; }
         
-        /* Yatay Scrollbar Gizleme (Araç Çubuğu İçin) */
         .hide-scrollbar::-webkit-scrollbar { display: none; }
         .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="relative">
-
-    <!-- Başlangıç Ekranı -->
     <div id="start-screen" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 transition-opacity duration-500">
         <a href="index.html" class="absolute top-4 left-4 md:top-8 md:left-8 bg-slate-800 hover:bg-slate-700 text-white w-12 h-12 md:w-14 md:h-14 rounded-2xl font-bold transition-all hover:scale-110 flex items-center justify-center text-2xl md:text-3xl border-2 border-slate-600 shadow-lg z-[100]" title="Ana Menüye Dön">
             🏠
@@ -189,11 +185,9 @@
         </div>
     </div>
 
-    <!-- Oyun Ekranı: h-full yerine flex-1 eklendi tam alanı doldursun diye -->
-    <div id="game-screen" class="hidden flex-1 flex-col z-10 opacity-0 transition-opacity duration-500 w-full h-full">
+    <div id="game-screen" class="hidden flex-1 flex flex-col z-10 opacity-0 transition-opacity duration-500 h-full w-full max-w-5xl mx-auto overflow-hidden">
         
-        <!-- ÜST MENÜ (Header): shrink-0 ile yüksekliği korunuyor ve mobilde kaybolması engellendi -->
-        <div class="glass-panel px-4 py-2 flex justify-between items-center shrink-0 border-b border-slate-600 w-full z-40">
+        <div class="glass-panel px-4 py-2 flex justify-between items-center shrink-0 border-b border-slate-600">
             <div class="flex items-center gap-2">
                 <a href="index.html" class="bg-slate-700 hover:bg-slate-600 text-white w-10 h-10 rounded-xl font-bold transition-colors flex items-center justify-center text-lg outline-none" title="Ana Menüye Dön">🏠</a>
                 <button onclick="showStartScreen()" class="bg-slate-700 hover:bg-red-500 text-white w-10 h-10 rounded-xl font-bold transition-colors outline-none" title="Oyundan Çık">✖</button>
@@ -205,13 +199,11 @@
             <button id="sound-btn" onclick="toggleSound()" class="bg-slate-700 hover:bg-slate-600 text-white w-10 h-10 rounded-xl transition-colors outline-none">🔊</button>
         </div>
 
-        <!-- OYUN ALANI İÇERİĞİ -->
-        <div class="flex-1 flex flex-col items-center w-full max-w-5xl mx-auto relative overflow-hidden pb-4">
+        <div class="gear top-[15%] left-[5%]"></div>
+        <div class="gear reverse top-[30%] right-[5%]" style="width: 50px; height: 50px;"></div>
+        
+        <div class="flex-1 flex flex-col items-center w-full relative min-h-0">
             
-            <div class="gear top-[15%] left-[5%]"></div>
-            <div class="gear reverse top-[30%] right-[5%]" style="width: 50px; height: 50px;"></div>
-            
-            <!-- Görev Panosu -->
             <div class="mt-4 bg-slate-900 border-4 border-slate-700 rounded-2xl p-4 w-[95%] md:w-[80%] text-center shadow-xl relative z-20 shrink-0">
                 <div class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-yellow-500 text-slate-900 text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest border-2 border-yellow-700">
                     Sipariş Fişi
@@ -219,8 +211,7 @@
                 <p id="task-instruction" class="text-green-400 font-mono text-sm md:text-lg font-bold">Yükleniyor...</p>
             </div>
 
-            <!-- Araç Çubuğu (Toolbar) -->
-            <div class="mt-4 bg-slate-200 p-2 md:p-3 rounded-2xl shadow-xl border-b-4 border-slate-400 w-[95%] md:w-[85%] z-20 flex flex-col gap-2 shrink-0">
+            <div class="mt-3 bg-slate-200 p-2 md:p-3 rounded-2xl shadow-xl border-b-4 border-slate-400 w-[95%] md:w-[85%] z-20 flex flex-col gap-2 shrink-0">
                 
                 <div class="flex flex-wrap justify-between items-center gap-2 bg-white p-2 rounded-xl border border-slate-300">
                     <select id="font-select" onchange="changeFormat('font', this.value)" class="dropdown-select flex-1 min-w-[120px] text-xs md:text-base">
@@ -237,7 +228,6 @@
                 </div>
 
                 <div class="flex overflow-x-auto hide-scrollbar items-center gap-2 bg-white p-2 rounded-xl border border-slate-300">
-                    
                     <div class="toolbar-group shrink-0">
                         <button id="btn-bold" onclick="toggleFormat('bold')" class="toolbar-btn font-black" title="Kalın (Ctrl+K)">K</button>
                         <button id="btn-italic" onclick="toggleFormat('italic')" class="toolbar-btn italic font-serif" title="İtalik (Ctrl+T)">T</button>
@@ -263,28 +253,27 @@
                             <button onclick="changeFormat('highlight', '#bbf7d0')" class="w-6 h-6 rounded border-2 border-slate-300 bg-green-200 outline-none"></button>
                         </div>
                     </div>
-
                 </div>
             </div>
 
-            <!-- Kağıt ve Bant Bölümü: flex-1 ile alt kısmı tamamen dolduruyor -->
-            <div class="flex-1 w-full flex flex-col items-center justify-end relative min-h-[250px]">
+            <div class="flex-1 w-full flex flex-col items-center justify-end relative overflow-hidden mt-2 min-h-0">
                 
-                <div id="paper-wrapper" class="absolute bottom-[40px] md:bottom-[45px] z-20 pointer-events-none">
+                <!-- Kağıt Alanı: Artık bant ile tam hizalı, üstüne binmez -->
+                <div id="paper-wrapper" class="z-20 pointer-events-none relative w-full flex justify-center" style="margin-bottom: -15px;">
                     <div id="active-paper" class="paper-container paper-slide-in">
-                        <span id="target-text" class="font-roboto transition-all duration-200" style="color:#000; font-size:1.8rem; text-align:left; background-color:transparent;">
-                        </span>
+                        <span id="target-text" class="font-roboto transition-all duration-200" style="color:#000; font-size:1.8rem; text-align:left; background-color:transparent;"></span>
                         <div id="stamp-mark" class="stamp">ONAYLANDI</div>
                     </div>
                 </div>
 
-                <div class="conveyor-belt" id="conveyor"></div>
+                <!-- Taşıma Bandı -->
+                <div class="conveyor-belt w-full shrink-0 relative z-10" id="conveyor"></div>
 
-                <!-- Baskıya Gönder Butonu -->
-                <div class="absolute bottom-[80px] right-[2%] md:right-[5%] z-30">
-                    <button onclick="submitDocument()" id="submit-btn" class="bg-green-500 hover:bg-green-400 text-white font-black text-xs md:text-xl px-4 md:px-8 py-3 md:py-4 rounded-2xl shadow-[0_6px_0_#16a34a] active:translate-y-2 active:shadow-none transition-all border-4 border-white flex flex-col items-center outline-none">
-                        <span>BASKIYA</span>
-                        <span>GÖNDER ✔️</span>
+                <!-- Baskıya Gönder Alt Çubuğu: Ekranın en altına sabit, kağıdı kapatmaz -->
+                <div class="w-full bg-[#0f172a] p-3 pb-6 flex justify-center shrink-0 border-t-4 border-slate-700 z-30 relative shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
+                    <button onclick="submitDocument()" id="submit-btn" class="bg-green-500 hover:bg-green-400 text-white font-black text-lg md:text-xl px-8 py-3 rounded-2xl shadow-[0_6px_0_#16a34a] active:translate-y-2 active:shadow-none transition-all border-2 border-green-300 outline-none w-full max-w-sm flex items-center justify-center gap-2">
+                        <span>BASKIYA GÖNDER</span>
+                        <span class="text-2xl">✔️</span>
                     </button>
                 </div>
             </div>
@@ -292,7 +281,6 @@
         </div>
     </div>
 
-    <!-- Başarı Modal -->
     <div id="success-modal" class="fixed inset-0 z-[60] hidden bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
         <div class="bg-white rounded-[32px] p-8 md:p-12 max-w-lg w-full text-center shadow-2xl border-8 border-green-400 anim-pop">
             <div class="text-7xl mb-4 drop-shadow-xl animate-bounce">🎖️</div>
@@ -397,9 +385,7 @@
 
         function showStartScreen() {
             document.getElementById('game-screen').classList.add('hidden');
-            document.getElementById('game-screen').classList.remove('flex');
             document.getElementById('game-screen').classList.remove('opacity-100');
-            
             const startScreen = document.getElementById('start-screen');
             startScreen.classList.remove('hidden');
             setTimeout(() => startScreen.classList.remove('opacity-0'), 50);
@@ -413,7 +399,6 @@
             setTimeout(() => {
                 startScreen.classList.add('hidden');
                 document.getElementById('game-screen').classList.remove('hidden');
-                document.getElementById('game-screen').classList.add('flex'); // hidden'ı kaldırıp flex yapıyoruz
                 setTimeout(() => document.getElementById('game-screen').classList.add('opacity-100'), 50);
                 loadTask();
             }, 500);
@@ -500,7 +485,6 @@
             textEl.style.color = currentFormat.color;
             textEl.style.backgroundColor = currentFormat.highlight;
             
-            // Ekran boyutuna göre boyutlandırma
             let currentSize = sizes[currentFormat.size];
             if(window.innerWidth < 768 && currentFormat.size === 'large') currentSize = '2.2rem';
             textEl.style.fontSize = currentSize;
