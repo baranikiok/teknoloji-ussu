@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Algoritma Treni - 30 Görev</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --sky-top: #38bdf8;
+            --sky-bottom: #3b82f6;
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, var(--sky-top) 0%, var(--sky-bottom) 100%);
+            min-height: 100dvh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .font-fredoka { font-family: 'Fredoka One', cursive; }
+
+        /* Arkaplan Manzarası */
+        .scenery {
+            position: absolute;
+            bottom: 0;
+            width: 200vw;
+            height: 120px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,100 L0,50 Q25,30 50,50 T100,50 L100,100 Z" fill="%2322c55e" opacity="0.4"/></svg>') repeat-x;
+            background-size: 50vw 100%;
+            z-index: -1;
+            animation: pass-scenery 25s linear infinite;
+        }
+        .scenery-front {
+            height: 90px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="none"><path d="M0,100 L0,70 Q25,50 50,70 T100,70 L100,100 Z" fill="%2316a34a" opacity="0.6"/></svg>');
+            animation-duration: 15s;
+            z-index: -2;
+        }
+
+        @keyframes pass-scenery { 100% { transform: translateX(-50vw); } }
+
+        /* UI Panelleri */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 4px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+        }
+
+        /* Görev Kartları */
+        .task-card {
+            background: white;
+            border: 4px solid #cbd5e1;
+            border-bottom-width: 8px;
+            border-radius: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 90px;
+            height: 100px;
+            box-shadow: 0 10px 15px rgba(0,0,0,0.05);
+        }
+
+        @media (min-width: 640px) {
+            .task-card { width: 120px; height: 130px; }
+        }
+        @media (min-width: 1024px) {
+            .task-card { width: 140px; height: 150px; }
+        }
+
+        .task-card:hover { transform: translateY(-5px) scale(1.05); border-color: #94a3b8; }
+        .task-card:active { transform: translateY(2px) scale(0.95); border-bottom-width: 4px; }
+        
+        /* Vagon Yuvaları */
+        .wagon-slot {
+            width: 95px;
+            height: 105px;
+            border: 4px dashed #94a3b8;
+            background: rgba(255,255,255,0.6);
+            border-radius: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+
+        @media (min-width: 640px) { .wagon-slot { width: 125px; height: 135px; } }
+        @media (min-width: 1024px) { .wagon-slot { width: 145px; height: 155px; } }
+
+        .wagon-slot.filled { border-style: solid; border-color: #3b82f6; background: #eff6ff; box-shadow: inset 0 0 15px rgba(59,130,246,0.1); }
+
+        /* Efektler */
+        @keyframes pop-in { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .anim-pop { animation: pop-in 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+        .error-shake { animation: shake 0.4s ease-in-out; border-color: #ef4444 !important; background: #fef2f2; }
+
+        /* Tren Sola Gidiş Animasyonu */
+        @keyframes train-depart {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-150vw); }
+        }
+        .train-departure { animation: train-depart 2.5s ease-in forwards; }
+
+        /* Tekerlek Dönüşü (Sola giden tren için saat yönünün tersi) */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(-360deg); }
+        }
+        .wheel-spin { animation: spin 1.5s linear infinite; }
+        .train-departure .wheel-spin { animation: spin 0.4s linear infinite; } /* Yola çıkınca hızlanır */
+
+        /* Gizli Scrollbar (Ray alanı için) */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="relative">
+
+    <!-- Arkaplan Görselleri -->
+    <div class="scenery"></div>
+    <div class="scenery scenery-front"></div>
+
+    <!-- Başlangıç Ekranı -->
+    <div id="start-screen" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4 transition-opacity duration-500">
+        <!-- SOL ÜST ANA SAYFA BUTONU EKLENDİ -->
+        <a href="index.html" class="absolute top-4 left-4 md:top-6 md:left-6 bg-white/90 hover:bg-white text-sky-600 w-12 h-12 md:w-14 md:h-14 rounded-2xl text-2xl md:text-3xl flex items-center justify-center transition-all shadow-lg hover:scale-110 z-10 border-2 border-sky-200" title="Ana Sayfaya Dön">
+            🏠
+        </a>
+
+        <div class="glass-panel rounded-[3rem] p-8 md:p-12 max-w-2xl w-full text-center anim-pop border-8 border-sky-400 relative">
+            <div class="text-7xl md:text-9xl mb-6 animate-bounce drop-shadow-xl">🚂</div>
+            <h1 class="text-4xl md:text-6xl font-fredoka text-sky-600 mb-4 drop-shadow-sm leading-tight">Algoritma Treni</h1>
+            <p class="text-slate-600 font-bold text-lg md:text-xl mb-8 bg-sky-50 p-4 rounded-2xl border border-sky-100">Vagonlara resimleri doğru sırayla yerleştir, treni hareket ettir! Bakalım günlük işleri ne kadar doğru sıralayacaksın?</p>
+            
+            <button onclick="startGame()" class="w-full bg-sky-500 hover:bg-sky-400 text-white font-black text-2xl md:text-3xl py-5 rounded-2xl shadow-[0_8px_0_#0284c7] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center gap-3">
+                <span class="text-4xl">🛤️</span> YOLCULUĞA ÇIK!
+            </button>
+            
+            <!-- GELİŞTİRİCİ İMZASI GÜNCELLENDİ -->
+            <p class="text-xs text-slate-400 font-bold tracking-widest uppercase mt-8 border-t border-slate-200 pt-4">Geliştirici: Mehmet Baran İKİOK</p>
+        </div>
+    </div>
+
+    <!-- Oyun Ekranı -->
+    <div id="game-screen" class="hidden flex-1 flex flex-col z-10 opacity-0 transition-opacity duration-500 h-full relative">
+        
+        <!-- Üst Bar -->
+        <div class="bg-white/90 backdrop-blur-md p-3 md:p-4 border-b-4 border-slate-200 flex justify-between items-center shadow-md shrink-0">
+            <!-- ÇIKIŞ BUTONU GÜNCELLENDİ (index.html'e Yönlendiriyor) -->
+            <a href="index.html" class="bg-slate-200 hover:bg-slate-300 text-slate-600 px-4 py-2 rounded-xl font-bold flex items-center gap-2 transition-colors border border-slate-300">
+                <span>🏠</span> <span class="hidden md:inline">Ana Menü</span>
+            </a>
+            
+            <div class="flex items-center gap-2 bg-sky-50 px-4 py-1.5 rounded-full border-2 border-sky-200">
+                <span class="text-2xl md:text-3xl">🚂</span>
+                <h1 class="text-lg md:text-2xl font-fredoka text-sky-600">Bölüm <span id="level-display" class="text-sky-800">1</span>/30</h1>
+            </div>
+            <button id="sound-btn" onclick="toggleSound()" class="bg-slate-200 hover:bg-slate-300 px-3 py-2 rounded-xl text-xl transition-colors border border-slate-300">🔊</button>
+        </div>
+
+        <!-- Görev ve Havuz Alanı -->
+        <div class="flex-1 flex flex-col items-center justify-center p-2 md:p-4 w-full max-w-6xl mx-auto min-h-[300px]">
+            
+            <div class="text-center mb-4 md:mb-6 w-full px-4">
+                <h2 id="task-title" class="text-3xl md:text-5xl font-fredoka text-white drop-shadow-lg mb-2 leading-tight">Görev Adı</h2>
+                <p id="task-desc" class="text-sky-50 font-bold text-base md:text-xl drop-shadow-md bg-black/20 inline-block px-6 py-2 rounded-full border border-white/20">Açıklama burada yazacak.</p>
+            </div>
+
+            <!-- Kart Havuzu Paneli -->
+            <div class="glass-panel w-full p-4 md:p-6 rounded-[2rem] flex flex-col items-center relative shadow-2xl">
+                
+                <div class="w-full flex justify-between items-center mb-4 px-2">
+                    <p class="text-slate-600 font-black text-sm md:text-lg text-center flex-1 uppercase tracking-wide">
+                        Resimlere Tıklayarak Vagonları Doldur
+                    </p>
+                </div>
+                
+                <div id="card-pool" class="flex flex-wrap justify-center gap-2 md:gap-4 lg:gap-6 min-h-[110px] md:min-h-[160px] w-full">
+                    <!-- Kartlar JS ile yüklenecek -->
+                </div>
+
+                <!-- Geri Al Butonu (Kartların Altında, Ortada, Asla Kesilmez) -->
+                <div class="mt-4 md:mt-6 h-12 flex justify-center w-full">
+                    <button id="undo-btn" onclick="undoLastMove()" class="hidden bg-orange-100 hover:bg-orange-200 text-orange-600 font-bold py-2 md:py-3 px-6 md:px-8 rounded-full transition-transform active:scale-95 border-2 border-orange-300 shadow-md items-center gap-2">
+                        <span class="text-xl md:text-2xl">🔙</span> <span class="text-sm md:text-base">Geri Al</span>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Tren ve Raylar Alanı -->
+        <div class="w-full bg-slate-800/30 backdrop-blur-sm border-t-8 border-slate-700/50 relative flex flex-col items-center shrink-0">
+            
+            <!-- Tren Rayı (Arkaplan) -->
+            <div class="absolute bottom-4 left-0 w-full h-4 bg-slate-500 shadow-inner z-0"></div>
+            <div class="absolute bottom-4 left-0 w-full h-4 z-0" style="background: repeating-linear-gradient(90deg, transparent, transparent 24px, #475569 24px, #475569 36px);"></div>
+
+            <!-- Kaydırılabilir Tren Alanı (Mobilde sığması için) -->
+            <div class="w-full overflow-x-auto no-scrollbar pb-6 pt-16 px-4 flex justify-start md:justify-center relative z-10">
+                
+                <!-- Onay Butonu (Trenin üstünde güvenli alanda) -->
+                <div class="absolute top-2 left-0 w-full flex justify-center z-30 pointer-events-none">
+                    <button id="check-btn" onclick="checkTrain()" class="pointer-events-auto bg-green-500 hover:bg-green-400 text-white font-black text-xl md:text-3xl py-3 md:py-4 px-10 md:px-12 rounded-full shadow-[0_6px_0_#16a34a] active:translate-y-2 active:shadow-none transition-all hidden opacity-0 border-4 border-green-300">
+                        HAZIR! ✔️
+                    </button>
+                </div>
+
+                <div id="train-container" class="flex items-end gap-2 md:gap-3 lg:gap-4 relative w-max transition-transform">
+                    
+                    <!-- LOKOMOTİF (Sola Bakıyor) -->
+                    <div class="relative pb-6 flex flex-col items-center shrink-0">
+                        <div class="text-7xl md:text-8xl lg:text-9xl drop-shadow-2xl z-10 relative">
+                            🚂
+                            <!-- Buhar -->
+                            <div class="absolute -top-6 left-2 text-2xl md:text-3xl opacity-60 animate-bounce delay-100">💨</div>
+                            <div class="absolute -top-10 left-8 text-xl md:text-2xl opacity-40 animate-bounce">💨</div>
+                        </div>
+                        <div class="absolute bottom-1 w-full flex justify-between px-2">
+                            <div class="text-2xl md:text-3xl wheel-spin drop-shadow-md">⚙️</div>
+                            <div class="text-2xl md:text-3xl wheel-spin drop-shadow-md">⚙️</div>
+                        </div>
+                    </div>
+
+                    <!-- Vagonlar 1, 2, 3, 4 -->
+                    <div class="relative pb-6 shrink-0"><div id="wagon-0" class="wagon-slot bg-gradient-to-b from-blue-50 to-blue-100 shadow-xl border-blue-300"></div><div class="absolute bottom-1 w-full flex justify-between px-6"><div class="text-xl md:text-2xl wheel-spin">🔘</div><div class="text-xl md:text-2xl wheel-spin">🔘</div></div></div>
+                    <div class="relative pb-6 shrink-0"><div id="wagon-1" class="wagon-slot bg-gradient-to-b from-green-50 to-green-100 shadow-xl border-green-300"></div><div class="absolute bottom-1 w-full flex justify-between px-6"><div class="text-xl md:text-2xl wheel-spin">🔘</div><div class="text-xl md:text-2xl wheel-spin">🔘</div></div></div>
+                    <div class="relative pb-6 shrink-0"><div id="wagon-2" class="wagon-slot bg-gradient-to-b from-yellow-50 to-yellow-100 shadow-xl border-yellow-300"></div><div class="absolute bottom-1 w-full flex justify-between px-6"><div class="text-xl md:text-2xl wheel-spin">🔘</div><div class="text-xl md:text-2xl wheel-spin">🔘</div></div></div>
+                    <div class="relative pb-6 shrink-0"><div id="wagon-3" class="wagon-slot bg-gradient-to-b from-purple-50 to-purple-100 shadow-xl border-purple-300"></div><div class="absolute bottom-1 w-full flex justify-between px-6"><div class="text-xl md:text-2xl wheel-spin">🔘</div><div class="text-xl md:text-2xl wheel-spin">🔘</div></div></div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Başarı Modalı -->
+    <div id="success-modal" class="fixed inset-0 z-[60] hidden bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white rounded-[32px] p-8 md:p-12 max-w-lg w-full text-center shadow-2xl border-8 border-green-400 anim-pop">
+            <div class="text-8xl mb-6 drop-shadow-xl animate-bounce">🌟</div>
+            <h2 class="text-4xl md:text-5xl font-fredoka text-green-500 mb-4 uppercase">HARİKA!</h2>
+            <p class="text-slate-600 font-bold text-lg md:text-xl mb-8 bg-green-50 p-4 rounded-xl border border-green-100">Olayları mükemmel bir sıraya koydun ve tren yola çıktı!</p>
+            <button onclick="nextLevel()" class="w-full bg-green-500 hover:bg-green-400 text-white font-black text-2xl md:text-3xl py-5 rounded-2xl shadow-[0_8px_0_#16a34a] active:translate-y-2 active:shadow-none transition-all">
+                Sıradaki Görev ➡️
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Ses Motoru
+        let audioCtx;
+        let isSoundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSound(type) {
+            if (!isSoundEnabled) return;
+            initAudio();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+
+            if (type === 'pop') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'remove') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'train') {
+                // Çuf çuf sesi
+                osc.type = 'square'; osc.frequency.setValueAtTime(300, now);
+                osc.frequency.setValueAtTime(400, now + 0.2); osc.frequency.setValueAtTime(300, now + 0.4);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0, now + 0.6);
+                osc.start(now); osc.stop(now + 0.6);
+            } else if (type === 'win') {
+                const notes = [523.25, 659.25, 783.99, 1046.50]; 
+                notes.forEach((freq, i) => {
+                    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                    o.connect(g); g.connect(audioCtx.destination); o.type = 'sine';
+                    o.frequency.setValueAtTime(freq, now + i*0.1);
+                    g.gain.setValueAtTime(0, now); g.gain.setValueAtTime(0.1, now + i*0.1);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + i*0.1 + 0.4);
+                    o.start(now + i*0.1); o.stop(now + i*0.1 + 0.4);
+                });
+            }
+        }
+
+        function toggleSound() {
+            isSoundEnabled = !isSoundEnabled;
+            document.getElementById('sound-btn').innerText = isSoundEnabled ? '🔊' : '🔇';
+            if(isSoundEnabled) initAudio();
+        }
+
+        // TAM 30 GÖREVLİK ARŞİV
+        const TASKS = [
+            {
+                title: "Sabah Rutini", desc: "Sabah uyanınca sırasıyla ne yaparız?",
+                items: [
+                    { emoji: "🥱", text: "Uyan", step: 1 }, { emoji: "🚰", text: "El Yüz Yıka", step: 2 },
+                    { emoji: "🍳", text: "Kahvaltı", step: 3 }, { emoji: "🎒", text: "Okul", step: 4 }
+                ]
+            },
+            {
+                title: "Bitki Büyütme", desc: "Bir tohum nasıl koca bir çiçeğe dönüşür?",
+                items: [
+                    { emoji: "🕳️", text: "Çukur Kaz", step: 1 }, { emoji: "🌱", text: "Tohum Ek", step: 2 },
+                    { emoji: "💧", text: "Sula", step: 3 }, { emoji: "🌻", text: "Çiçek Açsın", step: 4 }
+                ]
+            },
+            {
+                title: "Kardan Adam", desc: "Karlı bir günde kardan adamı nasıl yaparız?",
+                items: [
+                    { emoji: "❄️", text: "Büyük Top", step: 1 }, { emoji: "⛄", text: "Küçük Top", step: 2 },
+                    { emoji: "🥕", text: "Havuç Tak", step: 3 }, { emoji: "🧣", text: "Atkı Tak", step: 4 }
+                ]
+            },
+            {
+                title: "Mektup Gönder", desc: "Uzaktaki arkadaşımıza nasıl mektup yollarız?",
+                items: [
+                    { emoji: "✍️", text: "Yaz", step: 1 }, { emoji: "✉️", text: "Zarfa Koy", step: 2 },
+                    { emoji: "👅", text: "Pul Yapıştır", step: 3 }, { emoji: "📮", text: "Postala", step: 4 }
+                ]
+            },
+            {
+                title: "Makarna Pişir", desc: "Acıkınca nefis bir makarnayı nasıl pişiririz?",
+                items: [
+                    { emoji: "💧", text: "Su Kaynat", step: 1 }, { emoji: "🍝", text: "Makarnayı At", step: 2 },
+                    { emoji: "🍅", text: "Sos Ekle", step: 3 }, { emoji: "🍽️", text: "Afiyetle Ye", step: 4 }
+                ]
+            },
+            {
+                title: "Diş Fırçalama", desc: "Sağlıklı dişler için sırasıyla ne yapmalıyız?",
+                items: [
+                    { emoji: "🪥", text: "Fırçayı Al", step: 1 }, { emoji: "🧴", text: "Macun Sür", step: 2 },
+                    { emoji: "😬", text: "Fırçala", step: 3 }, { emoji: "🚰", text: "Çalkala", step: 4 }
+                ]
+            },
+            {
+                title: "Pizza Yapımı", desc: "Nefis bir pizzayı fırına atana kadar ne yaparız?",
+                items: [
+                    { emoji: "🥣", text: "Hamur Aç", step: 1 }, { emoji: "🍅", text: "Sos Sür", step: 2 },
+                    { emoji: "🧀", text: "Peynir Koy", step: 3 }, { emoji: "♨️", text: "Pişir", step: 4 }
+                ]
+            },
+            {
+                title: "Elma Yeme", desc: "Ağaçtaki elmayı yemeden önce ne yapmalıyız?",
+                items: [
+                    { emoji: "🌳", text: "Kopar", step: 1 }, { emoji: "🚰", text: "Elmayı Yıka", step: 2 },
+                    { emoji: "🔪", text: "Dilimle", step: 3 }, { emoji: "🍎", text: "Afiyetle Ye", step: 4 }
+                ]
+            },
+            {
+                title: "Gece Uykuya Hazırlık", desc: "Uyku vakti geldiğinde sırasıyla neler yaparız?",
+                items: [
+                    { emoji: "🪥", text: "Diş Fırçala", step: 1 }, { emoji: "🩳", text: "Pijama Giy", step: 2 },
+                    { emoji: "📖", text: "Kitap Oku", step: 3 }, { emoji: "😴", text: "Uyu", step: 4 }
+                ]
+            },
+            {
+                title: "Hediye Verme", desc: "Arkadaşımıza sürpriz bir hediye nasıl hazırlarız?",
+                items: [
+                    { emoji: "🎁", text: "Hediye Al", step: 1 }, { emoji: "🎀", text: "Paketle", step: 2 },
+                    { emoji: "🏷️", text: "İsim Yaz", step: 3 }, { emoji: "😊", text: "Arkadaşına Ver", step: 4 }
+                ]
+            },
+            { 
+                title: "Elleri Yıkama", desc: "Temiz eller için sırasıyla ne yapmalıyız?", 
+                items: [ {emoji: "🚰", text: "Suyu Aç", step:1}, {emoji: "🧼", text: "Sabun Al", step:2}, {emoji: "🫧", text: "Köpürt", step:3}, {emoji: "🧴", text: "Kurula", step:4} ]
+            },
+            { 
+                title: "Sandviç Yapımı", desc: "Açlıktan guruldayan karınlar için sandviç yapalım!", 
+                items: [ {emoji: "🍞", text: "Ekmek Kes", step:1}, {emoji: "🧀", text: "Peynir Koy", step:2}, {emoji: "🍅", text: "Domates Ekle", step:3}, {emoji: "🥪", text: "Kapat ve Ye", step:4} ]
+            },
+            { 
+                title: "Boyama Yapma", desc: "Harika bir resim çizmek için ne yaparız?", 
+                items: [ {emoji: "📄", text: "Kağıt Al", step:1}, {emoji: "✏️", text: "Çizim Yap", step:2}, {emoji: "🖍️", text: "Renklendir", step:3}, {emoji: "🖼️", text: "Duvara As", step:4} ]
+            },
+            { 
+                title: "Çamaşır Yıkama", desc: "Kirli kıyafetleri nasıl tertemiz yaparız?", 
+                items: [ {emoji: "🧺", text: "Kirlileri Topla", step:1}, {emoji: "🧼", text: "Makineye At", step:2}, {emoji: "🌀", text: "Çalıştır", step:3}, {emoji: "👕", text: "As ve Kurut", step:4} ]
+            },
+            { 
+                title: "Kek Yapma", desc: "Lezzetli bir kek hazırlamak için sıralama nedir?", 
+                items: [ {emoji: "🥚", text: "Yumurta Kır", step:1}, {emoji: "🥣", text: "Un Ekle", step:2}, {emoji: "♨️", text: "Fırında Pişir", step:3}, {emoji: "🧁", text: "Süsle", step:4} ]
+            },
+            { 
+                title: "Köpek Besleme", desc: "Sevimli dostumuz acıkmış, ona nasıl mama veririz?", 
+                items: [ {emoji: "🥣", text: "Kabı Al", step:1}, {emoji: "🧆", text: "Mama Dök", step:2}, {emoji: "💧", text: "Su Ekle", step:3}, {emoji: "🐶", text: "Köpeğe Ver", step:4} ]
+            },
+            { 
+                title: "Banyo Vakti", desc: "Banyo yaparken sırasıyla ne yaparız?", 
+                items: [ {emoji: "👕", text: "Kıyafet Çıkar", step:1}, {emoji: "🚿", text: "Yıkan", step:2}, {emoji: "🛁", text: "Köpükle Oyna", step:3}, {emoji: "🧖", text: "Havluyla Kurulan", step:4} ]
+            },
+            { 
+                title: "Ayakkabı Giyme", desc: "Dışarı çıkmadan önce ayaklarımıza ne giyeriz?", 
+                items: [ {emoji: "🧦", text: "Çorap Giy", step:1}, {emoji: "👟", text: "Ayakkabı Giy", step:2}, {emoji: "🎀", text: "Bağcık Bağla", step:3}, {emoji: "🚶", text: "Yürüyüşe Çık", step:4} ]
+            },
+            { 
+                title: "Uçurtma Uçurma", desc: "Rüzgarlı bir günde uçurtmayı nasıl uçururuz?", 
+                items: [ {emoji: "🪁", text: "Uçurtma Yap", step:1}, {emoji: "🧵", text: "İp Bağla", step:2}, {emoji: "🏃", text: "Rüzgarda Koş", step:3}, {emoji: "☁️", text: "Havaya Bırak", step:4} ]
+            },
+            { 
+                title: "Oda Toplama", desc: "Dağınık bir odayı nasıl temizleriz?", 
+                items: [ {emoji: "🧸", text: "Oyuncakları Topla", step:1}, {emoji: "🛏️", text: "Yatağı Düzelt", step:2}, {emoji: "📚", text: "Kitapları Diz", step:3}, {emoji: "✨", text: "Oda Tertemiz", step:4} ]
+            },
+            { 
+                title: "Limonata Yapımı", desc: "Sıcak bir günde serinlemek için limonata yapalım!", 
+                items: [ {emoji: "🍋", text: "Limon Sık", step:1}, {emoji: "💧", text: "Su Ekle", step:2}, {emoji: "🧊", text: "Buz At", step:3}, {emoji: "🍹", text: "Afiyetle İç", step:4} ]
+            },
+            { 
+                title: "Otobüse Binme", desc: "Bir yere giderken otobüse nasıl bineriz?", 
+                items: [ {emoji: "🚏", text: "Durakta Bekle", step:1}, {emoji: "🚌", text: "Otobüse Bin", step:2}, {emoji: "💳", text: "Kart Bas", step:3}, {emoji: "💺", text: "Koltuğa Otur", step:4} ]
+            },
+            { 
+                title: "Kuş Besleme", desc: "Parktaki kuşlara nasıl yem veririz?", 
+                items: [ {emoji: "🍞", text: "Yem Al", step:1}, {emoji: "🌳", text: "Parka Git", step:2}, {emoji: "🫳", text: "Yere Dök", step:3}, {emoji: "🕊️", text: "Kuşları İzle", step:4} ]
+            },
+            { 
+                title: "Sinema Vakti", desc: "Sinemada film izlemek için ne yaparız?", 
+                items: [ {emoji: "🎟️", text: "Bilet Al", step:1}, {emoji: "🍿", text: "Mısır Al", step:2}, {emoji: "💺", text: "Koltuğu Bul", step:3}, {emoji: "🎬", text: "Filmi İzle", step:4} ]
+            },
+            { 
+                title: "Market Alışverişi", desc: "Markete gittiğimizde sırasıyla ne yaparız?", 
+                items: [ {emoji: "🛒", text: "Araba Al", step:1}, {emoji: "🍎", text: "Sebze Seç", step:2}, {emoji: "📦", text: "Sepete Koy", step:3}, {emoji: "💳", text: "Kasada Öde", step:4} ]
+            },
+            { 
+                title: "Balık Tutma", desc: "Gölden balık tutmak için ne yapmalıyız?", 
+                items: [ {emoji: "🎣", text: "Oltayı Hazırla", step:1}, {emoji: "🪱", text: "Yem Tak", step:2}, {emoji: "🌊", text: "Suya At", step:3}, {emoji: "🐟", text: "Balığı Çek", step:4} ]
+            },
+            { 
+                title: "Çadır Kurma", desc: "Ormanda kampa gidince nasıl çadır kurarız?", 
+                items: [ {emoji: "🎒", text: "Çantayı Aç", step:1}, {emoji: "⛺", text: "Çadırı Kur", step:2}, {emoji: "🔥", text: "Ateş Yak", step:3}, {emoji: "🏕️", text: "İçinde Uyu", step:4} ]
+            },
+            { 
+                title: "Fotoğraf Çekme", desc: "Güzel bir anıyı fotoğraflamak için ne yaparız?", 
+                items: [ {emoji: "📷", text: "Kamerayı Al", step:1}, {emoji: "👁️", text: "Ekrana Bak", step:2}, {emoji: "🔘", text: "Düğmeye Bas", step:3}, {emoji: "🖼️", text: "Fotoğrafa Bak", step:4} ]
+            },
+            { 
+                title: "Süt Sağma", desc: "Köyde inekten nasıl süt alırız?", 
+                items: [ {emoji: "🪣", text: "Kova Al", step:1}, {emoji: "🐄", text: "İneğin Yanına Git", step:2}, {emoji: "🥛", text: "Sütü Sağ", step:3}, {emoji: "😋", text: "Sütü İç", step:4} ]
+            },
+            { 
+                title: "Yumurta Haşlama", desc: "Kahvaltıda yemek için yumurta nasıl haşlanır?", 
+                items: [ {emoji: "🥚", text: "Yumurta Al", step:1}, {emoji: "💧", text: "Suya Koy", step:2}, {emoji: "♨️", text: "Ateşte Kaynat", step:3}, {emoji: "🧂", text: "Soy ve Ye", step:4} ]
+            }
+        ];
+
+        let currentLevel = 0;
+        let wagonSlots = [null, null, null, null]; 
+        let isAnimating = false;
+
+        // Ekran Geçişleri
+        function showStartScreen() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('opacity-100');
+            const startScreen = document.getElementById('start-screen');
+            startScreen.classList.remove('hidden');
+            setTimeout(() => startScreen.classList.remove('opacity-0'), 50);
+        }
+
+        function startGame() {
+            initAudio();
+            currentLevel = 0;
+            const startScreen = document.getElementById('start-screen');
+            startScreen.classList.add('opacity-0');
+            setTimeout(() => {
+                startScreen.classList.add('hidden');
+                document.getElementById('game-screen').classList.remove('hidden');
+                setTimeout(() => document.getElementById('game-screen').classList.add('opacity-100'), 50);
+                loadLevel();
+            }, 500);
+        }
+
+        // Seviye Yükleme
+        function loadLevel() {
+            const task = TASKS[currentLevel];
+            document.getElementById('level-display').innerText = currentLevel + 1;
+            document.getElementById('task-title').innerText = task.title;
+            document.getElementById('task-desc').innerText = task.desc;
+            
+            wagonSlots = [null, null, null, null];
+            
+            // Treni eski haline getir
+            const train = document.getElementById('train-container');
+            train.classList.remove('train-departure');
+            train.style.transform = 'translateX(0)';
+            
+            // Vagonları temizle
+            for(let i=0; i<4; i++) {
+                const wagon = document.getElementById(`wagon-${i}`);
+                wagon.innerHTML = '';
+                wagon.classList.remove('filled', 'error-shake');
+            }
+
+            document.getElementById('check-btn').classList.add('hidden', 'opacity-0');
+            document.getElementById('undo-btn').classList.replace('flex', 'hidden');
+
+            // Havuzu doldur (Karışık sıra ile)
+            const pool = document.getElementById('card-pool');
+            pool.innerHTML = '';
+            
+            const shuffledItems = [...task.items].sort(() => Math.random() - 0.5);
+            
+            shuffledItems.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.className = 'task-card anim-pop';
+                card.style.animationDelay = `${index * 0.1}s`;
+                card.dataset.step = item.step;
+                card.innerHTML = `
+                    <span class="text-4xl md:text-6xl drop-shadow-md mb-2 pointer-events-none">${item.emoji}</span>
+                    <span class="text-[10px] md:text-sm font-bold text-slate-700 pointer-events-none uppercase tracking-wider text-center px-1 leading-tight">${item.text}</span>
+                `;
+                
+                // Tıklama Olayı (Havuza tıklandığında vagona git)
+                card.onclick = () => handleCardClick(card);
+                pool.appendChild(card);
+            });
+        }
+
+        function handleCardClick(card) {
+            if (isAnimating) return;
+            
+            if (card.parentElement.id === 'card-pool') {
+                // Havuzdan Vagona
+                const emptyIndex = wagonSlots.indexOf(null);
+                if (emptyIndex !== -1) {
+                    isAnimating = true;
+                    playSound('pop');
+                    
+                    const wagon = document.getElementById(`wagon-${emptyIndex}`);
+                    card.classList.remove('anim-pop');
+                    card.style.transform = 'scale(0.8)';
+                    card.style.opacity = '0.5';
+                    
+                    setTimeout(() => {
+                        wagon.appendChild(card);
+                        wagonSlots[emptyIndex] = card;
+                        wagon.classList.add('filled');
+                        
+                        card.style.transform = 'scale(1)';
+                        card.style.opacity = '1';
+                        
+                        updateCheckButton();
+                        isAnimating = false;
+                    }, 150);
+                }
+            } else {
+                // Vagondan Havuza
+                moveToPool(wagonSlots.indexOf(card));
+            }
+        }
+
+        // Belirli bir vagondaki kartı havuza geri gönderir
+        function moveToPool(slotIndex) {
+            if (isAnimating || slotIndex === -1 || !wagonSlots[slotIndex]) return;
+            
+            isAnimating = true;
+            playSound('remove');
+            const card = wagonSlots[slotIndex];
+            const wagon = document.getElementById(`wagon-${slotIndex}`);
+            const pool = document.getElementById('card-pool');
+            
+            card.style.transform = 'scale(0.8)';
+            card.style.opacity = '0.5';
+            
+            setTimeout(() => {
+                pool.appendChild(card);
+                wagonSlots[slotIndex] = null;
+                wagon.classList.remove('filled');
+                
+                card.style.transform = 'scale(1)';
+                card.style.opacity = '1';
+                
+                updateCheckButton();
+                isAnimating = false;
+            }, 150);
+        }
+
+        // Geri Al Fonksiyonu
+        function undoLastMove() {
+            if (isAnimating) return;
+            // Sondan başa doğru dolu olan ilk vagonu bul ve havuza geri gönder
+            for (let i = wagonSlots.length - 1; i >= 0; i--) {
+                if (wagonSlots[i] !== null) {
+                    moveToPool(i);
+                    return;
+                }
+            }
+        }
+
+        function updateCheckButton() {
+            const checkBtn = document.getElementById('check-btn');
+            const undoBtn = document.getElementById('undo-btn');
+
+            // Tüm vagonlar doluysa Kontrol butonunu göster
+            if (wagonSlots.every(slot => slot !== null)) {
+                checkBtn.classList.remove('hidden');
+                setTimeout(() => { checkBtn.classList.remove('opacity-0'); }, 50);
+            } else {
+                checkBtn.classList.add('opacity-0');
+                setTimeout(() => { checkBtn.classList.add('hidden'); }, 300);
+            }
+
+            // En az bir vagon doluysa Geri Al butonunu göster (Görseli bozmamak için flex kullanıyoruz)
+            if (wagonSlots.some(slot => slot !== null)) {
+                undoBtn.classList.remove('hidden');
+                undoBtn.classList.add('flex');
+            } else {
+                undoBtn.classList.replace('flex', 'hidden');
+            }
+        }
+
+        function checkTrain() {
+            let isCorrect = true;
+            
+            // Doğruluk Kontrolü
+            for (let i = 0; i < 4; i++) {
+                if (!wagonSlots[i] || parseInt(wagonSlots[i].dataset.step) !== (i + 1)) {
+                    isCorrect = false;
+                    break;
+                }
+            }
+
+            if (isCorrect) {
+                // BAŞARILI
+                document.getElementById('check-btn').classList.add('opacity-0');
+                playSound('train');
+                
+                // Tren Sola doğru yola çıkar
+                const train = document.getElementById('train-container');
+                train.classList.add('train-departure');
+                
+                if (window.confetti) {
+                    confetti({ particleCount: 150, spread: 80, origin: { y: 0.6 }, colors: ['#38bdf8', '#22c55e', '#facc15', '#a855f7'] });
+                }
+
+                setTimeout(() => {
+                    document.getElementById('success-modal').classList.remove('hidden');
+                    playSound('win');
+                }, 1800);
+
+            } else {
+                // HATALI
+                playSound('error');
+                for (let i = 0; i < 4; i++) {
+                    const wagon = document.getElementById(`wagon-${i}`);
+                    wagon.classList.remove('error-shake');
+                    // Yeniden tetiklemek için ufak hile
+                    void wagon.offsetWidth;
+                    
+                    if (wagonSlots[i] && parseInt(wagonSlots[i].dataset.step) !== (i + 1)) {
+                        wagon.classList.add('error-shake');
+                    }
+                }
+            }
+        }
+
+        function nextLevel() {
+            document.getElementById('success-modal').classList.add('hidden');
+            playSound('pop');
+            currentLevel++;
+            
+            if (currentLevel >= TASKS.length) {
+                alert("İnanılmaz! Bütün görevleri bitirdin. Sen bir Algoritma Uzmanısın! 🎉");
+                currentLevel = 0; 
+                showStartScreen();
+                return;
+            }
+            
+            loadLevel();
+        }
+
+    </script>
+</body>
+</html>

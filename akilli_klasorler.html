@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Akıllı Klasörler - Dijital Düzen</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        :root {
+            --dock-bg: rgba(255, 255, 255, 0.2);
+            --dock-border: rgba(255, 255, 255, 0.4);
+        }
+
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #4158D0;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            min-height: 100dvh;
+            margin: 0;
+            overflow: hidden;
+            user-select: none;
+            touch-action: none;
+            color: #1e293b;
+        }
+
+        .font-fredoka { font-family: 'Fredoka One', cursive; }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .mac-dock {
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-bottom: none;
+            box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+        }
+
+        .folder-wrapper {
+            position: relative;
+            width: 80px; height: 75px;
+            display: flex; flex-direction: column; align-items: center;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            perspective: 500px;
+            cursor: default;
+        }
+
+        @media (min-width: 768px) {
+            .folder-wrapper { width: 120px; height: 100px; }
+        }
+
+        .folder-back {
+            position: absolute; bottom: 0; width: 100%; height: 80%;
+            border-radius: 8px 8px 12px 12px;
+            border-top-left-radius: 20px;
+            box-shadow: inset 0 5px 10px rgba(0,0,0,0.1);
+        }
+
+        .folder-front {
+            position: absolute; bottom: 0; width: 100%; height: 75%;
+            border-radius: 8px 8px 12px 12px;
+            transform-origin: bottom;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 2;
+        }
+
+        .folder-wrapper.highlight {
+            transform: scale(1.15) translateY(-10px);
+            filter: drop-shadow(0 0 20px rgba(255,255,255,0.6));
+        }
+        
+        .folder-wrapper.highlight .folder-front {
+            transform: rotateX(-35deg);
+        }
+
+        .folder-icon { font-size: 2rem; transform: translateZ(20px); filter: drop-shadow(0 4px 4px rgba(0,0,0,0.2)); }
+        @media (min-width: 768px) { .folder-icon { font-size: 3rem; } }
+
+        .folder-label {
+            position: absolute; bottom: -25px;
+            background: rgba(0,0,0,0.7); color: white; padding: 2px 12px;
+            border-radius: 12px; font-size: 0.75rem; font-weight: 900;
+            letter-spacing: 1px; white-space: nowrap; backdrop-filter: blur(4px);
+        }
+
+        /* Tema Renkleri */
+        .bg-img-back { background: #1e40af; } .bg-img-front { background: #3b82f6; border-top: 2px solid #60a5fa; }
+        .bg-music-back { background: #6b21a8; } .bg-music-front { background: #a855f7; border-top: 2px solid #c084fc; }
+        .bg-video-back { background: #991b1b; } .bg-video-front { background: #ef4444; border-top: 2px solid #f87171; }
+        .bg-doc-back { background: #a16207; } .bg-doc-front { background: #eab308; border-top: 2px solid #facc15; }
+
+        .file-item {
+            position: absolute;
+            cursor: grab;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            width: 80px; height: 90px;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 12px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+            transition: transform 0.1s;
+            touch-action: none;
+            z-index: 20;
+            transform-origin: center;
+            border: 2px solid #cbd5e1;
+        }
+
+        .file-item.dragging {
+            cursor: grabbing;
+            transform: scale(1.15) rotate(0deg) !important;
+            box-shadow: 0 25px 40px rgba(0,0,0,0.4);
+            z-index: 100 !important;
+            border-color: #3b82f6;
+        }
+
+        .type-img { border-top: 6px solid #3b82f6; }
+        .type-music { border-top: 6px solid #a855f7; }
+        .type-video { border-top: 6px solid #ef4444; }
+        .type-doc { border-top: 6px solid #eab308; }
+
+        @media (min-width: 768px) {
+            .file-item { width: 100px; height: 110px; border-radius: 16px; border-width: 3px; border-top-width: 8px;}
+        }
+
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .anim-pop { animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        
+        @keyframes swallowFile {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.5) translateY(20px); opacity: 0.8; }
+            100% { transform: scale(0) translateY(50px); opacity: 0; }
+        }
+        .anim-swallow { animation: swallowFile 0.4s ease-in forwards; pointer-events: none; }
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+        .error-shake { animation: shake 0.4s ease-in-out; border-color: #ef4444 !important; }
+    </style>
+</head>
+<body class="relative flex flex-col h-[100dvh]">
+
+    <div id="start-screen" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-md p-4 transition-opacity duration-500">
+        <!-- Sol Üst Ana Sayfa Butonu -->
+        <a href="index.html" class="absolute top-4 left-4 md:top-6 md:left-6 bg-white/70 hover:bg-white text-slate-800 w-12 h-12 md:w-14 md:h-14 rounded-2xl text-2xl md:text-3xl flex items-center justify-center transition-all shadow-lg backdrop-blur-md hover:scale-110 z-10" title="Ana Sayfaya Dön">
+            🏠
+        </a>
+
+        <div class="glass-panel p-8 md:p-12 max-w-2xl w-full text-center anim-pop rounded-[2.5rem] border-4 border-white/40">
+            <div class="text-7xl md:text-8xl mb-6 animate-bounce drop-shadow-2xl flex justify-center gap-4">
+                <span class="transform -rotate-12">📁</span>
+                <span class="transform rotate-12">✨</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-fredoka text-slate-800 mb-4 leading-tight drop-shadow-sm">Akıllı Klasörler</h1>
+            <p class="text-slate-600 font-bold text-lg md:text-xl mb-8">Masaüstü birbirine girmiş! Dosya türlerine dikkat ederek onları doğru klasörlere taşı.</p>
+            
+            <button onclick="showTutorial()" class="w-full bg-blue-500 hover:bg-blue-400 text-white font-black text-2xl md:text-3xl py-5 rounded-2xl shadow-[0_8px_0_#1e40af] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center gap-3">
+                <span class="text-4xl">🧹</span> MASAÜSTÜNÜ TOPLA!
+            </button>
+            
+            <p class="text-xs text-slate-500 font-bold tracking-widest uppercase mt-6 border-t border-slate-200/50 pt-4">Geliştirici: Mehmet Baran İKİOK</p>
+        </div>
+    </div>
+
+    <div id="tutorial-screen" class="absolute inset-0 z-[55] hidden flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 transition-opacity duration-500">
+        <div class="glass-panel p-6 md:p-10 max-w-3xl w-full text-center anim-pop rounded-[2.5rem] border-4 border-yellow-400">
+            <h2 class="text-3xl md:text-4xl font-fredoka text-slate-800 mb-2">Dosyaları Tanıyalım! 🔍</h2>
+            <p class="text-slate-600 font-bold text-sm md:text-lg mb-6">Her dosyanın köşesinde türünü gösteren bir resim ve isminde bir uzantı vardır. Oyuna başlamadan bunları öğren:</p>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+                <!-- Resim -->
+                <div class="bg-blue-50 rounded-2xl p-4 border-2 border-blue-200 flex flex-col items-center">
+                    <div class="text-4xl mb-2">🖼️</div>
+                    <div class="bg-blue-500 text-white text-xs font-black px-2 py-1 rounded mb-2">.JPG / .PNG</div>
+                    <h3 class="font-black text-slate-700 text-sm">RESİMLER</h3>
+                </div>
+                <!-- Müzik -->
+                <div class="bg-purple-50 rounded-2xl p-4 border-2 border-purple-200 flex flex-col items-center">
+                    <div class="text-4xl mb-2">🎵</div>
+                    <div class="bg-purple-500 text-white text-xs font-black px-2 py-1 rounded mb-2">.MP3 / .WAV</div>
+                    <h3 class="font-black text-slate-700 text-sm">MÜZİKLER</h3>
+                </div>
+                <!-- Video -->
+                <div class="bg-red-50 rounded-2xl p-4 border-2 border-red-200 flex flex-col items-center">
+                    <div class="text-4xl mb-2">🎬</div>
+                    <div class="bg-red-500 text-white text-xs font-black px-2 py-1 rounded mb-2">.MP4 / .AVI</div>
+                    <h3 class="font-black text-slate-700 text-sm">VİDEOLAR</h3>
+                </div>
+                <!-- Yazı -->
+                <div class="bg-yellow-50 rounded-2xl p-4 border-2 border-yellow-200 flex flex-col items-center">
+                    <div class="text-4xl mb-2">📝</div>
+                    <div class="bg-yellow-500 text-white text-xs font-black px-2 py-1 rounded mb-2">.TXT / .DOC</div>
+                    <h3 class="font-black text-slate-700 text-sm">YAZILAR</h3>
+                </div>
+            </div>
+
+            <button onclick="startGame()" class="w-full bg-green-500 hover:bg-green-400 text-white font-black text-xl md:text-2xl py-4 rounded-2xl shadow-[0_6px_0_#16a34a] active:translate-y-2 active:shadow-none transition-all">
+                Anladım, Oyuna Başla! 🚀
+            </button>
+        </div>
+    </div>
+
+    <div id="game-screen" class="hidden flex-1 flex flex-col z-10 opacity-0 transition-opacity duration-500 h-full">
+        
+        <div class="bg-white/10 backdrop-blur-md border-b border-white/20 px-4 py-3 flex justify-between items-center shrink-0 shadow-sm">
+            <button onclick="showStartScreen()" class="bg-white/50 hover:bg-red-400 hover:text-white text-slate-800 w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold flex items-center justify-center transition-colors shadow-sm">
+                ✖
+            </button>
+            
+            <div class="flex flex-col items-center bg-white/50 px-4 md:px-6 py-1.5 rounded-2xl shadow-sm border border-white/60">
+                <span class="text-[10px] md:text-xs font-black text-blue-700 tracking-widest uppercase" id="level-subtitle">Seviye 1/20</span>
+                <h2 class="text-lg md:text-2xl font-fredoka text-slate-800 leading-tight" id="level-title">Temel Dosyalar</h2>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <div class="hidden md:flex bg-yellow-400 text-yellow-900 font-black px-4 py-2 rounded-xl shadow-sm items-center gap-2">
+                    <span>⭐</span>
+                    <span id="score-display">0</span>
+                </div>
+                <button id="sound-btn" onclick="toggleSound()" class="bg-white/50 hover:bg-white/80 text-slate-800 w-10 h-10 md:w-12 md:h-12 rounded-xl text-xl flex items-center justify-center transition-colors shadow-sm">🔊</button>
+            </div>
+        </div>
+
+        <div class="flex-1 relative w-full overflow-hidden" id="desktop-area">
+            <!-- Dosyalar JS ile buraya eklenecek -->
+        </div>
+
+        <div class="w-full flex justify-center pb-2 md:pb-6 px-2 shrink-0 z-30 pointer-events-none">
+            <div class="mac-dock rounded-3xl p-4 md:p-6 flex justify-center gap-6 md:gap-12 min-h-[120px] md:min-h-[160px] items-end pointer-events-auto" id="folders-dock">
+                <!-- Klasörler JS ile buraya eklenecek -->
+            </div>
+        </div>
+    </div>
+
+    <div id="success-modal" class="absolute inset-0 z-[60] hidden bg-slate-900/60 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="glass-panel p-8 md:p-14 max-w-lg w-full text-center anim-pop rounded-[2.5rem] border-4 border-green-400">
+            <div class="text-8xl mb-6 drop-shadow-2xl animate-bounce">✨</div>
+            <h2 class="text-4xl md:text-5xl font-fredoka text-green-600 mb-4 uppercase">PIRIL PIRIL!</h2>
+            
+            <div class="bg-yellow-100 rounded-xl p-4 mb-6 border-2 border-yellow-300">
+                <p class="text-yellow-800 font-bold text-sm">Bölüm Skoru</p>
+                <p class="text-3xl font-black text-yellow-600" id="modal-score-display">+50 ⭐</p>
+            </div>
+            
+            <p class="text-slate-600 font-bold text-lg md:text-xl mb-8">Tüm dosyaları doğru yerlerine yerleştirdin. Harika bir dijital düzene sahipsin!</p>
+            <button onclick="nextLevel()" id="next-level-btn" class="w-full bg-green-500 hover:bg-green-400 text-white font-black text-2xl md:text-3xl py-5 rounded-2xl shadow-[0_8px_0_#16a34a] active:translate-y-2 active:shadow-none transition-all">
+                Sıradaki Bölüm ➡️
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let audioCtx;
+        let isSoundEnabled = true;
+        let totalScore = 0;
+        let comboMultiplier = 1;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSound(type) {
+            if (!isSoundEnabled) return;
+            initAudio();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+
+            if (type === 'pickup') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(500, now); osc.frequency.exponentialRampToValueAtTime(1000, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'drop') {
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'correct') {
+                osc.type = 'square'; osc.frequency.setValueAtTime(800, now); osc.frequency.setValueAtTime(1200, now + 0.1);
+                gain.gain.setValueAtTime(0.05, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'wrong') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'win') {
+                const notes = [523.25, 659.25, 783.99, 1046.50]; 
+                notes.forEach((freq, i) => {
+                    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                    o.connect(g); g.connect(audioCtx.destination); o.type = 'sine';
+                    o.frequency.setValueAtTime(freq, now + i*0.1);
+                    g.gain.setValueAtTime(0, now); g.gain.setValueAtTime(0.1, now + i*0.1);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + i*0.1 + 0.4);
+                    o.start(now + i*0.1); o.stop(now + i*0.1 + 0.4);
+                });
+            }
+        }
+
+        function toggleSound() {
+            isSoundEnabled = !isSoundEnabled;
+            document.getElementById('sound-btn').innerText = isSoundEnabled ? '🔊' : '🔇';
+            if(isSoundEnabled) initAudio();
+        }
+
+        const FOLDERS = {
+            img:  { id: 'img', label: 'Resimler', icon: '🖼️', styleBase: 'bg-img', typeIcon: '🖼️', color: 'text-blue-500' },
+            music:{ id: 'music', label: 'Müzikler', icon: '🎵', styleBase: 'bg-music', typeIcon: '🎵', color: 'text-purple-500' },
+            video:{ id: 'video', label: 'Videolar', icon: '🎬', styleBase: 'bg-video', typeIcon: '🎬', color: 'text-red-500' },
+            doc:  { id: 'doc', label: 'Yazılar', icon: '📝', styleBase: 'bg-doc', typeIcon: '📝', color: 'text-yellow-500' }
+        };
+
+        const FILE_ITEMS = [
+            // Resim Dosyaları
+            { id: 'f1', type: 'img', emoji: '🐶', name: 'Köpek.jpg' }, { id: 'f2', type: 'img', emoji: '🌄', name: 'Manzara.png' },
+            { id: 'f3', type: 'img', emoji: '🎨', name: 'Çizim.jpg' }, { id: 'f4', type: 'img', emoji: '📸', name: 'Ailemiz.jpg' },
+            { id: 'f5', type: 'img', emoji: '🐱', name: 'Kedi.png' }, { id: 'f19', type: 'img', emoji: '🚗', name: 'Araba.jpg' },
+            { id: 'f20', type: 'img', emoji: '🌻', name: 'Çiçek.png' }, { id: 'f21', type: 'img', emoji: '🐦', name: 'Kuş.jpg' },
+            { id: 'f22', type: 'img', emoji: '🏖️', name: 'Tatil.png' },
+            
+            // Müzik Dosyaları
+            { id: 'f6', type: 'music', emoji: '🎸', name: 'Gitar.mp3' }, { id: 'f7', type: 'music', emoji: '🎼', name: 'Notalar.wav' },
+            { id: 'f8', type: 'music', emoji: '🎧', name: 'Şarkı.mp3' }, { id: 'f9', type: 'music', emoji: '🎹', name: 'Piyano.mp3' },
+            { id: 'f10', type: 'music', emoji: '📻', name: 'Radyo.wav' }, { id: 'f23', type: 'music', emoji: '🎻', name: 'Keman.mp3' },
+            { id: 'f24', type: 'music', emoji: '🥁', name: 'Davul.wav' }, { id: 'f25', type: 'music', emoji: '🎺', name: 'Trompet.mp3' },
+            { id: 'f26', type: 'music', emoji: '🎤', name: 'Vokal.mp3' },
+            
+            // Video Dosyaları
+            { id: 'f11', type: 'video', emoji: '📹', name: 'Kamera.mp4' }, { id: 'f12', type: 'video', emoji: '🍿', name: 'Film.avi' },
+            { id: 'f13', type: 'video', emoji: '📺', name: 'ÇizgiFilm.mp4' }, { id: 'f14', type: 'video', emoji: '📱', name: 'Kısa.mp4' },
+            { id: 'f27', type: 'video', emoji: '🎭', name: 'Tiyatro.avi' }, { id: 'f28', type: 'video', emoji: '🐅', name: 'Belgesel.mp4' },
+            { id: 'f29', type: 'video', emoji: '🏃', name: 'Spor.mp4' }, { id: 'f30', type: 'video', emoji: '🎉', name: 'Düğün.avi' },
+            
+            // Yazı/Belge Dosyaları
+            { id: 'f15', type: 'doc', emoji: '📖', name: 'Hikaye.txt' }, { id: 'f16', type: 'doc', emoji: '📝', name: 'Ödev.doc' },
+            { id: 'f17', type: 'doc', emoji: '📜', name: 'Şiir.txt' }, { id: 'f18', type: 'doc', emoji: '🔤', name: 'Alfabe.pdf' },
+            { id: 'f31', type: 'doc', emoji: '🧚', name: 'Masal.doc' }, { id: 'f32', type: 'doc', emoji: '📋', name: 'Liste.txt' },
+            { id: 'f33', type: 'doc', emoji: '💯', name: 'Sınav.pdf' }, { id: 'f34', type: 'doc', emoji: '📚', name: 'Sözlük.doc' }
+        ];
+
+        const LEVELS = [
+            { title: "Resimler ve Müzikler", folders: ['img', 'music'], itemCount: 4 },
+            { title: "Videolar ve Ödevler", folders: ['video', 'doc'], itemCount: 4 },
+            { title: "Müzik Dersi", folders: ['music', 'doc'], itemCount: 5 },
+            { title: "Kamera ve Fotoğraf", folders: ['img', 'video'], itemCount: 6 },
+            { title: "Dosyaları Ayır", folders: ['img', 'doc'], itemCount: 6 },
+            { title: "Üçlü Karışım", folders: ['img', 'music', 'video'], itemCount: 7 },
+            { title: "Çalışma Masası", folders: ['img', 'music', 'doc'], itemCount: 8 },
+            { title: "Medya Arşivi", folders: ['img', 'video', 'doc'], itemCount: 9 },
+            { title: "Okul ve Eğlence", folders: ['music', 'video', 'doc'], itemCount: 10 },
+            { title: "Klasörleri Kavrıyorum", folders: ['img', 'music', 'video'], itemCount: 12 },
+            { title: "Tüm Dosyalar Sahnede", folders: ['img', 'music', 'video', 'doc'], itemCount: 10 },
+            { title: "Dağınık Masaüstü", folders: ['img', 'music', 'video', 'doc'], itemCount: 12 },
+            { title: "Bahar Temizliği", folders: ['img', 'music', 'video', 'doc'], itemCount: 14 },
+            { title: "Bilgisayarımı Düzenliyorum", folders: ['img', 'music', 'video', 'doc'], itemCount: 16 },
+            { title: "Dosya Yöneticisi", folders: ['img', 'music', 'video', 'doc'], itemCount: 18 },
+            { title: "Büyük Masaüstü Temizliği", folders: ['img', 'music', 'video', 'doc'], itemCount: 20 },
+            { title: "Karışmış Klasörler", folders: ['img', 'music', 'video', 'doc'], itemCount: 22 },
+            { title: "Dijital Arşiv Ustası", folders: ['img', 'music', 'video', 'doc'], itemCount: 24 },
+            { title: "Süper İşletim Sistemi Uzmanı", folders: ['img', 'music', 'video', 'doc'], itemCount: 26 },
+            { title: "Efsanevi Dosya Düzenleyici", folders: ['img', 'music', 'video', 'doc'], itemCount: 28 }
+        ];
+
+        let currentLevel = 0;
+        let activeDragItem = null;
+        let dragOffset = { x: 0, y: 0 };
+        let itemsToSort = 0;
+        let levelInitialScore = 0; // To track score gained just in this level
+
+        function showStartScreen() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('opacity-100');
+            const startScreen = document.getElementById('start-screen');
+            startScreen.classList.remove('hidden');
+            setTimeout(() => startScreen.classList.remove('opacity-0'), 50);
+        }
+
+        function showTutorial() {
+            initAudio();
+            document.getElementById('start-screen').classList.add('opacity-0');
+            setTimeout(() => {
+                document.getElementById('start-screen').classList.add('hidden');
+                document.getElementById('tutorial-screen').classList.remove('hidden');
+                setTimeout(() => document.getElementById('tutorial-screen').classList.remove('opacity-0'), 50);
+            }, 500);
+        }
+
+        function startGame() {
+            currentLevel = 0;
+            totalScore = 0;
+            updateScoreDisplay();
+            const tutorialScreen = document.getElementById('tutorial-screen');
+            tutorialScreen.classList.add('opacity-0');
+            setTimeout(() => {
+                tutorialScreen.classList.add('hidden');
+                document.getElementById('game-screen').classList.remove('hidden');
+                setTimeout(() => document.getElementById('game-screen').classList.add('opacity-100'), 50);
+                loadLevel();
+            }, 500);
+        }
+
+        function loadLevel() {
+            const levelData = LEVELS[currentLevel];
+            
+            comboMultiplier = 1;
+            levelInitialScore = totalScore;
+            
+            document.getElementById('level-title').innerText = levelData.title;
+            document.getElementById('level-subtitle').innerText = `Seviye ${currentLevel + 1} / ${LEVELS.length}`;
+            
+            const dock = document.getElementById('folders-dock');
+            const desktop = document.getElementById('desktop-area');
+            
+            dock.innerHTML = '';
+            desktop.innerHTML = '';
+            
+            levelData.folders.forEach(fId => {
+                const fData = FOLDERS[fId];
+                const folderEl = document.createElement('div');
+                folderEl.className = `folder-wrapper`;
+                folderEl.id = `folder-${fId}`;
+                folderEl.dataset.type = fId;
+                
+                folderEl.innerHTML = `
+                    <div class="folder-back ${fData.styleBase}-back"></div>
+                    <div class="folder-front ${fData.styleBase}-front">
+                        <span class="folder-icon">${fData.icon}</span>
+                    </div>
+                    <div class="folder-label">${fData.label}</div>
+                `;
+                dock.appendChild(folderEl);
+            });
+
+            let availableItems = FILE_ITEMS.filter(item => levelData.folders.includes(item.type));
+            availableItems = availableItems.sort(() => 0.5 - Math.random());
+            
+            let selectedItems = [];
+            for(let i=0; i<levelData.itemCount; i++) {
+                selectedItems.push(availableItems[i % availableItems.length]);
+            }
+            
+            itemsToSort = selectedItems.length;
+
+            const deskWidth = desktop.clientWidth;
+            const deskHeight = desktop.clientHeight;
+
+            selectedItems.forEach((item, index) => {
+                const fileEl = document.createElement('div');
+                const randomRotate = Math.floor(Math.random() * 30) - 15;
+                
+                fileEl.className = `file-item type-${item.type} anim-pop bg-white`;
+                fileEl.style.animationDelay = `${index * 0.05}s`;
+                fileEl.style.transform = `rotate(${randomRotate}deg)`;
+                
+                fileEl.dataset.type = item.type;
+                fileEl.dataset.rotate = randomRotate;
+                fileEl.id = `file-${index}`;
+                
+                // Uzantıyı bul (.jpg, .mp3 vb.)
+                const ext = item.name.split('.').pop().toUpperCase();
+                const typeInfo = FOLDERS[item.type];
+
+                // Gerçekçi dosya görünümü (İkon + Uzantı + İsim)
+                fileEl.innerHTML = `
+                    <div class="flex flex-col justify-between items-center w-full h-full p-1 md:p-2">
+                        <div class="flex justify-between w-full px-1 items-center">
+                            <span class="text-[9px] md:text-[11px] font-black ${typeInfo.color}">.${ext}</span>
+                            <span class="text-[10px] md:text-sm opacity-60">${typeInfo.typeIcon}</span>
+                        </div>
+                        <div class="text-3xl md:text-5xl flex-1 flex items-center justify-center pointer-events-none">${item.emoji}</div>
+                        <div class="text-[8px] md:text-[10px] font-bold text-slate-600 bg-slate-100 rounded px-1 truncate w-full text-center pointer-events-none">${item.name}</div>
+                    </div>
+                `;
+
+                const itemSize = 100;
+                const maxX = Math.max(10, deskWidth - itemSize - 20);
+                const maxY = Math.max(10, deskHeight - itemSize - 40);
+                
+                fileEl.style.left = `${Math.random() * maxX}px`;
+                fileEl.style.top = `${Math.random() * maxY}px`;
+
+                fileEl.addEventListener('pointerdown', handlePointerDown);
+                desktop.appendChild(fileEl);
+            });
+        }
+
+        function handlePointerDown(e) {
+            if (activeDragItem) return;
+            
+            playSound('pickup');
+            activeDragItem = e.target.closest('.file-item');
+            
+            activeDragItem.classList.remove('anim-pop');
+            activeDragItem.classList.add('dragging');
+            
+            const rect = activeDragItem.getBoundingClientRect();
+            
+            if (activeDragItem.parentElement.id === 'desktop-area') {
+                const startX = rect.left;
+                const startY = rect.top;
+                
+                activeDragItem.style.position = 'fixed';
+                activeDragItem.style.left = `${startX}px`;
+                activeDragItem.style.top = `${startY}px`;
+                activeDragItem.style.transform = `none`;
+                document.body.appendChild(activeDragItem);
+            }
+
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+
+            activeDragItem.setPointerCapture(e.pointerId);
+
+            activeDragItem.addEventListener('pointermove', handlePointerMove);
+            activeDragItem.addEventListener('pointerup', handlePointerUp);
+            activeDragItem.addEventListener('pointercancel', handlePointerUp);
+        }
+
+        function handlePointerMove(e) {
+            if (!activeDragItem) return;
+            e.preventDefault(); 
+
+            const newX = e.clientX - dragOffset.x;
+            const newY = e.clientY - dragOffset.y;
+
+            activeDragItem.style.left = `${newX}px`;
+            activeDragItem.style.top = `${newY}px`;
+
+            checkHover(e.clientX, e.clientY);
+        }
+
+        function checkHover(pointerX, pointerY) {
+            document.querySelectorAll('.folder-wrapper').forEach(f => f.classList.remove('highlight'));
+
+            document.querySelectorAll('.folder-wrapper').forEach(folder => {
+                const rect = folder.getBoundingClientRect();
+                if (pointerX >= rect.left && pointerX <= rect.right &&
+                    pointerY >= rect.top && pointerY <= rect.bottom) {
+                    folder.classList.add('highlight');
+                }
+            });
+        }
+
+        function handlePointerUp(e) {
+            if (!activeDragItem) return;
+
+            const pointerX = e.clientX;
+            const pointerY = e.clientY;
+            let droppedFolder = null;
+
+            // Öğeyi yerel bir değişkene kopyalıyoruz
+            const currentItem = activeDragItem;
+            
+            // Global değişkeni HEMEN SIFIRLIYORUZ ki diğer dosyalara anında tıklanabilsin!
+            activeDragItem = null;
+
+            document.querySelectorAll('.folder-wrapper').forEach(folder => {
+                const rect = folder.getBoundingClientRect();
+                if (pointerX >= rect.left && pointerX <= rect.right &&
+                    pointerY >= rect.top && pointerY <= rect.bottom) {
+                    droppedFolder = folder;
+                }
+                folder.classList.remove('highlight');
+            });
+
+            currentItem.classList.remove('dragging');
+
+            if (droppedFolder) {
+                if (currentItem.dataset.type === droppedFolder.dataset.type) {
+                    // DOĞRU
+                    playSound('correct');
+                    currentItem.classList.add('anim-swallow');
+                    
+                    const pointsGained = 10 * comboMultiplier;
+                    totalScore += pointsGained;
+                    comboMultiplier = Math.min(comboMultiplier + 0.5, 3); // Max combo x3
+                    updateScoreDisplay();
+                    showFloatingText(`+${pointsGained}`, e.clientX, e.clientY, 'text-green-500');
+
+                    const fRect = droppedFolder.getBoundingClientRect();
+                    if (window.confetti) {
+                        confetti({
+                            particleCount: 30, spread: 50,
+                            origin: { x: (fRect.left + fRect.width/2) / window.innerWidth, y: fRect.top / window.innerHeight },
+                            colors: ['#3b82f6', '#10b981', '#f59e0b']
+                        });
+                    }
+
+                    setTimeout(() => {
+                        currentItem.remove();
+                        checkLevelComplete();
+                    }, 400);
+
+                } else {
+                    // YANLIŞ
+                    playSound('wrong');
+                    
+                    comboMultiplier = 1;
+                    totalScore = Math.max(0, totalScore - 5); // Penalty for wrong drop
+                    updateScoreDisplay();
+                    showFloatingText('-5', e.clientX, e.clientY, 'text-red-500');
+
+                    currentItem.classList.add('error-shake');
+                    setTimeout(() => currentItem.classList.remove('error-shake'), 400);
+                    returnToDesktop(currentItem);
+                }
+            } else {
+                // BOŞLUK
+                playSound('drop');
+                returnToDesktop(currentItem);
+            }
+
+            currentItem.releasePointerCapture(e.pointerId);
+            currentItem.removeEventListener('pointermove', handlePointerMove);
+            currentItem.removeEventListener('pointerup', handlePointerUp);
+            currentItem.removeEventListener('pointercancel', handlePointerUp);
+        }
+        
+        function updateScoreDisplay() {
+            document.getElementById('score-display').innerText = Math.floor(totalScore);
+        }
+
+        function showFloatingText(text, x, y, colorClass) {
+            const el = document.createElement('div');
+            el.innerText = text;
+            el.className = `absolute font-black text-2xl ${colorClass} pointer-events-none z-[100] drop-shadow-md`;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            el.style.transition = 'all 0.8s ease-out';
+            document.body.appendChild(el);
+            
+            // Trigger reflow
+            void el.offsetWidth;
+            
+            el.style.transform = 'translateY(-50px) scale(1.2)';
+            el.style.opacity = '0';
+            
+            setTimeout(() => el.remove(), 800);
+        }
+
+        function returnToDesktop(item) {
+            const desktop = document.getElementById('desktop-area');
+            const deskWidth = desktop.clientWidth;
+            const deskHeight = desktop.clientHeight;
+            
+            item.style.position = 'absolute';
+            item.style.transform = `rotate(${item.dataset.rotate}deg)`;
+            
+            const itemSize = 100;
+            item.style.left = `${Math.random() * (deskWidth - itemSize - 20) + 10}px`;
+            item.style.top = `${Math.random() * (deskHeight - itemSize - 40) + 10}px`;
+            
+            desktop.appendChild(item);
+        }
+
+        function checkLevelComplete() {
+            itemsToSort--;
+            if (itemsToSort <= 0) {
+                playSound('win');
+                if (window.confetti) confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: ['#38bdf8', '#818cf8', '#facc15', '#a855f7'] });
+                
+                const levelScore = Math.floor(totalScore - levelInitialScore);
+                document.getElementById('modal-score-display').innerText = `+${levelScore} ⭐`;
+
+                setTimeout(() => {
+                    const modal = document.getElementById('success-modal');
+                    const nextBtn = document.getElementById('next-level-btn');
+                    
+                    if (currentLevel === LEVELS.length - 1) {
+                        nextBtn.innerText = "Ana Menüye Dön 🏠";
+                        nextBtn.onclick = showStartScreen;
+                    } else {
+                        nextBtn.innerText = "Sıradaki Bölüm ➡️";
+                        nextBtn.onclick = nextLevel;
+                    }
+                    
+                    modal.classList.remove('hidden');
+                }, 800);
+            }
+        }
+
+        function nextLevel() {
+            document.getElementById('success-modal').classList.add('hidden');
+            playSound('pickup');
+            currentLevel++;
+            loadLevel();
+        }
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Minik Kodlayıcılar</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap');
+        
+        body { 
+            font-family: 'Nunito', sans-serif; 
+            overflow-x: hidden; 
+            overflow-y: auto; 
+            user-select: none; 
+            touch-action: manipulation; 
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .animate-pop { animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        @keyframes popStar {
+            0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+            80% { transform: scale(1.2) rotate(10deg); opacity: 1; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        .animate-star { animation: popStar 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; opacity: 0; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-10px); }
+            40%, 80% { transform: translateX(10px); }
+        }
+        .animate-shake { animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both; border-color: rgba(244, 63, 94, 0.8) !important; }
+        
+        .cell-content {
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            line-height: 1;
+            transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 20;
+            pointer-events: none;
+        }
+
+        .grid-cell-border {
+            position: absolute;
+            border: 3px solid rgba(79, 70, 229, 0.4); 
+            background: rgba(255, 255, 255, 0.08); 
+            box-sizing: border-box;
+        }
+
+        .emoji-shadow { filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+
+        .command-item {
+            background: rgba(255, 255, 255, 0.6);
+            border: 2px solid rgba(79, 70, 229, 0.3);
+            backdrop-filter: blur(8px);
+            transition: all 0.2s ease;
+        }
+        .command-item-active {
+            background: #fbbf24; 
+            box-shadow: 0 0 15px rgba(251, 191, 36, 0.7); 
+            border-color: #fff; 
+            transform: scale(1.15); 
+            z-index: 10;
+        }
+
+        .char-btn {
+            transition: all 0.2s;
+            border: 4px solid transparent;
+        }
+        .char-btn.selected {
+            border-color: #fbbf24;
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .theme-forest { background: linear-gradient(135deg, #1e3a8a, #059669); }
+        .theme-space { background: linear-gradient(135deg, #0f172a, #581c87); }
+        .theme-ocean { background: linear-gradient(135deg, #0c4a6e, #0ea5e9); }
+        .theme-volcano { background: linear-gradient(135deg, #450a0a, #991b1b); }
+        .theme-crystal { background: linear-gradient(135deg, #4c1d95, #db2777); }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .name-input {
+            background: rgba(255, 255, 255, 0.2);
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            text-align: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            padding: 12px;
+            border-radius: 15px;
+            outline: none;
+            width: 100%;
+            max-width: 300px;
+        }
+        .name-input:focus { border-color: #fbbf24; background: rgba(255, 255, 255, 0.3); }
+        .name-input::placeholder { color: rgba(255,255,255,0.6); }
+    </style>
+</head>
+<body class="theme-forest transition-colors duration-1000">
+    <div id="root" class="min-h-screen w-full"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        const Icons = {
+            Up: () => <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>,
+            Down: () => <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>,
+            Left: () => <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>,
+            Right: () => <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>,
+            Play: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>,
+            Trash: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>,
+            Undo: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H11"/></svg>,
+            Bulb: () => <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-1 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>,
+            Rocket: () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/><path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/></svg>,
+            Back: () => <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>,
+            SoundOn: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>,
+            SoundOff: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/></svg>,
+            Keyboard: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="M6 8h.01"/><path d="M10 8h.01"/><path d="M14 8h.01"/><path d="M18 8h.01"/><path d="M6 12h.01"/><path d="M10 12h.01"/><path d="M14 12h.01"/><path d="M18 12h.01"/><path d="M7 16h10"/></svg>,
+            Info: () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>,
+            Dice: () => <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><path d="M7 7h.01"/><path d="M17 7h.01"/><path d="M7 17h.01"/><path d="M17 17h.01"/><path d="M12 12h.01"/></svg>
+        };
+
+        const THEME_MAP = {
+            forest: { bg: 'theme-forest', obstacle: '🌳', target: '🏠', name: 'Orman Dünyası' },
+            space: { bg: 'theme-space', obstacle: '☄️', target: '🚀', name: 'Uzay Üssü' },
+            ocean: { bg: 'theme-ocean', obstacle: '🪨', target: '🏰', name: 'Okyanus Şehri' },
+            volcano: { bg: 'theme-volcano', obstacle: '🔥', target: '🚁', name: 'Lav Bölgesi' },
+            crystal: { bg: 'theme-crystal', obstacle: '💎', target: '🌀', name: 'Kristal Saray' }
+        };
+
+        const CHARACTERS = ['🤖', '🐱', '🐶', '🦊', '🐸', '🦄'];
+        const GRID_SIZE = 5;
+
+        const getShortestPathLength = (level) => {
+            const queue = [[level.playerPos, 0]];
+            const visited = new Set([`${level.playerPos.x},${level.playerPos.y}`]);
+            while(queue.length > 0) {
+                const [pos, dist] = queue.shift();
+                if (pos.x === level.targetPos.x && pos.y === level.targetPos.y) return dist;
+                [[0,1], [0,-1], [1,0], [-1,0]].forEach(([dx, dy]) => {
+                    const nx = pos.x + dx, ny = pos.y + dy;
+                    const key = `${nx},${ny}`;
+                    if (nx >= 0 && nx < GRID_SIZE && ny >= 0 && ny < GRID_SIZE && !level.obstacles.some(o => o.x === nx && o.y === ny) && !visited.has(key)) {
+                        visited.add(key); queue.push([{x: nx, y: ny}, dist + 1]);
+                    }
+                });
+            }
+            return 999;
+        };
+
+        const generateRandomLevel = (id, isEndless = false) => {
+            const themes = ['forest', 'space', 'ocean', 'volcano', 'crystal'];
+            const theme = themes[Math.floor(Math.random() * themes.length)];
+            let player, target, obstacles, isValid = false;
+            
+            while (!isValid) {
+                player = { x: Math.floor(Math.random() * GRID_SIZE), y: Math.floor(Math.random() * GRID_SIZE) };
+                target = { x: Math.floor(Math.random() * GRID_SIZE), y: Math.floor(Math.random() * GRID_SIZE) };
+                
+                const dist = Math.abs(target.x - player.x) + Math.abs(target.y - player.y);
+                if (dist < 3) continue;
+
+                obstacles = [];
+                const maxObs = isEndless ? 5 : 4;
+                const obsCount = Math.floor(Math.random() * maxObs) + 1;
+                
+                for (let j = 0; j < obsCount; j++) {
+                    const obs = { x: Math.floor(Math.random() * GRID_SIZE), y: Math.floor(Math.random() * GRID_SIZE) };
+                    if ((obs.x !== player.x || obs.y !== player.y) && (obs.x !== target.x || obs.y !== target.y)) {
+                        if (!obstacles.some(o => o.x === obs.x && o.y === obs.y)) {
+                            obstacles.push(obs);
+                        }
+                    }
+                }
+                
+                const pathLen = getShortestPathLength({playerPos: player, targetPos: target, obstacles: obstacles});
+                if (pathLen > 2 && pathLen < 25) isValid = true;
+            }
+            
+            return { 
+                id, 
+                title: isEndless ? "Sonsuz Macera" : `${THEME_MAP[theme].name} - ${id}`, 
+                playerPos: player, 
+                targetPos: target, 
+                obstacles: obstacles, 
+                theme: theme 
+            };
+        };
+
+        const generateStoryLevels = () => {
+            const levels = [];
+            const themes = ['forest', 'space', 'ocean', 'volcano', 'crystal'];
+            
+            const tutorialLevels = [
+                { id: 1, title: "Sağa Doğru!", playerPos: { x: 0, y: 2 }, targetPos: { x: 4, y: 2 }, obstacles: [], theme: 'forest' },
+                { id: 2, title: "Aşağı İniş", playerPos: { x: 2, y: 0 }, targetPos: { x: 2, y: 4 }, obstacles: [], theme: 'forest' },
+                { id: 3, title: "Sola Dönüş", playerPos: { x: 4, y: 2 }, targetPos: { x: 0, y: 2 }, obstacles: [], theme: 'forest' },
+                { id: 4, title: "L Şekli", playerPos: { x: 0, y: 0 }, targetPos: { x: 2, y: 2 }, obstacles: [], theme: 'forest' },
+                { id: 5, title: "İlk Engel", playerPos: { x: 0, y: 2 }, targetPos: { x: 4, y: 2 }, obstacles: [{x:2, y:2}], theme: 'forest' },
+                { id: 6, title: "Ağacın Etrafı", playerPos: { x: 2, y: 0 }, targetPos: { x: 2, y: 4 }, obstacles: [{x:2, y:2}], theme: 'forest' },
+                { id: 7, title: "Zikzak 1", playerPos: { x: 0, y: 0 }, targetPos: { x: 4, y: 0 }, obstacles: [{x:1, y:0}, {x:3, y:1}], theme: 'forest' },
+                { id: 8, title: "Zikzak 2", playerPos: { x: 0, y: 4 }, targetPos: { x: 4, y: 4 }, obstacles: [{x:2, y:4}], theme: 'forest' },
+                { id: 9, title: "Yukarı Tırman", playerPos: { x: 4, y: 4 }, targetPos: { x: 4, y: 0 }, obstacles: [{x:4, y:2}], theme: 'forest' },
+                { id: 10, title: "Merkez Hedef", playerPos: { x: 0, y: 0 }, targetPos: { x: 2, y: 2 }, obstacles: [{x:1, y:1}], theme: 'forest' },
+            ];
+
+            levels.push(...tutorialLevels);
+
+            for (let i = 11; i <= 100; i++) {
+                const rng = (seed) => {
+                    const x = Math.sin(seed) * 10000;
+                    return x - Math.floor(x);
+                };
+
+                const theme = themes[Math.floor((i-1) / 20)];
+                let player, target, obstacles, isValid = false;
+                let seed = i;
+                
+                while (!isValid) {
+                    player = { x: Math.floor(rng(seed++) * GRID_SIZE), y: Math.floor(rng(seed++) * GRID_SIZE) };
+                    target = { x: Math.floor(rng(seed++) * GRID_SIZE), y: Math.floor(rng(seed++) * GRID_SIZE) };
+                    
+                    const dist = Math.abs(target.x - player.x) + Math.abs(target.y - player.y);
+                    if (dist < 3) continue;
+
+                    obstacles = [];
+                    const maxObs = Math.min(7, Math.floor(i / 15) + 2);
+                    const obsCount = Math.floor(rng(seed++) * (maxObs - 1)) + 1;
+                    
+                    for (let j = 0; j < obsCount; j++) {
+                        const obs = { x: Math.floor(rng(seed++) * GRID_SIZE), y: Math.floor(rng(seed++) * GRID_SIZE) };
+                        if ((obs.x !== player.x || obs.y !== player.y) && (obs.x !== target.x || obs.y !== target.y)) {
+                            obstacles.push(obs);
+                        }
+                    }
+                    
+                    const pathLen = getShortestPathLength({playerPos: player, targetPos: target, obstacles: obstacles});
+                    if (pathLen > 2 && pathLen < 20) isValid = true;
+                }
+                levels.push({ id: i, title: `${THEME_MAP[theme].name} - ${i}`, playerPos: player, targetPos: target, obstacles: obstacles, theme: theme });
+            }
+            return levels;
+        };
+
+        const STORY_LEVELS = generateStoryLevels();
+
+        const App = () => {
+            const [mode, setMode] = useState('menu');
+            const [levelIndex, setLevelIndex] = useState(0); 
+            const [levelData, setLevelData] = useState(null);
+            const [playerPos, setPlayerPos] = useState({x:0, y:0});
+            const [commands, setCommands] = useState([]);
+            const [isExecuting, setIsExecuting] = useState(false);
+            const [status, setStatus] = useState('idle');
+            const [currentStep, setCurrentStep] = useState(-1);
+            const [hint, setHint] = useState("");
+            const [soundEnabled, setSoundEnabled] = useState(true);
+            const [userName, setUserName] = useState("");
+            const [inputName, setInputName] = useState("");
+            const [selectedChar, setSelectedChar] = useState(CHARACTERS[0]);
+            const [cellSize, setCellSize] = useState(100);
+            const [shake, setShake] = useState(false);
+            const [earnedStars, setEarnedStars] = useState(0);
+            const [showTutorial, setShowTutorial] = useState(false);
+            const [showNameError, setShowNameError] = useState(false);
+
+            useEffect(() => {
+                const handleResize = () => {
+                    const w = window.innerWidth;
+                    const h = window.innerHeight;
+                    if (w < 400) setCellSize(55);
+                    else if (w < 500) setCellSize(65);
+                    else if (w < 768) setCellSize(75);
+                    else if (h < 800) setCellSize(80);
+                    else setCellSize(100);
+                };
+                handleResize(); 
+                window.addEventListener('resize', handleResize);
+                return () => window.removeEventListener('resize', handleResize);
+            }, []);
+
+            useEffect(() => {
+                const handleKeyDown = (e) => {
+                    if (status !== 'idle' || isExecuting || mode === 'menu') return;
+                    switch(e.key) {
+                        case 'ArrowUp': addCommand('up'); break;
+                        case 'ArrowDown': addCommand('down'); break;
+                        case 'ArrowLeft': addCommand('left'); break;
+                        case 'ArrowRight': addCommand('right'); break;
+                        case 'Enter': runCommands(); break;
+                        case 'Backspace': 
+                        case 'Delete': undoCommand(); break;
+                    }
+                };
+                window.addEventListener('keydown', handleKeyDown);
+                return () => window.removeEventListener('keydown', handleKeyDown);
+            }, [status, isExecuting, mode, commands]);
+
+            useEffect(() => {
+                if (mode === 'menu') {
+                    document.body.className = 'theme-forest transition-colors duration-1000';
+                    return;
+                }
+                
+                let currentLevel;
+                if (mode === 'story') {
+                    currentLevel = STORY_LEVELS[levelIndex];
+                } else {
+                    currentLevel = generateRandomLevel(levelIndex, true);
+                }
+                
+                setLevelData(currentLevel);
+                setPlayerPos(currentLevel.playerPos);
+                document.body.className = THEME_MAP[currentLevel.theme].bg + ' transition-colors duration-1000';
+                setCommands([]); 
+                setStatus('idle'); 
+                setCurrentStep(-1); 
+                setHint(""); 
+                setEarnedStars(0);
+            }, [mode, levelIndex]);
+
+            const playSound = (type) => {
+                if (!soundEnabled) return;
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                const now = ctx.currentTime;
+                if (type === 'click') {
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(600, now);
+                    gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now); osc.stop(now + 0.1);
+                } else if (type === 'move') {
+                    osc.type = 'triangle'; osc.frequency.setValueAtTime(200, now);
+                    gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now); osc.stop(now + 0.15);
+                } else if (type === 'win') {
+                    [523.25, 659.25, 783.99, 1046.50].forEach((note, i) => {
+                        const o = ctx.createOscillator(); const g = ctx.createGain();
+                        o.connect(g); g.connect(ctx.destination);
+                        o.type = 'sine'; o.frequency.value = note;
+                        g.gain.setValueAtTime(0.2, now + i*0.15); g.gain.exponentialRampToValueAtTime(0.01, now + i*0.15 + 0.3);
+                        o.start(now + i*0.15); o.stop(now + i*0.15 + 0.3);
+                    });
+                } else if (type === 'fail') {
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, now);
+                    gain.gain.setValueAtTime(0.3, now); gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now); osc.stop(now + 0.4);
+                }
+            };
+
+            const addCommand = (direction) => { if (isExecuting || commands.length >= 15 || status !== 'idle') return; playSound('click'); setCommands(prev => [...prev, direction]); };
+            const undoCommand = () => { if (isExecuting || commands.length === 0 || status !== 'idle') return; playSound('click'); setCommands(prev => prev.slice(0, -1)); };
+            const clearCommands = () => { if (isExecuting) return; playSound('click'); setCommands([]); setStatus('idle'); setCurrentStep(-1); setPlayerPos(levelData.playerPos); setHint(""); };
+            
+            const nextLevel = () => { 
+                playSound('click'); 
+                if (mode === 'story') {
+                    if (levelIndex < 99) setLevelIndex(prev => prev + 1);
+                    else setMode('menu');
+                } else {
+                    setLevelIndex(prev => prev + 1);
+                }
+            };
+
+            const goToMenu = () => { playSound('click'); setMode('menu'); setLevelIndex(0); };
+            const triggerConfetti = () => { if (window.confetti) window.confetti({ particleCount: 200, spread: 90, origin: { y: 0.6 }, zIndex: 9999 }); };
+
+            const getHint = () => {
+                if (!levelData) return;
+                playSound('click');
+                const queue = [[playerPos, []]]; 
+                const visited = new Set();
+                const moves = [ 
+                    { name: 'Sağ', dir: { x: 1, y: 0 }, cmd: 'right' }, 
+                    { name: 'Sol', dir: { x: -1, y: 0 }, cmd: 'left' }, 
+                    { name: 'Aşağı', dir: { x: 0, y: 1 }, cmd: 'down' }, 
+                    { name: 'Yukarı', dir: { x: 0, y: -1 }, cmd: 'up' } 
+                ];
+                
+                while (queue.length > 0) {
+                    const [pos, path] = queue.shift();
+                    const key = `${pos.x},${pos.y}`;
+                    if (pos.x === levelData.targetPos.x && pos.y === levelData.targetPos.y) {
+                        setHint("İpucu: " + path.slice(0, 3).map(m => m.name).join(", "));
+                        setTimeout(() => setHint(""), 5000); 
+                        return;
+                    }
+                    if (visited.has(key)) continue; 
+                    visited.add(key);
+                    
+                    for (const m of moves) {
+                        const nX = pos.x + m.dir.x, nY = pos.y + m.dir.y;
+                        if (nX >= 0 && nX < GRID_SIZE && nY >= 0 && nY < GRID_SIZE && !levelData.obstacles.some(o => o.x === nX && o.y === nY)) {
+                            queue.push([{ x: nX, y: nY }, [...path, m]]);
+                        }
+                    }
+                }
+                setHint("Yol tıkalı!");
+            };
+
+            const runCommands = async () => {
+                if (commands.length === 0 || isExecuting) return;
+                setIsExecuting(true); setStatus('running'); setHint("");
+                let curX = levelData.playerPos.x; let curY = levelData.playerPos.y;
+                for (let i = 0; i < commands.length; i++) {
+                    setCurrentStep(i); const cmd = commands[i];
+                    let nX = curX, nY = curY;
+                    if (cmd === 'up') nY--; if (cmd === 'down') nY++; if (cmd === 'left') nX--; if (cmd === 'right') nX++;
+                    playSound('move'); await new Promise(r => setTimeout(r, 600));
+                    if (nX < 0 || nX >= GRID_SIZE || nY < 0 || nY >= GRID_SIZE || levelData.obstacles.some(o => o.x === nX && o.y === nY)) { 
+                        playSound('fail'); setShake(true); setTimeout(() => setShake(false), 400);
+                        setStatus('fail'); setIsExecuting(false); return; 
+                    }
+                    curX = nX; curY = nY; setPlayerPos({ x: curX, y: curY });
+                }
+                await new Promise(r => setTimeout(r, 400));
+                if (curX === levelData.targetPos.x && curY === levelData.targetPos.y) { 
+                    playSound('win'); triggerConfetti(); 
+                    const shortest = getShortestPathLength(levelData);
+                    if (commands.length === shortest) setEarnedStars(3);
+                    else if (commands.length <= shortest + 2) setEarnedStars(2);
+                    else setEarnedStars(1);
+                    setStatus('success'); 
+                } else { playSound('fail'); setShake(true); setTimeout(() => setShake(false), 400); setStatus('fail'); }
+                setIsExecuting(false);
+            };
+
+            const handleStart = (selectedMode) => {
+                if(!inputName.trim()) {
+                    setShowNameError(true);
+                    setTimeout(() => setShowNameError(false), 2500);
+                    return;
+                }
+                setUserName(inputName);
+                setMode(selectedMode);
+            }
+
+            if (mode === 'menu') {
+                return (
+                    <div className="min-h-screen w-full flex flex-col items-center justify-center text-white p-4 relative overflow-hidden">
+                        <a href="index.html" className="absolute top-4 left-4 bg-white/20 hover:bg-white/40 text-white w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center text-2xl md:text-3xl backdrop-blur-md transition-all border border-white/30 hover:scale-110 shadow-lg z-50" title="Ana Menüye Dön">🏠</a>
+                        
+                        {showTutorial && (
+                            <div className="absolute inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+                                <div className="bg-white text-indigo-900 p-6 md:p-8 rounded-[30px] max-w-lg w-full animate-pop shadow-2xl">
+                                    <h2 className="text-2xl md:text-3xl font-black mb-4 text-center text-indigo-700">Nasıl Oynanır? 🎮</h2>
+                                    <div className="space-y-4 font-bold opacity-90 mb-6 bg-indigo-50 p-4 rounded-2xl">
+                                        <p>1️⃣ Karakterini seçip oyuna başla.</p>
+                                        <p>2️⃣ Hedefe ulaştırmak için sırasıyla ok tuşlarına bas.</p>
+                                        <p>3️⃣ Engellere çarpmamaya çalış.</p>
+                                        <p>⭐ En kısa yoldan gidersen 3 YILDIZ kazanırsın!</p>
+                                    </div>
+                                    <button onClick={() => setShowTutorial(false)} className="w-full bg-green-500 text-white py-4 rounded-xl font-black text-xl shadow-lg">ANLADIM!</button>
+                                </div>
+                            </div>
+                        )}
+                        <div className="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"></div>
+                        <div className="z-10 text-center animate-pop w-full max-w-2xl px-4 py-8">
+                            <div className="text-6xl mb-4 animate-bounce text-yellow-300 flex justify-center"><Icons.Rocket /></div>
+                            <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter mb-4 drop-shadow-xl uppercase">Minik Kodlayıcılar</h1>
+                            <div className="mb-6 bg-black/20 p-6 md:p-8 rounded-3xl backdrop-blur-sm border border-white/10 relative">
+                                <button onClick={() => setShowTutorial(true)} className="absolute top-4 right-4 text-white/50 hover:text-white"><Icons.Info /></button>
+                                <p className="text-xl mb-3 font-bold">Merhaba! Adın ne?</p>
+                                <input type="text" className="name-input" placeholder="Adını Buraya Yaz" value={inputName} onChange={(e) => setInputName(e.target.value)} maxLength={15} />
+                                {showNameError && <p className="text-red-300 font-bold text-sm mt-2 animate-bounce">Lütfen oyuna başlamadan önce adını yaz!</p>}
+                                <p className="text-md mb-2 font-bold mt-4">Karakterini Seç:</p>
+                                <div className="flex flex-wrap justify-center gap-2">{CHARACTERS.map(char => (<button key={char} onClick={() => setSelectedChar(char)} className={`char-btn text-4xl p-2 rounded-xl ${selectedChar === char ? 'selected' : 'hover:scale-110'}`}>{char}</button>))}</div>
+                            </div>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                                <button onClick={() => handleStart('story')} className="group relative bg-white/20 backdrop-blur-md border-4 border-white/30 p-6 rounded-[30px] hover:bg-white/30 transition-all hover:scale-105 w-full md:w-64">
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-yellow-400 text-indigo-900 px-3 py-1 rounded-full font-black text-xs uppercase">100 Bölüm</div>
+                                    <div className="text-4xl mb-2 flex justify-center">🗺️</div>
+                                    <h2 className="text-2xl font-black uppercase tracking-tight">Hikaye Modu</h2>
+                                </button>
+                                <button onClick={() => handleStart('endless')} className="group relative bg-white/20 backdrop-blur-md border-4 border-white/30 p-6 rounded-[30px] hover:bg-white/30 transition-all hover:scale-105 w-full md:w-64">
+                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-purple-400 text-white px-3 py-1 rounded-full font-black text-xs uppercase tracking-tight">Sınırsız</div>
+                                    <div className="text-4xl mb-2 flex justify-center"><Icons.Dice /></div>
+                                    <h2 className="text-2xl font-black uppercase tracking-tight">Sonsuz Mod</h2>
+                                </button>
+                            </div>
+                        </div>
+                        <div className="absolute bottom-4 text-center opacity-70">
+                            <p className="text-xs font-black tracking-[0.3em] uppercase">GELİŞTİRİCİ</p>
+                            <div className="text-2xl font-black italic uppercase">Mehmet Baran İKİOK</div>
+                        </div>
+                    </div>
+                );
+            }
+
+            if (!levelData) return null;
+            const theme = THEME_MAP[levelData.theme];
+
+            return (
+                <div className="min-h-screen w-full p-2 md:p-4 text-gray-800 flex flex-col items-center">
+                    <div className="w-full max-w-[1200px] mb-2 flex flex-wrap items-center justify-between text-white gap-2">
+                        <div className="flex items-center gap-2">
+                            <a href="index.html" className="bg-white/20 p-2 rounded-xl active:scale-95 flex items-center justify-center hover:bg-white/30 transition-colors text-xl" title="Ana Menüye Dön">🏠</a>
+                            <button onClick={goToMenu} className="bg-white/20 p-2 rounded-xl active:scale-95 hover:bg-white/30 transition-colors" title="Geri Çık"><Icons.Back /></button>
+                            <div className="bg-white/10 px-4 py-2 rounded-full border border-white/20 shadow-xl flex items-center gap-2">
+                                <span className="text-2xl">{selectedChar}</span>
+                                <h1 className="text-lg font-black italic hidden sm:block uppercase">Minik Kodlayıcılar</h1>
+                            </div>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                            <div className="hidden lg:block bg-white/20 px-4 py-2 rounded-xl font-bold text-sm uppercase">HAYDİ, {userName}!</div>
+                            <button onClick={() => setSoundEnabled(!soundEnabled)} className="bg-white/20 p-2 rounded-xl hover:bg-white/30 transition-colors">{soundEnabled ? <Icons.SoundOn /> : <Icons.SoundOff />}</button>
+                            <div className="glass-panel bg-white/90 text-indigo-800 px-4 py-1 rounded-xl flex flex-col items-center">
+                                <span className="text-[8px] font-black uppercase opacity-60">{mode === 'story' ? 'BÖLÜM' : 'GÖREV'}</span>
+                                <span className="text-xl font-black">{mode === 'story' ? levelIndex + 1 : levelIndex + 1}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="max-w-[1200px] w-full glass-panel rounded-[20px] md:rounded-[30px] shadow-2xl overflow-hidden flex flex-col-reverse lg:flex-row flex-1 border-4 border-white/60">
+                        <div className="w-full lg:w-[350px] p-4 bg-white/95 backdrop-blur-md lg:border-r-4 border-white/50 flex flex-col shrink-0">
+                            <div className="flex justify-between items-center mb-3">
+                                <div className="text-indigo-700 font-black flex items-center gap-2 text-sm md:text-base"><Icons.Keyboard /> KOD PANELİ</div>
+                                <button onClick={getHint} className="bg-yellow-400 text-indigo-900 px-3 py-1.5 rounded-lg font-black text-xs shadow-md flex items-center gap-1 active:scale-95 transition-transform"><Icons.Bulb /> İPUCU</button>
+                            </div>
+                            
+                            <div className="grid grid-cols-3 gap-2 mb-3 max-w-[220px] mx-auto w-full">
+                                <div />
+                                <button onClick={() => addCommand('up')} className="aspect-square bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-[0_4px_0_rgb(67,56,202)] flex items-center justify-center border-2 border-white/20 active:translate-y-1 transition-colors"><Icons.Up /></button>
+                                <div />
+                                <button onClick={() => addCommand('left')} className="aspect-square bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-[0_4px_0_rgb(67,56,202)] flex items-center justify-center border-2 border-white/20 active:translate-y-1 transition-colors"><Icons.Left /></button>
+                                <button onClick={() => addCommand('down')} className="aspect-square bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-[0_4px_0_rgb(67,56,202)] flex items-center justify-center border-2 border-white/20 active:translate-y-1 transition-colors"><Icons.Down /></button>
+                                <button onClick={() => addCommand('right')} className="aspect-square bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl shadow-[0_4px_0_rgb(67,56,202)] flex items-center justify-center border-2 border-white/20 active:translate-y-1 transition-colors"><Icons.Right /></button>
+                            </div>
+
+                            <div className="flex-1 bg-indigo-50/50 rounded-2xl p-3 border-2 border-dashed border-indigo-200/50 overflow-y-auto mb-3 min-h-[80px]">
+                                <div className="flex flex-wrap gap-2">
+                                    {commands.map((cmd, idx) => (
+                                        <div key={idx} className={`w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center shadow-sm transition-all ${currentStep === idx ? 'command-item-active' : 'bg-white text-indigo-600'}`}>
+                                            {cmd === 'up' ? <Icons.Up /> : cmd === 'down' ? <Icons.Down /> : cmd === 'left' ? <Icons.Left /> : <Icons.Right />}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className="flex gap-2 shrink-0">
+                                <button onClick={undoCommand} className="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-600 py-3 rounded-xl font-black text-xs md:text-sm border-2 border-blue-200 active:scale-95 transition-all uppercase">Geri Al</button>
+                                <button onClick={clearCommands} className="flex-1 bg-white hover:bg-gray-100 text-rose-500 py-3 rounded-xl font-black text-xs md:text-sm border-2 border-rose-100 active:scale-95 transition-all uppercase">Sil</button>
+                                <button onClick={runCommands} className="flex-[1.5] bg-green-500 hover:bg-green-400 text-white py-3 rounded-xl font-black text-base md:text-lg shadow-[0_6px_0_rgb(22,163,74)] flex items-center justify-center gap-2 active:translate-y-1 transition-all uppercase tracking-tight"><Icons.Play /> YÜRÜ!</button>
+                            </div>
+                        </div>
+
+                        <div className="flex-1 p-4 bg-white/30 backdrop-blur-sm flex flex-col items-center justify-center relative min-h-[350px]">
+                            {status === 'success' && (
+                                <div className="absolute inset-0 z-50 bg-green-500/95 flex flex-col items-center justify-center text-white text-center animate-pop p-4">
+                                    <div className="flex gap-4 mb-4">
+                                        {[1, 2, 3].map(i => (<span key={i} className={`text-6xl md:text-8xl drop-shadow-2xl ${i <= earnedStars ? 'text-yellow-300 animate-star' : 'text-green-800/30'}`} style={{animationDelay: `${i*0.2}s`}}>⭐</span>))}
+                                    </div>
+                                    <h2 className="text-3xl md:text-5xl font-black mb-6 uppercase tracking-tight">HARİKASIN {userName.toUpperCase()}!</h2>
+                                    <button onClick={nextLevel} className="bg-white text-green-600 px-12 py-4 rounded-full font-black text-2xl shadow-xl hover:scale-105 active:scale-95 transition-transform uppercase">Sıradaki Bölüm</button>
+                                </div>
+                            )}
+                            {status === 'fail' && (
+                                <div className="absolute inset-0 z-50 bg-rose-500/95 flex flex-col items-center justify-center text-white text-center animate-pop p-4">
+                                    <div className="text-8xl mb-4 animate-bounce">💥</div>
+                                    <h2 className="text-3xl md:text-5xl font-black mb-6 uppercase tracking-tight uppercase">Dikkat Et!</h2>
+                                    <button onClick={clearCommands} className="bg-white text-rose-600 px-12 py-4 rounded-full font-black text-2xl shadow-xl hover:scale-105 active:scale-95 transition-transform uppercase">Tekrar Dene</button>
+                                </div>
+                            )}
+                            
+                            <div className={`relative rounded-[30px] border-[4px] shadow-2xl overflow-hidden backdrop-blur-sm transition-transform duration-300 ${shake ? 'animate-shake' : 'border-white/50'}`} style={{ width: GRID_SIZE * cellSize, height: GRID_SIZE * cellSize, background: 'rgba(255,255,255,0.15)' }}>
+                                {Array.from({ length: GRID_SIZE * GRID_SIZE }).map((_, i) => (
+                                    <div key={i} className="grid-cell-border" style={{ left: (i % GRID_SIZE) * cellSize, top: Math.floor(i / GRID_SIZE) * cellSize, width: cellSize, height: cellSize }} />
+                                ))}
+                                {levelData.obstacles.map((obs, i) => (
+                                    <div key={i} className="cell-content" style={{ transform: `translate(${obs.x * cellSize}px, ${obs.y * cellSize}px)`, width: cellSize, height: cellSize, fontSize: cellSize * 0.6 }}>
+                                        <span className="emoji-shadow">{theme.obstacle}</span>
+                                    </div>
+                                ))}
+                                <div className="cell-content animate-pulse" style={{ transform: `translate(${levelData.targetPos.x * cellSize}px, ${levelData.targetPos.y * cellSize}px)`, width: cellSize, height: cellSize, fontSize: cellSize * 0.7 }}><span className="emoji-shadow">{theme.target}</span></div>
+                                <div className="cell-content" style={{ transform: `translate(${playerPos.x * cellSize}px, ${playerPos.y * cellSize}px)`, width: cellSize, height: cellSize, fontSize: cellSize * 0.7, zIndex: 30 }}>
+                                    <span className="emoji-shadow">{selectedChar}</span>
+                                    {hint && <div className="absolute -top-16 bg-white text-indigo-700 text-xs font-black px-3 py-2 rounded-xl shadow-lg border-2 border-indigo-200 animate-bounce z-50 whitespace-nowrap">{hint}</div>}
+                                </div>
+                            </div>
+
+                            <div className="mt-4 flex gap-6 text-[10px] font-black text-white uppercase bg-black/40 px-6 py-2 rounded-full border border-white/20 shadow-md">
+                                <div className="flex items-center gap-2"><span>{selectedChar}</span> SEN</div>
+                                <div className="flex items-center gap-2"><span>{theme.target}</span> HEDEF</div>
+                                <div className="flex items-center gap-2"><span>{theme.obstacle}</span> ENGEL</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="mt-2 bg-white/10 backdrop-blur-md px-8 py-2 rounded-2xl text-white text-center shadow-lg shrink-0">
+                        <span className="text-[9px] font-black tracking-[0.3em] opacity-60 block uppercase">GELİŞTİRİCİ</span>
+                        <div className="text-xl font-black italic tracking-tighter uppercase">MEHMET BARAN İKİOK</div>
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

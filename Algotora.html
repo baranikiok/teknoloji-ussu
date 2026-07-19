@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Algo Rota</title>
+    
+    <!-- Tailwind CSS (Tasarım için) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      // Tailwind Karanlık Mod (Dark Mode) yapılandırması
+      tailwind.config = {
+        darkMode: 'class',
+      }
+    </script>
+    
+    <!-- React Kütüphaneleri -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel (Tarayıcının React JSX kodunu anlaması için çevirici) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Konfeti Kütüphanesi (Kutlamalar için) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <!-- Google Fontları -->
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet">
+    
+    <!-- Özel CSS Stillerimiz -->
+    <style>
+        body { font-family: 'Courier Prime', Courier, monospace; }
+        
+        @keyframes errorShake {
+          0%, 100% { transform: translateX(0); }
+          25% { transform: translateX(-15px); }
+          75% { transform: translateX(15px); }
+        }
+        .error-shake { animation: errorShake 0.25s ease-in-out; }
+        
+        /* Gizli Scrollbar - Temiz görünüm için */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        
+        /* Ana Sayfa Noktalı Arka Plan (Aydınlık Mod) */
+        .bg-dots {
+            background-image: radial-gradient(#cbd5e1 2px, transparent 2px);
+            background-size: 32px 32px;
+        }
+        /* Ana Sayfa Noktalı Arka Plan (Karanlık Mod) */
+        .dark .bg-dots {
+            background-image: radial-gradient(#334155 2px, transparent 2px);
+        }
+    </style>
+</head>
+<body class="bg-[#f8f9fa] dark:bg-[#0f172a] transition-colors duration-300">
+    <div id="root"></div>
+
+    <!-- React ve Oyun Kodumuz Başlıyor -->
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useCallback, useRef } = React;
+
+        // --- BASİT SES MOTORU (Web Audio API) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const playSound = (type, isEnabled) => {
+            if (!isEnabled) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            
+            const osc = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            osc.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+            
+            if (type === 'move') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(1000, now + 0.1);
+                gainNode.gain.setValueAtTime(0.05, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'success') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(400, now);
+                osc.frequency.setValueAtTime(600, now + 0.1);
+                osc.frequency.setValueAtTime(800, now + 0.2);
+                gainNode.gain.setValueAtTime(0.1, now);
+                gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+        };
+
+        // --- İKON BİLEŞENLERİ (Gömülü SVG'ler) ---
+        const ArrowRight = ({size=24, strokeWidth=2, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>;
+        const ArrowLeft = ({size=24, strokeWidth=2, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>;
+        const ArrowUp = ({size=24, strokeWidth=2, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"><path d="m5 12 7-7 7 7"/><path d="M12 19V5"/></svg>;
+        const ArrowDown = ({size=24, strokeWidth=2, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"><path d="M12 5v14"/><path d="m19 12-7 7-7-7"/></svg>;
+        const Play = ({size=24, strokeWidth=2, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>;
+        const Lock = ({size=24, strokeWidth=2, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
+        const ChevronLeft = ({size=24, strokeWidth=2, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"><path d="m15 18-6-6 6-6"/></svg>;
+        const RotateCcw = ({size=24, strokeWidth=2, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>;
+        const Star = ({size=24, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>;
+        const Moon = ({size=24, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>;
+        const Sun = ({size=24, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>;
+        const Volume2 = ({size=24, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>;
+        const VolumeX = ({size=24, className=""}) => <svg className={className} width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" x2="15" y1="9" y2="17"/><line x1="15" x2="23" y1="9" y2="17"/></svg>;
+
+        // --- KODLAMA BİLEŞENLERİ VE ALGORİTMA ÜRETİCİ ---
+        const R = { type: 'cmd', key: 'ArrowRight', text: 'sağ' };
+        const L = { type: 'cmd', key: 'ArrowLeft', text: 'sol' };
+        const U = { type: 'cmd', key: 'ArrowUp', text: 'yukarı' };
+        const D = { type: 'cmd', key: 'ArrowDown', text: 'aşağı' };
+        const DIRS = [R, D, L, U];
+
+        function Loop(count, ...body) {
+          return { type: 'loop', count, text: `tekrarla ${count}x {`, body };
+        }
+
+        function getLevelDesc(i) {
+          if (i === 1) return "Sadece kodları yukarıdan aşağıya oku ve sırayla oklara bas.";
+          if (i === 4) return "DÖNGÜLER: 'tekrarla' komutu, içindeki { } parantezli bölümü belirtilen sayı kadar tekrar ettirir.";
+          if (i === 6) return "Dikkat: Önce dışarıdaki komutu yap, sonra döngüye gir.";
+          if (i === 11) return "İÇ İÇE DÖNGÜLER: Bir döngünün içinde başka bir döngü olabilir. Sırayı karıştırma!";
+          if (i === 21) return "Öğretici bitti! Artık kendi başınasın. Şaşırtmacalara dikkat et.";
+          return "";
+        }
+
+        function generateCodeForLevel(i) {
+          if (i === 1) return [R, R, R];
+          if (i === 2) return [U, D, U, D];
+          if (i === 3) return [R, L, R, R];
+          if (i === 4) return [Loop(4, R)];
+          if (i === 5) return [Loop(3, R), R, R];
+          if (i === 6) return [U, Loop(2, D, U)];
+          if (i === 7) return [L, Loop(3, U), R];
+          if (i === 8) return [Loop(3, R, D)];
+          if (i === 9) return [Loop(2, U, U, R)];
+          if (i === 10) return [Loop(2, R), Loop(2, L)];
+          if (i === 11) return [Loop(2, Loop(2, R))];
+          if (i === 12) return [Loop(3, Loop(2, U))];
+          if (i === 13) return [Loop(2, R, Loop(2, U))];
+          if (i === 14) return [U, Loop(2, R, Loop(2, D)), L];
+          if (i === 15) return [Loop(2, Loop(2, R, U))];
+          if (i === 16) return [Loop(3, R), L, Loop(2, R)];
+          if (i === 17) return [Loop(4, U, D, U)];
+          if (i === 18) return [Loop(2, Loop(2, Loop(2, R)))];
+          if (i === 19) return [Loop(3, R, L, R)];
+          if (i === 20) return [Loop(2, U, Loop(2, R), D)];
+
+          let seed = i * 1024;
+          const rand = () => { let x = Math.sin(seed++) * 10000; return x - Math.floor(x); };
+          const getDir = () => DIRS[Math.floor(rand() * 4)];
+
+          const generateBlock = (depth, maxElements) => {
+            let block = [];
+            let elements = Math.floor(rand() * maxElements) + 1;
+            for (let j = 0; j < elements; j++) {
+              let makeLoop = rand() < (0.3 + (i / 200)); 
+              if (makeLoop && depth < (i > 40 ? 2 : 1)) {
+                let count = Math.floor(rand() * 3) + 2;
+                let bodyLen = i > 60 && rand() > 0.5 ? 2 : 1;
+                let body = [];
+                for(let k=0; k<bodyLen; k++) body.push(getDir());
+                if (i > 30 && rand() > 0.7 && depth === 0) {
+                   body.push(Loop(2, getDir()));
+                }
+                block.push(Loop(count, ...body));
+              } else {
+                block.push(getDir());
+              }
+            }
+            return block;
+          };
+
+          let code = generateBlock(0, Math.min(3 + Math.floor(i/15), 6));
+          if (code.length === 1 && code[0].type === 'cmd') code.push(Loop(3, getDir()));
+          return code;
+        }
+
+        const TOTAL_LEVELS = 100;
+        const LEVELS = Array.from({ length: TOTAL_LEVELS }, (_, i) => ({
+          id: i + 1,
+          code: generateCodeForLevel(i + 1),
+          description: getLevelDesc(i + 1)
+        }));
+
+        const MOTIVATIONAL_QUOTES = [
+          "MÜKEMMEL!", "HARİKA İŞ!", "KOD USTASI!", "SÜPER ZEKİ!", 
+          "AYNEN BÖYLE!", "BEYNİN YANIYOR!", "ALGORİTMA CANAVARI!", 
+          "ZİRVEDESİN!", "KUSURSUZ!", "YAPAY ZEKA GİBİSİN!"
+        ];
+
+        // --- ANA UYGULAMA BİLEŞENİ ---
+        function App() {
+          const [currentView, setCurrentView] = useState('home');
+          const [selectedLevelId, setSelectedLevelId] = useState(1);
+          
+          // Tercihler (Local Storage)
+          const [unlockedLevel, setUnlockedLevel] = useState(() => parseInt(localStorage.getItem('algoRota_save') || '1', 10));
+          const [levelStars, setLevelStars] = useState(() => JSON.parse(localStorage.getItem('algoRota_stars') || '{}'));
+          const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem('algoRota_theme') === 'dark');
+          const [isSoundEnabled, setIsSoundEnabled] = useState(() => localStorage.getItem('algoRota_sound') !== 'false');
+          const [streak, setStreak] = useState(0); // Kusursuz Seri Sistemi
+
+          // Karanlık Mod Geçişi
+          useEffect(() => {
+            if (isDarkMode) document.documentElement.classList.add('dark');
+            else document.documentElement.classList.remove('dark');
+            localStorage.setItem('algoRota_theme', isDarkMode ? 'dark' : 'light');
+          }, [isDarkMode]);
+
+          const toggleSound = () => {
+            const nextSound = !isSoundEnabled;
+            setIsSoundEnabled(nextSound);
+            localStorage.setItem('algoRota_sound', nextSound);
+          };
+
+          const handleLevelComplete = (completedId, starsEarned, errorCount) => {
+            // Seri (Streak) Mantığı
+            if (errorCount === 0) setStreak(s => s + 1);
+            else setStreak(0);
+
+            // Yıldızları kaydet
+            setLevelStars(prev => {
+              const newStars = { ...prev };
+              if (!newStars[completedId] || starsEarned > newStars[completedId]) {
+                newStars[completedId] = starsEarned;
+                localStorage.setItem('algoRota_stars', JSON.stringify(newStars));
+              }
+              return newStars;
+            });
+
+            // Seviyeyi aç
+            const nextLevel = completedId + 1;
+            if (nextLevel > unlockedLevel && nextLevel <= TOTAL_LEVELS) {
+              setUnlockedLevel(nextLevel);
+              localStorage.setItem('algoRota_save', nextLevel.toString());
+            }
+          };
+
+          const handleSelectLevel = (id) => {
+            setSelectedLevelId(id);
+            setCurrentView('game');
+          };
+
+          const handleResetProgress = () => {
+            localStorage.removeItem('algoRota_save');
+            localStorage.removeItem('algoRota_stars');
+            setUnlockedLevel(1);
+            setLevelStars({});
+            setStreak(0);
+          };
+
+          return (
+            <div className="min-h-screen text-[#003666] dark:text-[#f8f9fa] font-mono selection:bg-[#1dd2af]/30 overflow-hidden flex flex-col transition-colors duration-300">
+              {currentView === 'home' ? (
+                <LevelSelectScreen 
+                    unlockedLevel={unlockedLevel} 
+                    levelStars={levelStars}
+                    onSelectLevel={handleSelectLevel} 
+                    onReset={handleResetProgress}
+                    isDarkMode={isDarkMode}
+                    setIsDarkMode={setIsDarkMode}
+                    isSoundEnabled={isSoundEnabled}
+                    toggleSound={toggleSound}
+                />
+              ) : (
+                <GameScreen 
+                  levelData={LEVELS[selectedLevelId - 1]} 
+                  onBack={() => setCurrentView('home')}
+                  onComplete={handleLevelComplete}
+                  isSoundEnabled={isSoundEnabled}
+                  streak={streak}
+                  onNext={() => {
+                    if(selectedLevelId < TOTAL_LEVELS) handleSelectLevel(selectedLevelId + 1);
+                    else setCurrentView('home');
+                  }}
+                />
+              )}
+            </div>
+          );
+        }
+
+        // --- ANA SAYFA (HARİTA) ---
+        function LevelSelectScreen({ unlockedLevel, levelStars, onSelectLevel, onReset, isDarkMode, setIsDarkMode, isSoundEnabled, toggleSound }) {
+          const currentLevelRef = useRef(null);
+          const [showResetModal, setShowResetModal] = useState(false); // Yeni Özel Onay Modalı için State
+
+          useEffect(() => {
+            if (currentLevelRef.current) {
+              currentLevelRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+          }, []);
+
+          const MAP_WIDTH = 340;
+          const NODE_SPACING = 95; 
+          const TOTAL_HEIGHT = TOTAL_LEVELS * NODE_SPACING + 160;
+
+          const getPoint = (index) => {
+            const y = (TOTAL_LEVELS - index) * NODE_SPACING + 80;
+            const x = MAP_WIDTH / 2 + Math.sin(index * 0.6) * 110; 
+            return { x, y };
+          };
+
+          const allPoints = Array.from({ length: TOTAL_LEVELS }).map((_, i) => `${getPoint(i).x},${getPoint(i).y}`).join(' ');
+          const unlockedPoints = Array.from({ length: Math.min(unlockedLevel, TOTAL_LEVELS) }).map((_, i) => `${getPoint(i).x},${getPoint(i).y}`).join(' ');
+
+          const confirmReset = () => {
+              onReset();
+              setShowResetModal(false);
+          };
+
+          return (
+            <div className="flex flex-col h-screen w-full relative">
+              <div className="absolute inset-0 bg-dots opacity-50 pointer-events-none z-0"></div>
+
+              <header className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 flex flex-col gap-6 border-b border-[#e2e8f0]/80 dark:border-slate-800/80 bg-[#f8f9fa]/90 dark:bg-[#0f172a]/90 backdrop-blur-md transition-colors duration-300">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                  
+                  <div className="flex items-center justify-between w-full md:w-auto">
+                    <div className="flex items-center gap-2 sm:gap-4">
+                      {/* ANA SAYFAYA DÖN (EV) BUTONU */}
+                      <a href="index.html" className="flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-white dark:bg-slate-800 border-2 border-[#e2e8f0] dark:border-slate-700 hover:border-[#1dd2af] dark:hover:border-[#1dd2af] text-xl sm:text-2xl hover:scale-110 transition-all shadow-sm shrink-0" title="Ana Sayfaya Dön">
+                          🏠
+                      </a>
+
+                      <div className="relative flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-full border-[4px] sm:border-[6px] border-[#1dd2af] bg-[#f8f9fa] dark:bg-[#0f172a] shadow-lg shadow-[#1dd2af]/20 shrink-0">
+                        <div className="w-4 h-4 sm:w-5 sm:h-5 bg-[#003666] dark:bg-white rounded-full"></div>
+                      </div>
+                      <div className="flex flex-col">
+                        <h1 className="text-3xl sm:text-5xl font-bold tracking-widest">algo_rota</h1>
+                        <p className="text-[#94a8bc] dark:text-slate-400 font-bold tracking-widest mt-1 text-xs sm:text-sm">KODLAMA SİMÜLATÖRÜ</p>
+                      </div>
+                    </div>
+
+                    {/* Mobil için Ayarlar (Sağ üst) */}
+                    <div className="flex md:hidden items-center gap-3">
+                       <button onClick={toggleSound} className="text-[#94a8bc] dark:text-slate-400 hover:text-[#1dd2af] transition-colors">{isSoundEnabled ? <Volume2 size={24}/> : <VolumeX size={24}/>}</button>
+                       <button onClick={() => setIsDarkMode(!isDarkMode)} className="text-[#94a8bc] dark:text-slate-400 hover:text-[#1dd2af] transition-colors">{isDarkMode ? <Sun size={24}/> : <Moon size={24}/>}</button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-6 w-full md:w-auto justify-between md:justify-end">
+                    {/* PC için Ayarlar */}
+                    <div className="hidden md:flex items-center gap-4 border-r border-[#e2e8f0] dark:border-slate-700 pr-6">
+                       <button onClick={toggleSound} className="text-[#94a8bc] dark:text-slate-400 hover:text-[#1dd2af] transition-colors" title="Ses Aç/Kapat">{isSoundEnabled ? <Volume2 size={28}/> : <VolumeX size={28}/>}</button>
+                       <button onClick={() => setIsDarkMode(!isDarkMode)} className="text-[#94a8bc] dark:text-slate-400 hover:text-[#1dd2af] transition-colors" title="Tema Değiştir">{isDarkMode ? <Sun size={28}/> : <Moon size={28}/>}</button>
+                    </div>
+
+                    <div className="flex flex-col items-center md:items-end flex-1 max-w-xs">
+                      <div className="text-xl sm:text-2xl font-bold mb-2 flex items-center justify-between w-full">
+                        <span>SEVİYE <span className="text-[#1dd2af]">{unlockedLevel}</span><span className="text-[#94a8bc] dark:text-slate-500 text-sm sm:text-lg">/100</span></span>
+                        <button onClick={() => setShowResetModal(true)} className="text-[#94a8bc] dark:text-slate-500 hover:text-red-500 transition-colors ml-4" title="İlerlemeyi Sıfırla"><RotateCcw size={20} /></button>
+                      </div>
+                      <div className="w-full h-2 sm:h-3 bg-[#e2e8f0] dark:bg-slate-800 rounded-full overflow-hidden">
+                        <div className="h-full bg-[#1dd2af] rounded-full transition-all duration-700 ease-out" style={{ width: `${unlockedLevel}%` }}></div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </header>
+
+              <div className="flex-1 overflow-y-auto relative z-10 scroll-smooth pb-20">
+                <div className="relative mx-auto my-10" style={{ width: `${MAP_WIDTH}px`, height: `${TOTAL_HEIGHT}px` }}>
+                  
+                  <svg className="absolute inset-0 pointer-events-none" width={MAP_WIDTH} height={TOTAL_HEIGHT}>
+                    <polyline points={allPoints} fill="none" stroke={isDarkMode ? '#334155' : '#e2e8f0'} strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" className="transition-colors duration-300" />
+                    <polyline points={unlockedPoints} fill="none" stroke="#1dd2af" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+
+                  {Array.from({ length: TOTAL_LEVELS }).map((_, idx) => {
+                    const id = idx + 1;
+                    const isUnlocked = id <= unlockedLevel;
+                    const isCurrent = id === unlockedLevel;
+                    const isCompleted = id < unlockedLevel;
+                    const stars = levelStars[id] || 0;
+                    
+                    const { x, y } = getPoint(idx);
+
+                    return (
+                      <button
+                        key={id}
+                        ref={isCurrent ? currentLevelRef : null}
+                        onClick={() => isUnlocked && onSelectLevel(id)}
+                        disabled={!isUnlocked}
+                        style={{ position: 'absolute', left: `${x}px`, top: `${y}px`, transform: 'translate(-50%, -50%)' }}
+                        className={`
+                          group flex items-center justify-center rounded-full text-xl font-bold transition-all duration-300 z-10 w-16 h-16 shadow-sm relative
+                          ${!isUnlocked ? 'bg-[#f8f9fa] dark:bg-[#0f172a] border-4 border-[#e2e8f0] dark:border-slate-800 text-[#94a8bc] dark:text-slate-600 cursor-not-allowed' : ''}
+                          ${isCompleted ? 'bg-[#1dd2af] border-4 border-[#1bc1a0] text-white shadow-md shadow-[#1dd2af]/30 hover:scale-105' : ''}
+                          ${isCurrent ? 'bg-white dark:bg-slate-900 border-[6px] border-[#1dd2af] text-[#003666] dark:text-white scale-110 shadow-xl shadow-[#1dd2af]/40 hover:scale-125 z-20' : ''}
+                        `}
+                      >
+                        <span className={!isUnlocked ? 'opacity-50' : ''}>{id}</span>
+                        
+                        {!isUnlocked && (
+                          <div className="absolute -top-2 -right-2 bg-[#e2e8f0] dark:bg-slate-800 p-1.5 rounded-full border-2 border-white dark:border-slate-900 shadow-sm transition-colors duration-300">
+                            <Lock size={14} strokeWidth={2.5} className="text-[#64748b] dark:text-slate-500" />
+                          </div>
+                        )}
+
+                        {/* YILDIZLAR (Sadece tamamlanan bölümlerde) */}
+                        {isCompleted && (
+                          <div className="absolute -bottom-5 flex gap-0.5">
+                            {Array.from({length: 3}).map((_, i) => (
+                              <Star key={i} size={12} className={i < stars ? "text-yellow-400 fill-yellow-400" : "text-slate-300 dark:text-slate-700"} />
+                            ))}
+                          </div>
+                        )}
+
+                        {isCurrent && (
+                          <div className="absolute -top-12 animate-bounce text-[#1dd2af] drop-shadow-md pointer-events-none">
+                            <ArrowDown size={36} strokeWidth={3} />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Geliştirici İmzası */}
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 md:bottom-4 md:left-auto md:right-4 md:translate-x-0 z-50 text-[10px] sm:text-xs font-bold text-[#94a8bc] dark:text-slate-500 bg-white/90 dark:bg-slate-800/90 px-4 py-2 rounded-full backdrop-blur-md border border-[#e2e8f0] dark:border-slate-700 shadow-sm text-center pointer-events-none">
+                  Geliştirici: Mehmet Baran İKİOK
+              </div>
+
+              {/* SIFIRLAMA ONAY MODALI */}
+              {showResetModal && (
+                  <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                      <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl max-w-sm w-full text-center border-2 border-[#e2e8f0] dark:border-slate-700">
+                          <h3 className="text-xl sm:text-2xl font-bold mb-3 text-[#003666] dark:text-white">Emin misiniz?</h3>
+                          <p className="text-[#94a8bc] dark:text-slate-400 mb-8 font-bold text-sm sm:text-base">Tüm ilerlemenizi ve kazandığınız yıldızları silip 1. seviyeden başlamak istediğinize emin misiniz? Bu işlem geri alınamaz.</p>
+                          <div className="flex gap-4">
+                              <button onClick={() => setShowResetModal(false)} className="flex-1 bg-[#e2e8f0] dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-[#003666] dark:text-white font-bold py-3 rounded-xl transition-colors">İptal</button>
+                              <button onClick={confirmReset} className="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl transition-colors shadow-[0_4px_0_#b91c1c] active:translate-y-1 active:shadow-none">Evet, Sıfırla</button>
+                          </div>
+                      </div>
+                  </div>
+              )}
+
+            </div>
+          );
+        }
+
+        // --- OYUN EKRANI ---
+        function GameScreen({ levelData, onBack, onComplete, onNext, isSoundEnabled, streak }) {
+          const [stepIndex, setStepIndex] = useState(0);
+          const [hasError, setHasError] = useState(false);
+          const [errorCount, setErrorCount] = useState(0); 
+          const [levelComplete, setLevelComplete] = useState(false);
+          const [quote, setQuote] = useState("");
+          const [earnedStars, setEarnedStars] = useState(0);
+          const [activeKey, setActiveKey] = useState(null); // Tuş Geri Bildirimi İçin State
+          
+          const codeContainerRef = useRef(null);
+          const activeLineRef = useRef(null);
+
+          useEffect(() => {
+            setStepIndex(0);
+            setLevelComplete(false);
+            setHasError(false);
+            setErrorCount(0); 
+          }, [levelData]);
+
+          const { displayLines, executionSequence, pathPoints, gridBox } = useMemo(() => {
+            let lines = [];
+            let seq = [];
+            let lineCounter = 0;
+
+            const clonedCode = JSON.parse(JSON.stringify(levelData.code));
+
+            const processDisplay = (block, indent) => {
+              block.forEach(item => {
+                const myLineId = lineCounter++;
+                item._lineId = myLineId; 
+                lines.push({ id: myLineId, text: item.text, type: item.type, indent, count: item.count });
+                
+                if (item.type === 'loop') {
+                  processDisplay(item.body, indent + 1);
+                  lines.push({ id: lineCounter++, text: '}', type: 'bracket', indent });
+                }
+              });
+            };
+
+            const processSequence = (block) => {
+              block.forEach(item => {
+                if (item.type === 'cmd') {
+                  seq.push({ key: item.key, lineId: item._lineId });
+                } else if (item.type === 'loop') {
+                  for (let i = 0; i < item.count; i++) processSequence(item.body);
+                }
+              });
+            };
+
+            processDisplay(clonedCode, 0);
+            processSequence(clonedCode);
+
+            let currentX = 0, currentY = 0;
+            let rawPath = [{ x: currentX, y: currentY }];
+
+            seq.forEach(cmd => {
+              if (cmd.key === 'ArrowUp') currentY -= 1;
+              if (cmd.key === 'ArrowDown') currentY += 1;
+              if (cmd.key === 'ArrowLeft') currentX -= 1;
+              if (cmd.key === 'ArrowRight') currentX += 1;
+              rawPath.push({ x: currentX, y: currentY });
+            });
+
+            let minX = Math.min(...rawPath.map(p => p.x));
+            let maxX = Math.max(...rawPath.map(p => p.x));
+            let minY = Math.min(...rawPath.map(p => p.y));
+            let maxY = Math.max(...rawPath.map(p => p.y));
+
+            let shiftX = -minX;
+            let shiftY = -minY;
+            let finalPath = rawPath.map(p => ({ x: p.x + shiftX, y: p.y + shiftY }));
+
+            let cols = (maxX - minX) + 1;
+            let rows = (maxY - minY) + 1;
+            let maxDim = Math.max(cols + 2, rows + 2, 5); 
+
+            let extraShiftX = Math.floor((maxDim - cols) / 2);
+            let extraShiftY = Math.floor((maxDim - rows) / 2);
+            finalPath = finalPath.map(p => ({ x: p.x + extraShiftX, y: p.y + extraShiftY }));
+
+            return { displayLines: lines, executionSequence: seq, pathPoints: finalPath, gridBox: maxDim };
+          }, [levelData]);
+
+          const activeLineId = stepIndex < executionSequence.length ? executionSequence[stepIndex].lineId : -1;
+
+          const handleInput = useCallback((key) => {
+            if (levelComplete) return;
+
+            const expectedKey = executionSequence[stepIndex]?.key;
+
+            if (key === expectedKey) {
+              // DOĞRU ADIM
+              playSound('move', isSoundEnabled);
+              const nextStep = stepIndex + 1;
+              setStepIndex(nextStep);
+              setHasError(false);
+              
+              if (nextStep >= executionSequence.length) {
+                // SEVİYE TAMAMLANDI
+                playSound('success', isSoundEnabled);
+                
+                let finalStars = 3;
+                if (errorCount === 1) finalStars = 2;
+                else if (errorCount > 1) finalStars = 1;
+                
+                setEarnedStars(finalStars);
+
+                // Konfeti Mantığı (Seri artarsa daha büyük patlama!)
+                if(typeof confetti === 'function') {
+                    const particleCount = (streak + 1) * 50; // Seriye göre konfeti artar
+                    confetti({ particleCount: Math.min(particleCount, 300), spread: 90, origin: { y: 0.6 }, colors: ['#1dd2af', '#003666', '#f8f9fa', '#fbbf24'] });
+                }
+                setQuote(MOTIVATIONAL_QUOTES[Math.floor(Math.random() * MOTIVATIONAL_QUOTES.length)]);
+                setLevelComplete(true);
+                onComplete(levelData.id, finalStars, errorCount); // errorCount'u da gönderiyoruz
+              }
+            } else {
+              // HATALI ADIM
+              playSound('error', isSoundEnabled);
+              setErrorCount(prev => prev + 1);
+              setHasError(true);
+              setStepIndex(0); 
+              setTimeout(() => setHasError(false), 300); 
+            }
+          }, [stepIndex, executionSequence, levelComplete, onComplete, levelData.id, errorCount, isSoundEnabled, streak]);
+
+          // Klavye Dinleyicisi (Gelişmiş Keydown / Keyup mekanizması)
+          useEffect(() => {
+            const validKeys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+            
+            const handleKeyDown = (e) => {
+              if (levelComplete) {
+                if (e.key === ' ' || e.code === 'Space') {
+                  e.preventDefault();
+                  onNext();
+                }
+                return;
+              }
+
+              if (validKeys.includes(e.key)) {
+                e.preventDefault();
+                setActiveKey(e.key); // Tuşa basıldığını kaydet
+                handleInput(e.key);
+              }
+            };
+            
+            const handleKeyUp = (e) => {
+                if (validKeys.includes(e.key)) {
+                    setActiveKey(null); // Tuştan el çekildiğinde efekti kaldır
+                }
+            }
+
+            window.addEventListener('keydown', handleKeyDown);
+            window.addEventListener('keyup', handleKeyUp);
+            return () => {
+                window.removeEventListener('keydown', handleKeyDown);
+                window.removeEventListener('keyup', handleKeyUp);
+            }
+          }, [handleInput, levelComplete, onNext]);
+
+          const currentPos = pathPoints[stepIndex] || pathPoints[0];
+
+          return (
+            <div className={`flex flex-col h-screen ${hasError ? 'error-shake' : ''}`}>
+              
+              <header className="flex items-center justify-between p-4 sm:px-8 py-4 shrink-0 z-10 border-b border-[#e2e8f0]/50 dark:border-slate-800/80 bg-[#f8f9fa]/50 dark:bg-[#0f172a]/50 backdrop-blur-md">
+                <button onClick={onBack} className="flex items-center gap-2 text-[#94a8bc] dark:text-slate-500 hover:text-[#003666] dark:hover:text-white transition-colors font-bold text-lg">
+                  <ChevronLeft size={28} />
+                </button>
+                <div className="flex flex-col items-center">
+                  <div className="flex items-center gap-3">
+                    <div className="text-xl sm:text-2xl font-bold text-[#94a8bc] dark:text-slate-500 tracking-widest">
+                      {levelData.id}
+                    </div>
+                    {/* ATEŞLİ SERİ KOMBOSU GÖSTERİMİ */}
+                    {streak >= 2 && (
+                       <div className="flex items-center gap-1 text-orange-500 font-bold bg-orange-100 dark:bg-orange-500/20 px-2 py-0.5 rounded-xl text-sm sm:text-base animate-bounce">
+                          🔥 {streak} Seri
+                       </div>
+                    )}
+                  </div>
+                  {levelData.description && (
+                     <div className="text-xs sm:text-sm font-semibold text-[#1dd2af] mt-1 max-w-md text-center leading-tight">
+                       {levelData.description}
+                     </div>
+                  )}
+                </div>
+                <button onClick={() => { setStepIndex(0); setErrorCount(0); }} className="text-[#94a8bc] dark:text-slate-500 hover:text-[#003666] dark:hover:text-white transition-colors" title="Başa Sar">
+                  <RotateCcw size={24} />
+                </button>
+              </header>
+
+              <div className="flex-1 flex flex-col md:flex-row overflow-hidden pb-4 sm:pb-10">
+                
+                <div className="w-full md:w-1/2 flex items-center justify-center p-4 relative min-h-[40vh] md:min-h-0 flex-col">
+                  
+                  <div className="w-full flex justify-center items-end shrink-0 mb-2 sm:mb-8 min-h-[60px] sm:min-h-[80px]">
+                    {!levelComplete && (
+                      <div className="flex flex-col items-center opacity-40 dark:opacity-30 pointer-events-none z-10 scale-75 sm:scale-100 transition-opacity duration-300">
+                         {/* TUŞ BASMA EFEKTİ ENTEGRE EDİLDİ */}
+                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-1.5 transition-all duration-100 ${activeKey === 'ArrowUp' ? 'bg-[#1dd2af] text-white scale-125 shadow-[0_0_15px_#1dd2af]' : 'bg-[#94a8bc] dark:bg-slate-500 text-white dark:text-slate-900'}`}><ArrowUp size={24} strokeWidth={3}/></div>
+                         <div className="flex gap-1.5">
+                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-100 ${activeKey === 'ArrowLeft' ? 'bg-[#1dd2af] text-white scale-125 shadow-[0_0_15px_#1dd2af]' : 'bg-[#94a8bc] dark:bg-slate-500 text-white dark:text-slate-900'}`}><ArrowLeft size={24} strokeWidth={3}/></div>
+                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-100 ${activeKey === 'ArrowDown' ? 'bg-[#1dd2af] text-white scale-125 shadow-[0_0_15px_#1dd2af]' : 'bg-[#94a8bc] dark:bg-slate-500 text-white dark:text-slate-900'}`}><ArrowDown size={24} strokeWidth={3}/></div>
+                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-100 ${activeKey === 'ArrowRight' ? 'bg-[#1dd2af] text-white scale-125 shadow-[0_0_15px_#1dd2af]' : 'bg-[#94a8bc] dark:bg-slate-500 text-white dark:text-slate-900'}`}><ArrowRight size={24} strokeWidth={3}/></div>
+                         </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {levelComplete && (
+                    <div className="absolute inset-0 bg-[#f8f9fa]/90 dark:bg-[#0f172a]/90 z-30 flex flex-col items-center justify-center backdrop-blur-sm animate-in fade-in zoom-in duration-300">
+                      
+                      {/* Yıldız Gösterimi */}
+                      <div className="flex gap-2 mb-4">
+                        {Array.from({length: 3}).map((_, i) => (
+                           <Star key={i} size={40} className={i < earnedStars ? "text-yellow-400 fill-yellow-400 animate-in zoom-in duration-500 delay-" + (i*100) : "text-slate-300 dark:text-slate-700"} />
+                        ))}
+                      </div>
+
+                      <div className="text-2xl sm:text-4xl font-black text-[#1dd2af] mb-8 tracking-wider text-center px-4 drop-shadow-sm">
+                        {quote}
+                      </div>
+                      
+                      <button 
+                        onClick={onNext}
+                        className="group flex flex-col items-center justify-center cursor-pointer p-4 outline-none"
+                      >
+                        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full bg-[#1dd2af] group-hover:bg-[#1bc1a0] group-hover:scale-105 active:scale-95 transition-all flex items-center justify-center mb-6 shadow-lg shadow-[#1dd2af]/20">
+                          <Play size={48} className="text-white ml-2 sm:w-14 sm:h-14" strokeWidth={2.5} />
+                        </div>
+                        <div className="text-xl sm:text-2xl font-bold text-[#003666] dark:text-slate-900 group-hover:text-[#1dd2af] transition-colors tracking-widest bg-white px-8 py-3 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center">
+                          <span>SONRAKİ_</span>
+                          <span className="text-xs text-[#94a8bc] dark:text-slate-500 mt-1 font-sans tracking-normal hidden sm:block">Space (Boşluk) tuşuna bas</span>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+
+                  <div 
+                    className="grid aspect-square w-full max-w-[450px] lg:max-w-[550px] gap-2 sm:gap-4 lg:gap-6 p-4"
+                    style={{ 
+                      gridTemplateColumns: `repeat(${gridBox}, minmax(0, 1fr))`,
+                      gridTemplateRows: `repeat(${gridBox}, minmax(0, 1fr))`
+                    }}
+                  >
+                    {Array.from({ length: gridBox * gridBox }).map((_, idx) => {
+                      const x = idx % gridBox;
+                      const y = Math.floor(idx / gridBox);
+                      
+                      const isAvatar = currentPos.x === x && currentPos.y === y;
+                      const pathIndex = pathPoints.findIndex(p => p.x === x && p.y === y);
+                      const isPath = pathIndex !== -1;
+                      
+                      const futureVisits = pathPoints.slice(stepIndex).filter(p => p.x === x && p.y === y).length;
+                      const isVisited = isPath && futureVisits === 0;
+
+                      let cellClass = "rounded-full transition-all duration-300 ";
+                      
+                      if (isAvatar) {
+                        cellClass += "border-[8px] sm:border-[12px] border-[#1dd2af] bg-[#f8f9fa] dark:bg-[#0f172a] z-20 scale-105 shadow-sm";
+                      } else if (isPath && !isVisited) {
+                        cellClass += "bg-[#1dd2af] scale-[0.85]"; 
+                      } else {
+                        cellClass += "bg-white dark:bg-slate-800 shadow-sm border border-[#e2e8f0]/60 dark:border-slate-700/60 scale-[0.85]"; 
+                      }
+
+                      return (
+                        <div key={idx} className="flex items-center justify-center relative w-full h-full">
+                          <div className={`w-full h-full ${cellClass}`}></div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="w-full md:w-1/2 flex flex-col justify-center relative h-[50vh] md:h-full">
+                  <div 
+                    ref={codeContainerRef}
+                    className="w-full h-full overflow-y-auto px-4 sm:px-8 lg:px-12 flex flex-col items-center justify-center relative"
+                  >
+                     <div className="flex flex-col items-start w-fit py-12">
+                       {displayLines.map((line) => {
+                          const isActive = line.id === activeLineId && !levelComplete;
+                          const textColor = isActive ? 'text-[#003666] dark:text-white' : 'text-[#9cb0c1] dark:text-slate-600';
+                          const bgClass = isActive ? 'bg-[#e2e8f0] dark:bg-slate-800' : 'bg-transparent';
+
+                          return (
+                            <div 
+                              key={line.id} 
+                              className={`transition-colors duration-200 w-fit font-bold tracking-wide flex items-end ${textColor} ${bgClass} rounded-xl px-3 py-1 my-0.5`}
+                              style={{ marginLeft: `${(line.indent * 2)}rem` }}
+                            >
+                              {line.type === 'loop' || line.type === 'bracket' ? (
+                                <span className="text-3xl sm:text-5xl md:text-[3rem] leading-none">
+                                  {line.text}
+                                </span>
+                              ) : (
+                                <span className="flex items-end">
+                                  <span className="text-4xl sm:text-6xl md:text-[3.5rem] lg:text-[4rem] leading-none">
+                                    {line.text}
+                                  </span>
+                                  <span className="text-3xl sm:text-5xl md:text-6xl lg:text-[3rem] ml-2 pb-1 sm:pb-2">
+                                    ( )
+                                  </span>
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })}
+                     </div>
+                  </div>
+
+                  <div className="md:hidden absolute bottom-4 left-1/2 -translate-x-1/2 bg-[#f8f9fa] dark:bg-[#0f172a] p-3 rounded-2xl border border-[#e2e8f0] dark:border-slate-800 flex flex-col items-center shadow-sm z-30">
+                    <div className="grid grid-cols-3 gap-2 w-[180px]">
+                      <div className="col-start-2">
+                        <ControlButton 
+                            icon={<ArrowUp size={28} />} 
+                            isActive={activeKey === 'ArrowUp'}
+                            onPress={() => { setActiveKey('ArrowUp'); handleInput('ArrowUp'); }} 
+                            onRelease={() => setActiveKey(null)}
+                        />
+                      </div>
+                      <div className="col-start-1 row-start-2">
+                        <ControlButton 
+                            icon={<ArrowLeft size={28} />} 
+                            isActive={activeKey === 'ArrowLeft'}
+                            onPress={() => { setActiveKey('ArrowLeft'); handleInput('ArrowLeft'); }} 
+                            onRelease={() => setActiveKey(null)}
+                        />
+                      </div>
+                      <div className="col-start-2 row-start-2">
+                        <ControlButton 
+                            icon={<ArrowDown size={28} />} 
+                            isActive={activeKey === 'ArrowDown'}
+                            onPress={() => { setActiveKey('ArrowDown'); handleInput('ArrowDown'); }} 
+                            onRelease={() => setActiveKey(null)}
+                        />
+                      </div>
+                      <div className="col-start-3 row-start-2">
+                        <ControlButton 
+                            icon={<ArrowRight size={28} />} 
+                            isActive={activeKey === 'ArrowRight'}
+                            onPress={() => { setActiveKey('ArrowRight'); handleInput('ArrowRight'); }} 
+                            onRelease={() => setActiveKey(null)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  
+                </div>
+              </div>
+            </div>
+          );
+        }
+
+        // Dokunmatik/Fare D-Pad Butonları (Mobil için tuş geri bildirimi eklendi)
+        function ControlButton({ icon, isActive, onPress, onRelease }) {
+          return (
+            <button 
+              onMouseDown={onPress}
+              onMouseUp={onRelease}
+              onMouseLeave={onRelease}
+              onTouchStart={(e) => { e.preventDefault(); onPress(); }}
+              onTouchEnd={(e) => { e.preventDefault(); onRelease(); }}
+              className={`w-full aspect-square rounded-xl flex items-center justify-center transition-colors shadow-sm select-none ${isActive ? 'bg-[#1dd2af] text-white' : 'bg-[#e2e8f0] dark:bg-slate-800 text-[#64748b] dark:text-slate-400'}`}
+            >
+              {icon}
+            </button>
+          );
+        }
+
+        // --- UYGULAMAYI BAŞLAT ---
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

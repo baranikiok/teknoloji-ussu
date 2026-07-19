@@ -1,0 +1,1846 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Bilişim Galaksisi: Donanım ve Yazılım</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js Kütüphanesi - 3D Çizimler İçin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Nunito:wght@400;700;900&display=swap');
+        
+        body, html {
+            font-family: 'Nunito', sans-serif;
+            background-color: #09090b; 
+            background-image: 
+                radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+                radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
+                radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px);
+            background-size: 550px 550px, 350px 350px, 250px 250px;
+            background-position: 0 0, 40px 60px, 130px 270px;
+            animation: spaceScroll 60s linear infinite;
+            user-select: none;
+            overflow: hidden; 
+            touch-action: none; 
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: white;
+        }
+
+        @keyframes spaceScroll {
+            0% { background-position: 0 0, 40px 60px, 130px 270px; }
+            100% { background-position: 550px 550px, 390px 410px, 380px 520px; }
+        }
+
+        h1, h2, .fredoka { font-family: 'Fredoka', sans-serif; }
+
+        .overlay-screen {
+            backdrop-filter: blur(8px);
+            background-color: rgba(9, 9, 11, 0.9);
+        }
+
+        .speech-bubble {
+            position: relative;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: .8em;
+            color: #1e293b;
+            box-shadow: 0 4px 20px rgba(56, 189, 248, 0.3);
+            transition: all 0.2s ease;
+            backdrop-filter: blur(5px);
+        }
+        .speech-bubble:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 15%;
+            width: 0;
+            height: 0;
+            border: 15px solid transparent;
+            border-top-color: rgba(255, 255, 255, 0.95);
+            border-bottom: 0;
+            border-left: 0;
+            margin-left: -7.5px;
+            margin-bottom: -15px;
+        }
+        
+        .speaking-pulse { animation: pulse-ring 1s infinite; }
+        @keyframes pulse-ring {
+            0% { filter: drop-shadow(0 0 0px rgba(56, 189, 248, 0.8)); }
+            50% { filter: drop-shadow(0 0 25px rgba(56, 189, 248, 1)); transform: scale(1.05); }
+            100% { filter: drop-shadow(0 0 0px rgba(56, 189, 248, 0.8)); }
+        }
+
+        @keyframes shimmer { 100% { transform: translateX(100%); } }
+
+        .lab-item { transition: all 0.2s ease; cursor: pointer; }
+        .lab-item:hover { transform: scale(1.05); z-index: 10; }
+        .lab-item:active { transform: scale(0.95); }
+
+        .teleport-pad {
+            position: absolute;
+            bottom: -10px;
+            width: 140px;
+            height: 30px;
+            background: radial-gradient(ellipse, rgba(56, 189, 248, 0.6) 0%, rgba(56, 189, 248, 0) 70%);
+            border-radius: 50%;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4), inset 0 0 10px rgba(255,255,255,0.5);
+            animation: pulse-pad 2s infinite ease-in-out;
+            z-index: 10;
+        }
+        @media (min-width: 640px) {
+            .teleport-pad { width: 200px; height: 40px; bottom: -20px; }
+        }
+
+        @keyframes pulse-pad {
+            0%, 100% { transform: scale(1); opacity: 0.6; }
+            50% { transform: scale(1.2); opacity: 1; }
+        }
+
+        .timer-bar-container {
+            width: 120px;
+            height: 6px;
+            background-color: rgba(0,0,0,0.5);
+            border-radius: 10px;
+            margin-top: 10px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.2);
+            position: relative;
+            z-index: 40;
+        }
+        .timer-bar {
+            height: 100%;
+            background-color: #22c55e; 
+            width: 100%;
+            transition: width 0.1s linear, background-color 0.3s;
+        }
+
+        .laser-beam {
+            position: absolute;
+            bottom: 10px;
+            width: 80px;
+            height: 200px;
+            background: linear-gradient(to top, rgba(56, 189, 248, 0.4), transparent);
+            border-radius: 50% 50% 0 0;
+            opacity: 0;
+            z-index: 5;
+            pointer-events: none;
+        }
+        .beam-active { animation: beamUp 0.5s ease-out; }
+        @keyframes beamUp {
+            0% { opacity: 0; height: 0; }
+            50% { opacity: 1; height: 250px; }
+            100% { opacity: 0; height: 300px; }
+        }
+
+        .target-zone { transition: all 0.3s; position: relative; }
+        
+        .target-donanim {
+            background: linear-gradient(135deg, #78350f, #451a03); 
+            border: 3px solid #b45309;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.8), 0 10px 15px rgba(0,0,0,0.5);
+            border-radius: 16px;
+        }
+        
+        .target-yazilim {
+            background: linear-gradient(135deg, #0f172a, #1e1b4b); 
+            border: 3px dashed #6366f1;
+            box-shadow: inset 0 0 30px rgba(99,102,241,0.3), 0 0 20px rgba(99,102,241,0.4);
+            border-radius: 16px;
+        }
+
+        .target-virus {
+            background: radial-gradient(circle, #3b0764 0%, #000000 80%); 
+            border: 3px dotted #a855f7;
+            box-shadow: inset 0 0 40px rgba(168,85,247,0.5), 0 0 20px rgba(168,85,247,0.3);
+            border-radius: 50%; 
+        }
+        
+        .target-zone.highlight-donanim { transform: scale(1.05); box-shadow: 0 0 30px rgba(245, 158, 11, 0.8); border-color: #fde68a; }
+        .target-zone.highlight-yazilim { transform: scale(1.05); box-shadow: 0 0 30px rgba(99, 102, 241, 0.8); border-color: #c7d2fe; }
+        .target-zone.highlight-virus { transform: scale(1.1) rotate(5deg); box-shadow: 0 0 50px rgba(168, 85, 247, 1); border-color: #e9d5ff; }
+
+        .box-receive { animation: boxJump 0.4s ease-out; }
+        @keyframes boxJump {
+            0%, 100% { transform: scale(1) translateY(0); filter: brightness(1); }
+            50% { transform: scale(1.1) translateY(-10px); filter: brightness(1.5); }
+        }
+
+        .screen-receive { animation: screenGlow 0.4s ease-out; }
+        @keyframes screenGlow {
+            0%, 100% { transform: scale(1); filter: brightness(1) drop-shadow(0 0 0px #818cf8); }
+            50% { transform: scale(1.1); filter: brightness(1.8) drop-shadow(0 0 40px #818cf8); }
+        }
+
+        .virus-receive { animation: virusSuck 0.6s ease-in-out; }
+        @keyframes virusSuck {
+            0%, 100% { transform: scale(1) rotate(0deg); filter: brightness(1); }
+            50% { transform: scale(1.2) rotate(180deg); filter: brightness(1.5) drop-shadow(0 0 30px #a855f7); }
+        }
+
+        #draggable-item {
+            cursor: grab;
+            transition: transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1);
+            touch-action: none;
+            will-change: transform;
+            background: rgba(255, 255, 255, 0.95);
+            color: #0f172a;
+            box-shadow: 0 15px 25px rgba(0,0,0,0.5), 0 0 15px rgba(56,189,248,0.5);
+            animation: floatingItem 3s infinite ease-in-out;
+        }
+        #draggable-item:active { cursor: grabbing; animation: none; }
+
+        @keyframes floatingItem {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .item-pop { animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        @keyframes popIn {
+            0% { transform: scale(0) translateY(-50px); opacity: 0; }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        .shake { animation: shake-anim 0.4s; }
+        @keyframes shake-anim {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px) rotate(-5deg); }
+            75% { transform: translateX(10px) rotate(5deg); }
+        }
+
+        .progress-bar-container { width: 100%; height: 12px; background-color: #334155; border-radius: 9999px; overflow: hidden; }
+        .progress-bar { height: 100%; background: linear-gradient(90deg, #22d3ee, #818cf8); width: 0%; transition: width 0.3s ease-out; box-shadow: 0 0 10px rgba(56, 189, 248, 0.8); }
+        
+        .karne-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; max-height: 40vh; overflow-y: auto; padding-right: 0.5rem; }
+        .karne-grid::-webkit-scrollbar { width: 6px; }
+        .karne-grid::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
+        .karne-grid::-webkit-scrollbar-thumb { background: #6366f1; border-radius: 4px; }
+
+        .star-container { position: absolute; pointer-events: none; z-index: 50; }
+        .floating-star { position: absolute; animation: floatUp 1s ease-out forwards; font-size: 2.5rem; filter: drop-shadow(0 0 10px rgba(56, 189, 248, 1)); }
+        @keyframes floatUp {
+            0% { transform: translateY(0) scale(0.5) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(-120px) scale(1.5) rotate(180deg); opacity: 0; }
+        }
+
+        .explored-badge {
+            position: absolute; top: -8px; right: -8px; background-color: #22c55e; color: white; width: 24px; height: 24px;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900;
+            border: 3px solid #1e293b; z-index: 20;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        
+        .float-anim { animation: floating 3s ease-in-out infinite; }
+        
+        .blueprint-bg {
+            background-color: rgba(15, 23, 42, 0.8);
+            border: 2px solid rgba(99, 102, 241, 0.3);
+            box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+        }
+
+        .heart { transition: all 0.3s; }
+        .heart-lost { filter: grayscale(1) opacity(0.3); transform: scale(0.8); }
+        .heart-beat { animation: heartbeat 1s infinite; }
+        @keyframes heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.2); } }
+
+        #three-canvas-container {
+            width: 100%;
+            background: radial-gradient(circle, #1e293b, #0f172a);
+            border-radius: 12px;
+            border: 2px solid #38bdf8;
+            position: relative;
+            overflow: hidden;
+            cursor: grab;
+        }
+        #three-canvas-container:active { cursor: grabbing; }
+
+        .three-label {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.8);
+            color: #38bdf8;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            border: 1px solid #38bdf8;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- BAŞLANGIÇ EKRANI -->
+    <div id="start-screen" class="fixed inset-0 flex flex-col items-center justify-center z-50 transition-opacity duration-500 overlay-screen px-4">
+        
+        <!-- Ana Sayfaya Dön Butonu (Sol Üst) -->
+        <a href="index.html" class="absolute top-4 left-4 bg-slate-800/80 hover:bg-slate-700 text-cyan-400 w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center text-2xl md:text-3xl backdrop-blur-md transition-all border border-cyan-500/50 hover:scale-110 shadow-[0_0_15px_rgba(34,211,238,0.3)] z-50" title="Ana Menüye Dön">🏠</a>
+
+        <div class="bg-slate-900/80 p-6 sm:p-10 rounded-3xl shadow-[0_0_80px_rgba(99,102,241,0.4)] flex flex-col items-center max-w-2xl w-full border border-indigo-500/50 relative z-10 backdrop-blur-md">
+            
+            <div class="w-20 h-20 sm:w-24 sm:h-24 bg-indigo-900 rounded-full border-4 border-cyan-400 flex items-center justify-center text-5xl sm:text-6xl mb-4 shadow-[0_0_30px_rgba(34,211,238,0.6)] z-10 relative">🧑‍🚀</div>
+            
+            <h1 class="text-3xl sm:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-400 mb-1 fredoka text-center drop-shadow-lg leading-tight uppercase tracking-wide">Bilişim Galaksisi</h1>
+            <h2 class="text-lg sm:text-2xl font-bold text-white mb-4 fredoka text-center tracking-wider drop-shadow-md">Donanım ve Yazılım Macerası</h2>
+            <p class="text-xs sm:text-sm text-cyan-200 font-bold mb-4 text-center bg-cyan-900/40 px-4 py-1.5 rounded-full border border-cyan-500/30 uppercase tracking-widest shadow-inner flex items-center gap-2">
+                <span class="animate-pulse text-red-400">⚠️ VİRÜS ALARMI EKLENDİ!</span>
+            </p>
+            
+            <div class="text-left bg-black/40 p-4 sm:p-5 rounded-2xl mb-4 border border-slate-700 w-full shadow-inner overflow-hidden">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                    <div class="bg-orange-950/40 p-3 rounded-xl border border-orange-500/30 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
+                        <span class="text-3xl sm:text-4xl mb-1 drop-shadow-md">📦</span> 
+                        <strong class="text-orange-400 text-sm block mb-1">DONANIM</strong> 
+                        <span class="text-slate-300 text-[10px] sm:text-xs">Fiziksel ağırlığı vardır. Elle tutulabilir cihazlardır.</span>
+                    </div>
+                    <div class="bg-indigo-950/40 p-3 rounded-xl border border-indigo-500/30 flex flex-col items-center text-center hover:-translate-y-1 transition-transform">
+                        <span class="text-3xl sm:text-4xl mb-1 drop-shadow-md">☁️</span> 
+                        <strong class="text-indigo-400 text-sm block mb-1">YAZILIM</strong> 
+                        <span class="text-slate-300 text-[10px] sm:text-xs">Programlar ve verilerdir. Ağırlığı yoktur.</span>
+                    </div>
+                    <div class="bg-purple-950/40 p-3 rounded-xl border border-purple-500/30 flex flex-col items-center text-center relative overflow-hidden">
+                        <div class="absolute inset-0 bg-red-500/10 animate-pulse pointer-events-none"></div>
+                        <span class="text-3xl sm:text-4xl mb-1 drop-shadow-md">🕳️</span> 
+                        <strong class="text-purple-400 text-sm block mb-1">VİRÜS</strong> 
+                        <span class="text-slate-300 text-[10px] sm:text-xs">Tehlikeli yazılımlardır. <b>Kara Deliğe</b> yolla!</span>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="startExploration()" class="group relative bg-cyan-600 hover:bg-cyan-500 text-white font-black text-lg sm:text-2xl py-3 sm:py-4 px-6 sm:px-8 rounded-2xl shadow-[0_6px_0_#0891b2] sm:shadow-[0_8px_0_#0891b2] active:translate-y-2 active:shadow-none transition-all w-full flex items-center justify-center gap-2 sm:gap-3 overflow-hidden border border-cyan-300/50">
+                <div class="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></div>
+                <span class="text-2xl sm:text-3xl group-hover:scale-110 transition-transform">🚀</span> 
+                <span>MACERAYA BAŞLA</span>
+            </button>
+
+            <!-- GELİŞTİRİCİ İMZASI -->
+            <div class="mt-6 text-slate-400 font-bold text-xs sm:text-sm bg-black/50 px-4 py-2 rounded-full w-full border border-slate-800 text-center shadow-inner">
+                👨‍💻 Geliştirici: <span class="text-cyan-400 font-black tracking-wide">Mehmet Baran İKİOK</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3D İNCELEME MODALI -->
+    <div id="three-modal" class="fixed inset-0 bg-slate-950/95 hidden flex-col items-center justify-center z-[70] backdrop-blur-xl px-2 sm:px-4">
+        <div class="bg-slate-900 p-4 sm:p-6 rounded-3xl flex flex-col items-center w-full max-w-5xl border-2 border-cyan-500 shadow-[0_0_80px_rgba(34,211,238,0.3)] relative mt-4 sm:mt-8">
+            <div class="absolute -top-6 bg-cyan-600 text-white font-black px-6 py-2 rounded-full border-2 border-cyan-300 shadow-[0_0_20px_rgba(34,211,238,0.5)] tracking-widest text-sm sm:text-base">
+                🔬 HOLOGRAFİK İNCELEME
+            </div>
+            
+            <h2 class="text-xl sm:text-3xl font-black text-cyan-400 mt-2 sm:mt-4 mb-1 fredoka text-center">İçi Açık Sistem Kasası</h2>
+            <p class="text-slate-400 text-xs sm:text-base mb-4 text-center font-bold">Fareyle veya parmağınla basılı tutarak <span class="text-cyan-300">kasayı döndür</span>. Parçaların üzerine gelerek görevlerini öğren!</p>
+            
+            <div id="three-canvas-container" class="w-full h-[50vh] sm:h-[65vh] bg-black rounded-2xl border-2 border-slate-700 relative overflow-hidden shadow-inner cursor-grab active:cursor-grabbing">
+                <div id="three-label" class="absolute bottom-0 left-0 w-full bg-slate-900/95 text-cyan-300 p-3 sm:p-5 border-t-4 border-cyan-500 pointer-events-none opacity-0 transition-opacity duration-300 z-10 flex flex-col items-center justify-center shadow-[0_-10px_20px_rgba(0,0,0,0.5)]">
+                    <!-- İçerik JS ile güncellenecek -->
+                </div>
+            </div>
+
+            <button onclick="close3DModal()" class="mt-4 sm:mt-6 bg-red-600 hover:bg-red-500 text-white font-black py-3 sm:py-4 px-10 rounded-xl shadow-[0_4px_0_#7f1d1d] active:translate-y-1 active:shadow-none transition-all w-full max-w-sm tracking-widest text-lg">
+                KAPAT VE DÖN
+            </button>
+        </div>
+    </div>
+
+    <!-- 1. AŞAMA: UZAY İSTASYONU (Keşif Ekranı) -->
+    <div id="exploration-screen" class="fixed inset-0 flex flex-col z-40 hidden transition-opacity duration-500 overlay-screen overflow-y-auto pb-20">
+        
+        <div class="w-full bg-black/60 border-b border-slate-800 p-3 sm:p-4 shadow-lg sticky top-0 z-30 flex justify-between items-center backdrop-blur-md">
+            <div class="flex items-center gap-2 sm:gap-4">
+                <a href="index.html" class="text-cyan-400 hover:text-white bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg font-bold text-xs sm:text-sm flex items-center gap-1 transition-colors border border-slate-600" title="Ana Menüye Dön">
+                    <span>🏠</span> <span class="hidden sm:inline">Ana Menü</span>
+                </a>
+                <h2 class="text-lg sm:text-xl font-black text-cyan-400 fredoka flex items-center gap-2 shrink-0">
+                    <span>🛰️</span> <span class="hidden sm:inline">Kaptan Köşkü</span>
+                </h2>
+            </div>
+
+            <div class="text-indigo-300 font-bold bg-indigo-900/50 px-3 py-1 sm:px-4 sm:py-1.5 rounded-full border border-indigo-500/30 text-xs sm:text-sm flex items-center gap-2 shadow-inner mx-2">
+                <span class="hidden sm:inline">Taranan Veri:</span> 
+                <span id="explore-progress" class="text-white text-lg sm:text-xl font-black bg-indigo-500/40 px-2 py-0.5 rounded">0</span><span class="text-white">/ 3</span>
+            </div>
+            <button id="exp-mute-btn" onclick="toggleMute()" class="shrink-0 bg-slate-800 hover:bg-slate-700 border border-slate-600 p-2 rounded-full transition text-lg sm:text-xl flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10">🔊</button>
+        </div>
+
+        <div class="max-w-5xl w-full mx-auto p-3 sm:p-4 flex flex-col items-center mt-2 pb-10">
+            
+            <div id="lab-focus-panel" class="hidden w-full bg-slate-900/80 rounded-2xl sm:rounded-3xl border-2 border-cyan-500 p-4 sm:p-6 mb-4 sm:mb-6 items-start sm:items-center gap-3 sm:gap-6 shadow-[0_0_30px_rgba(34,211,238,0.2)] transition-all relative overflow-hidden flex-col sm:flex-row text-center sm:text-left backdrop-blur-md">
+               <div id="focus-icon" class="text-5xl sm:text-8xl bg-black/50 border border-slate-700 p-3 sm:p-6 rounded-2xl shadow-inner flex items-center justify-center min-w-[80px] sm:min-w-[140px] z-10 mx-auto sm:mx-0">❓</div>
+               <div class="flex-1 flex flex-col justify-center z-10 w-full items-center sm:items-start">
+                   <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 mb-2 w-full justify-center sm:justify-start">
+                       <h3 id="focus-title" class="text-xl sm:text-4xl font-black text-white fredoka">Analiz Ediliyor...</h3>
+                       <span id="focus-type" class="px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[10px] sm:text-sm font-bold tracking-wider"></span>
+                   </div>
+                   <p id="focus-desc" class="text-slate-300 font-bold text-xs sm:text-lg leading-relaxed max-w-lg">...</p>
+               </div>
+            </div>
+
+            <div class="flex items-start sm:items-end gap-2 sm:gap-3 w-full mb-4 sm:mb-6 transition-all duration-300" id="exp-robot-container">
+                <div id="exp-robot-emoji" class="text-4xl sm:text-6xl drop-shadow-[0_0_15px_rgba(34,211,238,0.5)] z-10 shrink-0 mt-2 sm:mt-0">🧑‍🚀</div>
+                <div class="relative w-full">
+                    <div id="exp-robot-speech" class="speech-bubble p-3 sm:p-4 font-bold text-xs sm:text-base border-2 border-cyan-200/50 w-full min-h-[50px] sm:min-h-[60px] flex items-center shadow-[0_4px_20px_rgba(34,211,238,0.2)]">
+                        Hoş geldin! Lütfen sisteme giren Virüslere dikkat et. Göreve çıkmadan önce masadan en az 3 nesne tara.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Kontrol Paneli -->
+            <div class="w-full rounded-2xl sm:rounded-3xl p-3 sm:p-8 relative blueprint-bg overflow-hidden z-10">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-8 mt-2 relative z-10">
+                    
+                    <!-- SOL: Kasa ve Dış Donanımlar -->
+                    <div class="lg:col-span-5 flex flex-col items-center w-full">
+                        <div class="text-center font-black text-orange-400 mb-3 sm:mb-4 fredoka text-sm sm:text-lg flex items-center justify-center gap-2 bg-black/60 px-2 sm:px-4 py-2 rounded-xl border border-slate-700 w-full max-w-[300px]">
+                            <span>🗄️</span> FİZİKSEL PANEL (DONANIM)
+                        </div>
+
+                        <!-- VURGULU 3D BUTONU -->
+                        <button onclick="open3DModal(); exploreItem('donanim', 'Sistem Kasası', '🗄️', 'Bilgisayarın tüm donanımlarını barındıran ana iskelettir.', this)" class="w-full max-w-[260px] sm:max-w-[300px] bg-gradient-to-r from-cyan-900/80 to-blue-900/80 hover:from-cyan-800 hover:to-blue-800 border-2 border-cyan-400 text-cyan-100 font-bold py-3 sm:py-4 rounded-xl mb-4 shadow-[0_0_20px_rgba(34,211,238,0.4)] transition-all flex items-center justify-center gap-3 group">
+                            <span class="text-3xl group-hover:scale-125 transition-transform drop-shadow-[0_0_10px_rgba(255,255,255,0.8)]">🔬</span>
+                            <span class="tracking-widest text-xs sm:text-sm">3D KASAYI İNCELE</span>
+                        </button>
+                        
+                        <div class="bg-gradient-to-b from-slate-700 to-slate-900 border-2 border-slate-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 w-full max-w-[260px] sm:max-w-[300px] flex flex-col gap-3 sm:gap-4 lab-item shadow-2xl" onclick="exploreItem('donanim', 'Sistem Kasası', '🗄️', 'Tüm parçaları içinde tutar. Fiziksel ağırlığı olan bir DONANIMDIR.', this)">
+                            <div class="grid grid-cols-2 gap-3 sm:gap-4">
+                                <button class="lab-item float-anim bg-black/40 p-2 sm:p-4 rounded-xl border border-slate-600 flex flex-col items-center hover:border-orange-500 relative z-10 shadow-inner" onclick="event.stopPropagation(); exploreItem('donanim', 'İşlemci (CPU)', '🧠', 'Bilgisayarın beynidir. Elle tutabildiğimiz fiziksel bir DONANIMDIR.', this)">
+                                    <span class="text-3xl sm:text-5xl mb-1 sm:mb-2 drop-shadow-md">🧠</span>
+                                    <span class="text-[9px] sm:text-xs font-bold text-slate-300 uppercase">İşlemci</span>
+                                </button>
+                                <button class="lab-item float-anim bg-black/40 p-2 sm:p-4 rounded-xl border border-slate-600 flex flex-col items-center hover:border-orange-500 relative z-10 shadow-inner" style="animation-delay: 0.3s;" onclick="event.stopPropagation(); exploreItem('donanim', 'RAM (Hafıza)', '📏', 'Kısa süreli hafıza görevi gören çubuk şeklindeki fiziksel DONANIMDIR.', this)">
+                                    <span class="text-3xl sm:text-5xl mb-1 sm:mb-2 transform rotate-45 drop-shadow-md">📏</span>
+                                    <span class="text-[9px] sm:text-xs font-bold text-slate-300 uppercase">RAM Hafıza</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-center gap-3 sm:gap-4 mt-4 sm:mt-6 w-full max-w-[260px] sm:max-w-[300px]">
+                            <button class="lab-item float-anim bg-slate-800 border-2 border-slate-600 flex flex-col items-center hover:border-orange-500 p-2 sm:p-3 rounded-xl flex-1 relative z-10 shadow-lg" style="animation-delay: 0.2s;" onclick="exploreItem('donanim', 'Yazıcı', '🖨️', 'Bilgisayardaki yazıları kağıda döken fiziksel bir DONANIMDIR.', this)">
+                                <span class="text-2xl sm:text-4xl mb-1 drop-shadow-md">🖨️</span>
+                                <span class="text-[9px] sm:text-xs text-slate-300 font-bold uppercase">Yazıcı</span>
+                            </button>
+                            <button class="lab-item float-anim bg-slate-800 border-2 border-slate-600 flex flex-col items-center hover:border-orange-500 p-2 sm:p-3 rounded-xl flex-1 relative z-10 shadow-lg" style="animation-delay: 0.5s;" onclick="exploreItem('donanim', 'Fare (Mouse)', '🖱️', 'Elimizle tutup hareket ettirdiğimiz fiziksel bir DONANIMDIR.', this)">
+                                <span class="text-2xl sm:text-4xl mb-1 drop-shadow-md">🖱️</span>
+                                <span class="text-[9px] sm:text-xs text-slate-300 font-bold uppercase">Fare</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- SAĞ: Holografik Monitör (Yazılımlar ve Virüsler) -->
+                    <div class="lg:col-span-7 flex flex-col items-center justify-center w-full mt-4 lg:mt-0">
+                        
+                        <div class="w-full max-w-[450px] px-2 sm:px-0">
+                            <!-- Monitör Camı -->
+                            <div class="bg-black border-4 border-slate-600 rounded-xl p-1.5 sm:p-2 shadow-[0_0_50px_rgba(56,189,248,0.15)] relative lab-item hover:border-cyan-400 w-full transition-colors" onclick="exploreItem('donanim', 'Monitör (Ekran)', '🖥️', 'Görüntüyü yansıtan bu cam ve plastik cihaz fiziksel bir DONANIMDIR.', this)">
+                                
+                                <div class="absolute -top-4 left-1/2 -translate-x-1/2 font-black text-cyan-400 text-[10px] sm:text-xs bg-slate-900 px-4 py-1 rounded-full border border-slate-700">HOLOGRAFİK EKRAN</div>
+
+                                <!-- Ekran İçi -->
+                                <div class="bg-gradient-to-b from-indigo-950 to-blue-900 rounded-lg border border-indigo-500/30 grid grid-cols-3 gap-2 sm:gap-3 p-3 sm:p-5 min-h-[140px] sm:min-h-[220px] relative overflow-hidden shadow-inner" onclick="event.stopPropagation();">
+                                    
+                                    <button class="lab-item float-anim bg-white/5 border border-cyan-400/30 flex flex-col items-center hover:bg-cyan-500/30 hover:border-cyan-300 p-2 sm:p-3 rounded-lg relative z-10 backdrop-blur-md h-fit shadow-lg" style="animation-delay: 0.1s;" onclick="exploreItem('yazilim', 'İnternet Tarayıcı', '🌐', 'Ağırlığı yoktur, sadece kodlardan oluşur. Dijital bir YAZILIMDIR.', this)">
+                                        <span class="text-2xl sm:text-4xl mb-1 sm:mb-2 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]">🌐</span>
+                                        <span class="text-[8px] sm:text-xs font-bold text-cyan-100 text-center">İnternet</span>
+                                    </button>
+                                    
+                                    <button class="lab-item float-anim bg-white/5 border border-cyan-400/30 flex flex-col items-center hover:bg-cyan-500/30 hover:border-cyan-300 p-2 sm:p-3 rounded-lg relative z-10 backdrop-blur-md h-fit shadow-lg" style="animation-delay: 0.4s;" onclick="exploreItem('yazilim', 'Uzay Oyunu', '🕹️', 'Oyunlar fiziksel eşya değildir, ekranda çalışan kodlardır. YAZILIMDIR.', this)">
+                                        <span class="text-2xl sm:text-4xl mb-1 sm:mb-2 drop-shadow-[0_0_10px_rgba(34,211,238,0.8)]">🕹️</span>
+                                        <span class="text-[8px] sm:text-xs font-bold text-cyan-100 text-center">Oyunlar</span>
+                                    </button>
+                                    
+                                    <!-- Virüs Öğesi (Keşif Ekranında) -->
+                                    <button class="lab-item float-anim bg-red-900/40 border border-red-500/50 flex flex-col items-center hover:bg-red-700/50 hover:border-red-400 p-2 sm:p-3 rounded-lg relative z-10 backdrop-blur-md h-fit shadow-[0_0_15px_rgba(239,68,68,0.5)]" style="animation-delay: 0.7s;" onclick="exploreItem('virus', 'Truva Atı', '👾', 'DİKKAT! Bu zararlı bir kod parçasıdır (Virüs). Sisteme zarar verir!', this)">
+                                        <span class="text-2xl sm:text-4xl mb-1 sm:mb-2 drop-shadow-[0_0_10px_rgba(239,68,68,1)] animate-pulse">👾</span>
+                                        <span class="text-[8px] sm:text-xs font-bold text-red-200 text-center uppercase">Truva Atı</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div class="w-10 sm:w-12 h-6 sm:h-8 bg-gradient-to-b from-slate-600 to-slate-800 margin-auto mx-auto rounded-b-md"></div>
+                            <div class="w-24 sm:w-32 h-2 sm:h-3 bg-slate-600 margin-auto mx-auto rounded-t-lg shadow-[0_5px_10px_rgba(0,0,0,0.8)]"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="start-factory-btn" onclick="startFactoryGame()" class="mt-6 sm:mt-8 bg-slate-800 text-slate-500 font-black text-base sm:text-xl py-4 sm:py-5 px-6 sm:px-10 rounded-2xl shadow-md transition-all w-full max-w-md flex items-center justify-center gap-2 sm:gap-3 border-2 border-slate-700 cursor-not-allowed mb-10">
+                <span class="text-2xl sm:text-3xl grayscale opacity-30">🚀</span> <span class="btn-text">GÖREVE BAŞLA (Veri Eksik)</span>
+            </button>
+
+        </div>
+    </div>
+
+    <!-- OYUN EKRANI -->
+    <div id="game-header" class="w-full bg-black/60 border-b border-slate-800 shadow-lg z-10 p-2 sm:p-4 hidden shrink-0 relative backdrop-blur-md">
+        <div class="max-w-5xl mx-auto flex flex-col gap-1.5 sm:gap-2 w-full px-2">
+            <div class="flex justify-between items-center w-full">
+                
+                <div class="flex items-center gap-2">
+                    <!-- Oyun İçi Geri Butonu -->
+                    <button onclick="returnToMainMenu()" class="text-slate-400 hover:text-white bg-slate-800 hover:bg-red-600/80 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg font-bold text-xs sm:text-sm flex items-center transition-colors border border-slate-700" title="Oyundan Çık">
+                        <span>🏠</span>
+                    </button>
+                    
+                    <div class="flex items-center gap-2 sm:gap-4 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-700 shadow-inner">
+                        <span class="text-[10px] sm:text-xs font-black text-cyan-500 tracking-widest hidden sm:inline">GEMİ ENERJİSİ:</span>
+                        <div id="lives-container" class="flex gap-1 text-red-500 text-lg sm:text-2xl heart-beat">
+                            <span class="heart drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]" id="life-1">❤️</span>
+                            <span class="heart drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]" id="life-2">❤️</span>
+                            <span class="heart drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]" id="life-3">❤️</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2 sm:gap-6">
+                    <div class="font-black text-lg sm:text-2xl text-yellow-400 drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]"><span id="score-text">0</span> XP ✨</div>
+                    <button id="game-mute-btn" onclick="toggleMute()" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 p-1.5 sm:p-2 rounded-full transition text-lg sm:text-2xl flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10">🔊</button>
+                </div>
+            </div>
+            
+            <div class="flex justify-between items-center mt-1">
+                <div class="font-black text-[10px] sm:text-xs text-slate-400 tracking-widest">GÖREV: <span id="level-text" class="text-cyan-400 ml-1">1</span>/12</div>
+                <div class="progress-bar-container h-1.5 sm:h-2 flex-1 ml-4 bg-slate-800">
+                    <div id="progress" class="progress-bar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ana Oyun Alanı -->
+    <div id="main-game" class="flex-1 flex-col w-full max-w-5xl mx-auto px-2 sm:px-4 py-2 hidden overflow-hidden gap-1 sm:gap-2 relative">
+        
+        <div class="w-full flex justify-center z-10 shrink-0 mt-1">
+            <div class="flex items-start sm:items-end gap-2 sm:gap-3 max-w-xl w-full">
+                <div id="robot-emoji" class="text-4xl sm:text-5xl drop-shadow-[0_0_15px_rgba(34,211,238,0.5)] transition-transform duration-300 shrink-0">🧑‍🚀</div>
+                <div class="relative w-full">
+                    <div id="robot-speech" class="speech-bubble p-2 sm:p-3 font-bold text-xs sm:text-sm border-2 border-cyan-200/50 w-full min-h-[40px] flex items-center pr-8 sm:pr-10 leading-tight shadow-[0_4px_20px_rgba(34,211,238,0.2)]">
+                        Hızlıca sürükle! Süre bitmeden doğru alana yerleştir.
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="flex-1 w-full flex flex-col items-center justify-center relative pb-2 shrink-0 min-h-[200px]">
+            
+            <div id="laser-beam" class="laser-beam"></div>
+
+            <div id="item-container" class="relative z-30 mb-2">
+                <div id="draggable-item" class="border border-cyan-200/50 rounded-2xl sm:rounded-3xl p-2 sm:p-4 flex flex-col items-center justify-center w-24 h-24 sm:w-36 sm:h-36 bg-white/95 relative z-50 backdrop-blur-md">
+                    <span id="item-icon" class="text-4xl sm:text-6xl drop-shadow-md pointer-events-none mb-1">❓</span>
+                    <span id="item-name" class="text-[10px] sm:text-sm font-black text-slate-800 text-center pointer-events-none fredoka leading-tight px-1">Bekleniyor</span>
+                </div>
+            </div>
+            
+            <div class="w-full relative z-20 flex flex-col items-center">
+                <div class="teleport-pad"></div>
+                
+                <div class="timer-bar-container w-28 sm:w-40 mt-4 sm:mt-8">
+                    <div id="time-bar" class="timer-bar"></div>
+                </div>
+                <div class="text-[9px] sm:text-[10px] font-bold text-slate-400 mt-1 uppercase tracking-widest">Patlama Süresi</div>
+            </div>
+        </div>
+
+        <!-- HEDEF BÖLGELER (3 ADET) -->
+        <div class="w-full grid grid-cols-3 gap-2 sm:gap-6 shrink-0 h-24 sm:h-36 z-20 pb-2">
+            
+            <div id="basket-donanim" class="target-zone target-donanim flex flex-col items-center justify-center relative overflow-visible rounded-xl transition-all duration-300">
+                <span id="box-icon" class="text-3xl sm:text-5xl mb-1 drop-shadow-[0_5px_10px_rgba(0,0,0,0.8)] opacity-70">📦</span>
+                <h2 class="text-[10px] sm:text-sm font-black text-orange-400 fredoka tracking-widest drop-shadow-md hidden sm:block">DONANIM</h2>
+                <h2 class="text-[10px] font-black text-orange-400 fredoka sm:hidden">DONANIM</h2>
+            </div>
+
+            <div id="basket-virus" class="target-zone target-virus flex flex-col items-center justify-center relative overflow-visible rounded-full transition-all duration-300 mx-auto w-full aspect-square max-w-[120px]">
+                <span id="virus-icon" class="text-3xl sm:text-5xl mb-1 drop-shadow-[0_0_15px_rgba(168,85,247,0.8)] opacity-70">🕳️</span>
+                <h2 class="text-[9px] sm:text-xs font-black text-purple-400 fredoka tracking-widest drop-shadow-md text-center leading-none">KARA<br>DELİK</h2>
+            </div>
+
+            <div id="basket-yazilim" class="target-zone target-yazilim flex flex-col items-center justify-center relative overflow-visible rounded-xl transition-all duration-300">
+                <span id="screen-icon" class="text-3xl sm:text-5xl mb-1 drop-shadow-[0_0_15px_rgba(99,102,241,0.8)] opacity-70">☁️</span>
+                <h2 class="text-[10px] sm:text-sm font-black text-indigo-400 fredoka tracking-widest drop-shadow-md hidden sm:block">YAZILIM</h2>
+                <h2 class="text-[10px] font-black text-indigo-400 fredoka sm:hidden">YAZILIM</h2>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- HATA ANINDA DURDURAN EĞİTİM MODALI -->
+    <div id="learning-modal" class="fixed inset-0 bg-red-950/95 hidden flex items-center justify-center z-[60] backdrop-blur-md px-4">
+        <div class="bg-slate-900 p-6 sm:p-10 rounded-3xl shadow-[0_0_80px_rgba(239,68,68,0.5)] flex flex-col items-center max-w-lg w-full text-center border-2 border-red-500 relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 text-[10rem] opacity-5 pointer-events-none text-red-500">⚠️</div>
+            <div class="text-6xl mb-4 animate-bounce drop-shadow-[0_0_15px_rgba(239,68,68,0.8)]">🚨</div>
+            
+            <h2 id="learn-title" class="text-2xl sm:text-3xl font-black text-red-500 mb-2 fredoka uppercase tracking-widest">Rota Hatası!</h2>
+            <p id="learn-subtitle" class="text-slate-300 font-bold text-sm sm:text-lg mb-6">Yanlış hedefe gönderim yapıldı.</p>
+            
+            <div class="w-full bg-black/50 rounded-xl p-5 mb-6 border border-red-500/30 shadow-inner text-left">
+                <div class="flex items-center gap-4 mb-4 border-b border-slate-700 pb-4">
+                    <span id="learn-icon" class="text-5xl drop-shadow-md bg-slate-800 p-3 rounded-xl border border-slate-600">❓</span>
+                    <div>
+                        <h3 id="learn-name" class="text-xl font-black text-white mb-1">Parça Adı</h3>
+                        <span id="learn-type" class="text-xs font-black px-2 py-1 rounded bg-slate-800 text-slate-300 tracking-wider">Türü</span>
+                    </div>
+                </div>
+                <p id="learn-desc" class="text-slate-300 font-bold text-sm sm:text-base leading-relaxed">
+                    Açıklama buraya gelecek.
+                </p>
+            </div>
+            
+            <button onclick="closeLearningModal()" class="bg-red-600 hover:bg-red-500 text-white font-black text-sm sm:text-lg py-4 px-8 rounded-2xl shadow-[0_6px_0_#7f1d1d] active:translate-y-2 active:shadow-none transition-all w-full flex items-center justify-center gap-2">
+                <span>🔄</span> ANLADIM, TEKRAR DENEYECEĞİM
+            </button>
+        </div>
+    </div>
+
+    <!-- OYUN BİTTİ MODALI -->
+    <div id="game-over-modal" class="fixed inset-0 bg-slate-950/95 hidden flex items-center justify-center z-[60] px-4 backdrop-blur-md">
+        <div class="bg-slate-900 p-8 rounded-3xl flex flex-col items-center max-w-md w-full text-center border-2 border-red-900 shadow-[0_0_50px_rgba(220,38,38,0.3)]">
+            <div class="text-7xl mb-4 grayscale opacity-80">💥</div>
+            <h2 class="text-3xl font-black text-red-500 mb-2 fredoka uppercase">Enerji Tükendi!</h2>
+            <p class="text-slate-400 mb-8 text-sm sm:text-base font-bold">Gemi aşırı yüklendi ve sistemler durdu. Göreve baştan başlamalısın.</p>
+            <button onclick="restartGame()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-black text-lg py-4 px-8 rounded-2xl shadow-[0_6px_0_#0891b2] active:translate-y-2 active:shadow-none transition-all w-full">
+                🚀 YENİDEN BAŞLA
+            </button>
+        </div>
+    </div>
+
+    <!-- Ders Sonu MODALI -->
+    <div id="success-modal" class="fixed inset-0 bg-slate-950/95 hidden flex items-center justify-center z-[55] backdrop-blur-md px-4 py-6 sm:py-8">
+        <div class="bg-slate-900 p-5 sm:p-10 rounded-2xl sm:rounded-3xl shadow-[0_0_80px_rgba(34,211,238,0.3)] flex flex-col items-center max-w-2xl w-full text-center border-2 border-cyan-500 overflow-hidden max-h-full">
+            <div class="text-6xl sm:text-7xl mb-2 drop-shadow-[0_0_20px_rgba(250,204,21,0.8)]">🏆</div>
+            <h2 class="text-2xl sm:text-4xl font-black text-cyan-400 mb-1 sm:mb-2 fredoka uppercase tracking-widest">Görev Tamamlandı!</h2>
+            <p class="text-slate-300 font-bold text-sm sm:text-lg mb-3 sm:mb-4">Tüm donanım ve yazılımları doğru alanlara ulaştırdın.</p>
+            
+            <div class="w-full bg-black/40 rounded-xl p-3 sm:p-4 mb-4 sm:mb-6 border border-slate-700 overflow-hidden flex flex-col min-h-0 shadow-inner">
+                <h3 class="text-left font-bold text-cyan-500/70 mb-2 sm:mb-3 text-[10px] sm:text-xs uppercase tracking-widest shrink-0 border-b border-slate-800 pb-2">Uçuş Raporu (Analiz)</h3>
+                <div class="karne-grid flex-1" id="karne-list"></div>
+            </div>
+            
+            <button onclick="restartGame()" class="shrink-0 bg-cyan-600 hover:bg-cyan-500 text-white font-black text-lg sm:text-xl py-3 sm:py-4 px-6 sm:px-8 rounded-2xl shadow-[0_6px_0_#0891b2] active:translate-y-2 active:shadow-none transition-all w-full mt-auto">
+                🔄 YENİ BİR GÖREVE ÇIK
+            </button>
+            
+            <div class="mt-5 text-slate-500 font-bold text-[10px] sm:text-xs uppercase tracking-widest text-center flex flex-col gap-1">
+                <span>👨‍💻 Geliştirici</span>
+                <span class="text-cyan-600/50">© Mehmet Baran İKİOK</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- SES VE TTS MOTORU GÜVENLİ BAŞLATMA ---
+        let audioCtx = null;
+        let isTTSAvailable = 'speechSynthesis' in window;
+        let lastSpokenText = "";
+        let isMuted = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) {
+                        audioCtx = new AudioContext();
+                    }
+                } catch (e) {
+                    console.warn("Ses başlatılamadı:", e);
+                }
+            }
+            if (audioCtx && audioCtx.state === 'suspended') {
+                try { audioCtx.resume(); } catch (e) {}
+            }
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const expMuteBtn = document.getElementById('exp-mute-btn');
+            const gameMuteBtn = document.getElementById('game-mute-btn');
+            if(expMuteBtn) expMuteBtn.innerText = isMuted ? '🔇' : '🔊';
+            if(gameMuteBtn) gameMuteBtn.innerText = isMuted ? '🔇' : '🔊';
+            stopSpeech();
+        }
+
+        function playSound(type) {
+            if (isMuted) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                if (type === 'pickup') { 
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+                } else if (type === 'drop') { 
+                    osc.type = 'triangle'; osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+                } else if (type === 'success') { 
+                    osc.type = 'square'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.1);
+                    gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+                } else if (type === 'buzzer') {
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                    osc.frequency.setValueAtTime(100, audioCtx.currentTime + 0.4);
+                    gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+                } else if (type === 'win') { 
+                    const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]; 
+                    notes.forEach((freq, i) => {
+                        const oscW = audioCtx.createOscillator();
+                        const gainW = audioCtx.createGain();
+                        oscW.connect(gainW); gainW.connect(audioCtx.destination);
+                        oscW.type = 'sine';
+                        oscW.frequency.setValueAtTime(freq, audioCtx.currentTime + i*0.15);
+                        gainW.gain.setValueAtTime(0, audioCtx.currentTime);
+                        gainW.gain.setValueAtTime(0.1, audioCtx.currentTime + i*0.15);
+                        gainW.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i*0.15 + 0.5);
+                        oscW.start(audioCtx.currentTime + i*0.15);
+                        oscW.stop(audioCtx.currentTime + i*0.15 + 0.5);
+                    });
+                } else if (type === 'beam') {
+                    osc.type = 'sine'; osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.3);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+                } else if (type === 'explosion') {
+                    osc.type = 'square'; osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.5);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+                    osc.start(); osc.stop(audioCtx.currentTime + 0.5);
+                }
+            } catch (e) {}
+        }
+
+        // GÜVENLİ KONUŞMA DURDURMA
+        function stopSpeech() {
+            if (isTTSAvailable && window.speechSynthesis) {
+                try { window.speechSynthesis.cancel(); } catch(e) {}
+            }
+        }
+
+        function speakText(text, emojiId = 'robot-emoji') {
+            if (!isTTSAvailable || isMuted || !text) return; 
+            stopSpeech(); 
+            lastSpokenText = text;
+            
+            try {
+                // Etiketleri temizlerken boşluk bırakarak kelime yapışmasını önler
+                const cleanText = text.replace(/<\/?[^>]+(>|$)/g, " ").replace(/\s+/g, " ").trim();
+                
+                const utterance = new SpeechSynthesisUtterance(cleanText);
+                utterance.lang = 'tr-TR';
+                utterance.rate = 1.0; 
+                utterance.pitch = 1.2; 
+                
+                const emoji = emojiId ? document.getElementById(emojiId) : null;
+                if(emoji) {
+                    utterance.onstart = () => { emoji.classList.add('speaking-pulse'); emoji.style.transform = 'scale(1.1)'; };
+                    utterance.onend = () => { emoji.classList.remove('speaking-pulse'); emoji.style.transform = 'scale(1)'; };
+                }
+                window.speechSynthesis.speak(utterance);
+            } catch(e) {}
+        }
+
+        function replaySpeech() {
+            const expScreen = document.getElementById('exploration-screen');
+            if(lastSpokenText) speakText(lastSpokenText, expScreen && !expScreen.classList.contains('hidden') ? 'exp-robot-emoji' : 'robot-emoji');
+        }
+
+        // EKRAN GÖSTERİM KONTROLLERİ (Hatasız Geçişler)
+        function returnToMainMenu() {
+            stopSpeech();
+            stopItemTimer();
+            playSound('click');
+            
+            ['exploration-screen', 'game-header', 'main-game', 'success-modal', 'game-over-modal', 'learning-modal', 'three-modal'].forEach(id => {
+                const el = document.getElementById(id);
+                // Class ile gizliyoruz. inline style kullanmıyoruz.
+                if(el) el.classList.add('hidden');
+            });
+
+            const startScreen = document.getElementById('start-screen');
+            if(startScreen) {
+                startScreen.classList.remove('hidden');
+                setTimeout(() => {
+                    startScreen.classList.remove('opacity-0');
+                }, 50);
+            }
+            
+            document.body.style.overflow = 'hidden'; 
+        }
+
+        let exploredItemsCount = 0;
+        const requiredExplorableItems = 3; 
+
+        function startExploration() {
+            initAudio();
+            playSound('pickup');
+            
+            try {
+                if(isTTSAvailable) {
+                    let wakeTTS = new SpeechSynthesisUtterance("");
+                    window.speechSynthesis.speak(wakeTTS);
+                }
+            } catch(e) {}
+            
+            const startScreen = document.getElementById('start-screen');
+            if(startScreen) startScreen.classList.add('opacity-0');
+            
+            setTimeout(() => {
+                if(startScreen) startScreen.classList.add('hidden');
+                const expScreen = document.getElementById('exploration-screen');
+                if(expScreen) {
+                    expScreen.classList.remove('hidden');
+                }
+                
+                const welcomeText = "Masadaki cihazlara veya virüslere tıkla. En az 3 nesneyi analiz etmelisin Kaptan!";
+                const expRobotSpeech = document.getElementById('exp-robot-speech');
+                if(expRobotSpeech) expRobotSpeech.innerText = welcomeText;
+                speakText(welcomeText, 'exp-robot-emoji');
+            }, 300);
+        }
+
+        function exploreItem(type, name, icon, desc, btnElement) {
+            playSound('pickup');
+            
+            if (btnElement && !btnElement.classList.contains('explored-item')) {
+                btnElement.classList.add('explored-item');
+                const badge = document.createElement('div');
+                badge.className = 'explored-badge';
+                badge.innerText = '✓';
+                btnElement.appendChild(badge);
+                
+                exploredItemsCount++;
+                const expProgress = document.getElementById('explore-progress');
+                if(expProgress) expProgress.innerText = exploredItemsCount;
+                
+                if (exploredItemsCount >= requiredExplorableItems) {
+                    const factoryBtn = document.getElementById('start-factory-btn');
+                    if(factoryBtn) {
+                        factoryBtn.className = "mt-6 sm:mt-8 bg-cyan-600 hover:bg-cyan-500 text-white font-black text-base sm:text-2xl py-4 sm:py-5 px-6 sm:px-10 rounded-2xl shadow-[0_6px_0_#0891b2] active:translate-y-2 active:shadow-none transition-all w-full max-w-md flex items-center justify-center gap-2 sm:gap-3 animate-bounce border-2 border-cyan-400 cursor-pointer mb-10";
+                        const gsSpan = factoryBtn.querySelector('span.grayscale');
+                        if(gsSpan) gsSpan.classList.remove('grayscale', 'opacity-30');
+                        const btnText = factoryBtn.querySelector('.btn-text');
+                        if(btnText) btnText.innerText = "GÖREVE BAŞLA (Hazırsın!)";
+                    }
+                    if(exploredItemsCount === requiredExplorableItems) playSound('success'); 
+                }
+            }
+
+            const focusPanel = document.getElementById('lab-focus-panel');
+            if (focusPanel) {
+                focusPanel.classList.remove('hidden');
+                focusPanel.classList.add('flex');
+                focusPanel.classList.remove('item-pop');
+                void focusPanel.offsetWidth; 
+                focusPanel.classList.add('item-pop');
+                
+                const focusIconEl = document.getElementById('focus-icon');
+                if (focusIconEl) focusIconEl.innerText = icon;
+                
+                const focusBgIconEl = document.getElementById('focus-bg-icon');
+                if (focusBgIconEl) focusBgIconEl.innerText = icon;
+                
+                const focusTitleEl = document.getElementById('focus-title');
+                if (focusTitleEl) focusTitleEl.innerText = name;
+                
+                const typeBadge = document.getElementById('focus-type');
+                if (typeBadge) {
+                    if (type === 'donanim') {
+                        typeBadge.innerHTML = '📦 FİZİKSEL DONANIM';
+                        typeBadge.className = 'px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[10px] sm:text-sm font-black inline-block bg-orange-900/80 text-orange-400 border border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.4)] tracking-widest';
+                        focusPanel.style.borderColor = '#f97316';
+                        focusPanel.style.boxShadow = '0 0 30px rgba(249, 115, 22, 0.15)';
+                    } else if(type === 'yazilim') {
+                        typeBadge.innerHTML = '☁️ DİJİTAL YAZILIM';
+                        typeBadge.className = 'px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[10px] sm:text-sm font-black inline-block bg-indigo-900/80 text-indigo-400 border border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)] tracking-widest';
+                        focusPanel.style.borderColor = '#6366f1';
+                        focusPanel.style.boxShadow = '0 0 30px rgba(99, 102, 241, 0.15)';
+                    } else {
+                        typeBadge.innerHTML = '🕳️ ZARARLI VİRÜS';
+                        typeBadge.className = 'px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[10px] sm:text-sm font-black inline-block bg-purple-900/80 text-purple-400 border border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.4)] tracking-widest animate-pulse';
+                        focusPanel.style.borderColor = '#a855f7';
+                        focusPanel.style.boxShadow = '0 0 30px rgba(168, 85, 247, 0.5)';
+                    }
+                }
+                focusPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            const focusDescEl = document.getElementById('focus-desc');
+            if (focusDescEl) focusDescEl.innerHTML = desc;
+            
+            const expRobotSpeechEl = document.getElementById('exp-robot-speech');
+            if (expRobotSpeechEl) expRobotSpeechEl.innerHTML = `Şu an <b>${name}</b> verisi inceleniyor.`;
+            
+            speakText(`${name}. ${desc}`, 'exp-robot-emoji');
+        }
+
+        function startFactoryGame() {
+            if(exploredItemsCount < requiredExplorableItems) {
+                const factoryBtn = document.getElementById('start-factory-btn');
+                if(factoryBtn) {
+                    factoryBtn.classList.add('shake');
+                    setTimeout(() => factoryBtn.classList.remove('shake'), 400);
+                }
+                
+                const warning = `Analiz eksik! En az ${requiredExplorableItems} nesneyi incelemelisin.`;
+                const expRobotSpeech = document.getElementById('exp-robot-speech');
+                if(expRobotSpeech) expRobotSpeech.innerHTML = `<span class="text-red-400">${warning}</span>`;
+                speakText(warning, 'exp-robot-emoji');
+                playSound('buzzer');
+                return;
+            }
+            
+            stopSpeech();
+            playSound('pickup');
+            
+            const expScreen = document.getElementById('exploration-screen');
+            if(expScreen) expScreen.classList.add('hidden'); 
+            
+            const mainGame = document.getElementById('main-game');
+            const gameHeader = document.getElementById('game-header');
+            
+            if(gameHeader) {
+                gameHeader.classList.remove('hidden');
+            }
+            if(mainGame) {
+                mainGame.classList.remove('hidden');
+                mainGame.classList.add('flex'); 
+            }
+            
+            document.body.style.overflow = 'hidden'; 
+            initGame();
+        }
+
+        // --- EĞİTSEL VERİ TABANI ---
+        const ALL_ITEMS = [
+            { name: "Fare (Mouse)", type: "donanim", icon: "🖱️", hint: "Ekranda ok işaretini hareket ettirmemizi sağlar.", desc: "Fare fiziksel bir DONANIMDIR ve Donanım alanına gönderilmelidir." },
+            { name: "Klavye", type: "donanim", icon: "⌨️", hint: "Bilgisayara yazı yazmamızı sağlar.", desc: "Klavye plastik ve fiziksel bir DONANIM olduğu için Donanım alanına gider." },
+            { name: "Monitör", type: "donanim", icon: "🖥️", hint: "Bilgisayardaki her şeyi görmemizi sağlar.", desc: "Görüntüleri yansıtan bu cam makine bir DONANIMDIR." },
+            { name: "Sistem Kasası", type: "donanim", icon: "🗄️", hint: "Tüm parçalar içindedir.", desc: "Ağır bir DONANIMDIR. Kesinlikle Donanım alanına yüklenmelidir." },
+            
+            { name: "İnternet", type: "yazilim", icon: "🌐", hint: "Sitelerde gezinmemizi sağlayan programdır.", desc: "Tarayıcılar kodlardan oluşur, ağırlığı yoktur. YAZILIMDIR." },
+            { name: "Çizim Programı", type: "yazilim", icon: "🎨", hint: "Ekranda çizim yapmamızı sağlar.", desc: "Fiziksel değildir. YAZILIM olduğu için Yazılım alanına gider." },
+            { name: "Oyunlar", type: "yazilim", icon: "🕹️", hint: "İçinde eğlendiğimiz dijital dünyalardır.", desc: "Minecraft gibi oyunlar sadece koddur. YAZILIMDIR." },
+            { name: "Sanal Klasör", type: "yazilim", icon: "📁", hint: "İçine dosyalarımızı koyduğumuz ikonlardır.", desc: "Sarı dosyalar gerçek kağıt değildir. YAZILIMDIR." },
+
+            { name: "Truva Atı", type: "virus", icon: "👾", hint: "Kendini faydalı gibi gösterip sistemi bozar.", desc: "DİKKAT! Bu zararlı bir koddur. Sisteme zarar vermemesi için onu Kara Deliğe atmalısın!" },
+            { name: "Bilgisayar Solucanı", type: "virus", icon: "🐛", hint: "Dosyaları kemirip kopyalayarak çoğalır.", desc: "DİKKAT! Bu bir Virüstür. Diğer dosyalara bulaşmadan önce onu hemen Kara Deliğe sürükle!" },
+            { name: "Casus Yazılım", type: "virus", icon: "👁️", hint: "Şifrelerini gizlice kopyalar.", desc: "DİKKAT! Bu verilerini çalan tehlikeli bir koddur. Karantinaya, yani Kara Deliğe yolla!" },
+            { name: "Sahte Bağlantı", type: "virus", icon: "🔗", hint: "Tıkladığında bilgisayarına zarar verir.", desc: "DİKKAT! İçinde virüs taşıyan sahte bir link. Hemen Kara Deliğe fırlatarak yok et!" }
+        ];
+
+        let gameItems = [];
+        let currentIndex = 0;
+        let score = 0;
+        let currentItem = null;
+        
+        let isDragging = false;
+        let isItemLocked = false;
+        let startX = 0, startY = 0;
+        let currentX = 0, currentY = 0;
+        let lives = 3; 
+        
+        let itemTimer;
+        let timeLeft = 100;
+        const TIME_LIMIT_MS = 10000; 
+
+        function initGame() {
+            gameItems = [...ALL_ITEMS];
+            for (let i = gameItems.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [gameItems[i], gameItems[j]] = [gameItems[j], gameItems[i]];
+            }
+            gameItems = gameItems.slice(0, 12);
+            
+            currentIndex = 0;
+            score = 0;
+            lives = 3;
+            updateLivesUI();
+            updateUI();
+            
+            robotSpeak("Gemi kalkışa hazır! Parçaları hızlıca doğru alana yerleştir.", false, true);
+            setTimeout(() => { loadNextItem(); }, 1000); 
+        }
+
+        function startItemTimer() {
+            clearInterval(itemTimer);
+            timeLeft = 100;
+            const timeBar = document.getElementById('time-bar');
+            if(timeBar) {
+                timeBar.style.width = '100%';
+                timeBar.style.backgroundColor = '#22c55e';
+            }
+            
+            const step = 100 / (TIME_LIMIT_MS / 100); 
+            
+            itemTimer = setInterval(() => {
+                if(isItemLocked || isDragging) return; 
+                
+                timeLeft -= step;
+                if(timeBar) {
+                    timeBar.style.width = `${Math.max(0, timeLeft)}%`;
+                    if (timeLeft < 40) timeBar.style.backgroundColor = '#f59e0b'; 
+                    if (timeLeft < 15) timeBar.style.backgroundColor = '#ef4444'; 
+                }
+                
+                if (timeLeft <= 0) {
+                    clearInterval(itemTimer);
+                    handleTimeOut();
+                }
+            }, 100);
+        }
+
+        function stopItemTimer() {
+            clearInterval(itemTimer);
+        }
+
+        function handleTimeOut() {
+            isItemLocked = true;
+            playSound('explosion');
+            lives--;
+            updateLivesUI();
+            
+            const draggableItem = document.getElementById('draggable-item');
+            if(draggableItem) {
+                draggableItem.style.animation = 'none';
+                draggableItem.style.transition = 'all 0.3s ease';
+                draggableItem.style.transform = 'scale(0) rotate(180deg)';
+                draggableItem.style.opacity = '0';
+            }
+            
+            showLearningModal(currentItem, true); 
+        }
+
+        function updateLivesUI() {
+            const life1 = document.getElementById('life-1');
+            const life2 = document.getElementById('life-2');
+            const life3 = document.getElementById('life-3');
+            
+            if(life1) life1.className = lives >= 1 ? 'heart drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'heart heart-lost';
+            if(life2) life2.className = lives >= 2 ? 'heart drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'heart heart-lost';
+            if(life3) life3.className = lives >= 3 ? 'heart drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]' : 'heart heart-lost';
+        }
+
+        function robotSpeak(text, isError = false, useTTS = true) {
+            const robotSpeech = document.getElementById('robot-speech');
+            if(!robotSpeech) return;
+            robotSpeech.innerHTML = text; 
+            robotSpeech.style.color = isError ? "#991b1b" : "#0f172a"; 
+            robotSpeech.style.backgroundColor = isError ? "#fecaca" : "rgba(255, 255, 255, 0.95)";
+            robotSpeech.style.borderColor = isError ? "#ef4444" : "rgba(56, 189, 248, 0.5)";
+            
+            const style = document.createElement('style');
+            style.innerHTML = `.speech-bubble:after { border-top-color: ${isError ? '#fecaca' : 'rgba(255, 255, 255, 0.95)'} !important; }`;
+            document.head.appendChild(style);
+
+            if(useTTS) {
+                const cleanText = text.replace(/<\/?[^>]+(>|$)/g, " ").replace(/\s+/g, " ").trim();
+                speakText(cleanText, 'robot-emoji');
+            }
+        }
+
+        function loadNextItem() {
+            if (currentIndex >= gameItems.length) {
+                endGame();
+                return;
+            }
+
+            currentItem = gameItems[currentIndex];
+            isItemLocked = true; 
+            
+            const itemIcon = document.getElementById('item-icon');
+            const itemName = document.getElementById('item-name');
+            if(itemIcon) itemIcon.innerText = currentItem.icon;
+            if(itemName) itemName.innerText = currentItem.name;
+            
+            const draggableItem = document.getElementById('draggable-item');
+            if(draggableItem) {
+                if(currentItem.type === 'virus') {
+                    draggableItem.style.boxShadow = '0 15px 25px rgba(0,0,0,0.5), 0 0 20px rgba(239,68,68,0.6)';
+                } else {
+                    draggableItem.style.boxShadow = '0 15px 25px rgba(0,0,0,0.5), 0 0 15px rgba(56,189,248,0.5)';
+                }
+
+                currentX = 0; currentY = 0;
+                
+                draggableItem.style.animation = 'none'; 
+                draggableItem.style.transition = 'none';
+                draggableItem.style.transform = `scale(0) translateY(50px)`; 
+                draggableItem.style.opacity = '0';
+            }
+            
+            playSound('beam');
+            const laserBeam = document.getElementById('laser-beam');
+            if(laserBeam) {
+                laserBeam.classList.remove('beam-active');
+                void laserBeam.offsetWidth;
+                laserBeam.classList.add('beam-active');
+            }
+            
+            setTimeout(() => {
+                if(draggableItem) {
+                    draggableItem.style.transition = 'transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.6s ease';
+                    draggableItem.style.transform = `scale(1) translateY(0px)`;
+                    draggableItem.style.opacity = '1';
+                }
+                
+                setTimeout(() => { 
+                    isItemLocked = false; 
+                    if(draggableItem) draggableItem.style.animation = ''; 
+                    startItemTimer(); 
+                }, 600); 
+            }, 250);
+            
+            updateUI();
+            
+            robotSpeak(`<b>${currentItem.name}</b> geldi! Süre bitmeden fırlat.`, false, false);
+        }
+
+        function updateUI() {
+            const scoreEl = document.getElementById('score-text');
+            const levelEl = document.getElementById('level-text');
+            const progressEl = document.getElementById('progress');
+            
+            if(scoreEl) scoreEl.innerText = score;
+            if(levelEl) levelEl.innerText = (currentIndex + 1) > gameItems.length ? gameItems.length : (currentIndex + 1);
+            if(progressEl) progressEl.style.width = `${(currentIndex / gameItems.length) * 100}%`;
+        }
+
+        // --- SÜRÜKLE BIRAK MANTIĞI ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const draggableItem = document.getElementById('draggable-item');
+            
+            if(draggableItem) {
+                draggableItem.addEventListener('pointerdown', (e) => {
+                    if (isItemLocked || currentIndex >= gameItems.length || draggableItem.style.opacity === '0') return;
+                    
+                    isDragging = true;
+                    draggableItem.style.animation = 'none'; 
+                    draggableItem.setPointerCapture(e.pointerId); 
+                    
+                    startX = e.clientX - currentX;
+                    startY = e.clientY - currentY;
+                    
+                    draggableItem.style.transition = 'none';
+                    draggableItem.style.zIndex = "100";
+                    draggableItem.style.transform = `translate(${currentX}px, ${currentY}px) scale(1.1) rotate(2deg)`;
+                    playSound('pickup');
+                });
+
+                draggableItem.addEventListener('pointermove', (e) => {
+                    if (!isDragging) return;
+                    
+                    currentX = e.clientX - startX;
+                    currentY = e.clientY - startY;
+                    
+                    draggableItem.style.transform = `translate(${currentX}px, ${currentY}px) scale(1.1) rotate(2deg)`;
+                    
+                    const basketDonanim = document.getElementById('basket-donanim');
+                    const basketYazilim = document.getElementById('basket-yazilim');
+                    const basketVirus = document.getElementById('basket-virus');
+                    if(!basketDonanim || !basketYazilim || !basketVirus) return;
+                    
+                    const itemRect = draggableItem.getBoundingClientRect();
+                    const donanimRect = basketDonanim.getBoundingClientRect();
+                    const yazilimRect = basketYazilim.getBoundingClientRect();
+                    const virusRect = basketVirus.getBoundingClientRect(); 
+                    
+                    const itemCenterX = itemRect.left + itemRect.width / 2;
+                    const itemCenterY = itemRect.top + itemRect.height / 2;
+
+                    basketDonanim.classList.remove('highlight-donanim');
+                    basketYazilim.classList.remove('highlight-yazilim');
+                    basketVirus.classList.remove('highlight-virus');
+
+                    if (isCollidingCenter(itemCenterX, itemCenterY, donanimRect)) {
+                        basketDonanim.classList.add('highlight-donanim');
+                    } else if (isCollidingCenter(itemCenterX, itemCenterY, yazilimRect)) {
+                        basketYazilim.classList.add('highlight-yazilim');
+                    } else if (isCollidingCenter(itemCenterX, itemCenterY, virusRect)) {
+                        basketVirus.classList.add('highlight-virus');
+                    }
+                });
+
+                draggableItem.addEventListener('pointerup', (e) => {
+                    if (!isDragging) return;
+                    isDragging = false;
+                    draggableItem.releasePointerCapture(e.pointerId);
+                    
+                    draggableItem.style.transition = 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                    draggableItem.style.zIndex = "30";
+                    
+                    const basketDonanim = document.getElementById('basket-donanim');
+                    const basketYazilim = document.getElementById('basket-yazilim');
+                    const basketVirus = document.getElementById('basket-virus');
+                    if(!basketDonanim || !basketYazilim || !basketVirus) return;
+
+                    basketDonanim.classList.remove('highlight-donanim');
+                    basketYazilim.classList.remove('highlight-yazilim');
+                    basketVirus.classList.remove('highlight-virus');
+
+                    const itemRect = draggableItem.getBoundingClientRect();
+                    const donanimRect = basketDonanim.getBoundingClientRect();
+                    const yazilimRect = basketYazilim.getBoundingClientRect();
+                    const virusRect = basketVirus.getBoundingClientRect();
+                    
+                    const itemCenterX = itemRect.left + itemRect.width / 2;
+                    const itemCenterY = itemRect.top + itemRect.height / 2;
+
+                    let droppedOn = null;
+                    if (isCollidingCenter(itemCenterX, itemCenterY, donanimRect)) {
+                        droppedOn = 'donanim';
+                    } else if (isCollidingCenter(itemCenterX, itemCenterY, yazilimRect)) {
+                        droppedOn = 'yazilim';
+                    } else if (isCollidingCenter(itemCenterX, itemCenterY, virusRect)) {
+                        droppedOn = 'virus';
+                    }
+
+                    if (droppedOn) {
+                        isItemLocked = true;
+                        checkAnswer(droppedOn);
+                    } else {
+                        returnToCenter();
+                        playSound('drop');
+                    }
+                });
+            }
+        });
+
+        function isCollidingCenter(cx, cy, targetRect) {
+            return (cx >= targetRect.left && cx <= targetRect.right &&
+                    cy >= targetRect.top && cy <= targetRect.bottom);
+        }
+
+        function returnToCenter() {
+            currentX = 0; currentY = 0;
+            const draggableItem = document.getElementById('draggable-item');
+            if(draggableItem) {
+                draggableItem.style.transform = `translate(0px, 0px) scale(1)`;
+                
+                setTimeout(() => {
+                    if (!isDragging && !isItemLocked) {
+                        draggableItem.style.animation = ''; 
+                    }
+                }, 300);
+            }
+        }
+
+        function createStars(x, y) {
+            const layer = document.getElementById('star-layer');
+            if(!layer) return; 
+            
+            for(let i=0; i<4; i++) {
+                const star = document.createElement('div');
+                star.className = 'floating-star';
+                star.innerText = '✨'; 
+                
+                const offsetX = (Math.random() - 0.5) * 80;
+                star.style.left = `${x + offsetX}px`;
+                star.style.top = `${y}px`;
+                
+                layer.appendChild(star);
+                setTimeout(() => { star.remove(); }, 1000);
+            }
+        }
+
+        function checkAnswer(droppedBasketType) {
+            stopItemTimer(); 
+            const basketDonanim = document.getElementById('basket-donanim');
+            const basketYazilim = document.getElementById('basket-yazilim');
+            const basketVirus = document.getElementById('basket-virus');
+            const draggableItem = document.getElementById('draggable-item');
+
+            if (currentItem.type === droppedBasketType) {
+                
+                if (droppedBasketType === 'donanim' && basketDonanim) {
+                    basketDonanim.classList.remove('box-receive');
+                    void basketDonanim.offsetWidth;
+                    basketDonanim.classList.add('box-receive');
+                    const boxIcon = document.getElementById('box-icon');
+                    if(boxIcon) {
+                        boxIcon.style.opacity = '1';
+                        setTimeout(() => boxIcon.style.opacity = '0.7', 400);
+                    }
+                } else if (droppedBasketType === 'yazilim' && basketYazilim) {
+                    basketYazilim.classList.remove('screen-receive');
+                    void basketYazilim.offsetWidth;
+                    basketYazilim.classList.add('screen-receive');
+                    const screenIcon = document.getElementById('screen-icon');
+                    if(screenIcon) {
+                        screenIcon.style.opacity = '1';
+                        setTimeout(() => screenIcon.style.opacity = '0.7', 400);
+                    }
+                } else if(basketVirus) {
+                    basketVirus.classList.remove('virus-receive');
+                    void basketVirus.offsetWidth;
+                    basketVirus.classList.add('virus-receive');
+                    const virusIcon = document.getElementById('virus-icon');
+                    if(virusIcon) {
+                        virusIcon.style.opacity = '1';
+                        setTimeout(() => virusIcon.style.opacity = '0.7', 600);
+                    }
+                }
+
+                score += 10;
+                playSound('success');
+                
+                let dropRect;
+                if(droppedBasketType === 'donanim' && basketDonanim) dropRect = basketDonanim.getBoundingClientRect();
+                else if(droppedBasketType === 'yazilim' && basketYazilim) dropRect = basketYazilim.getBoundingClientRect();
+                else if(basketVirus) dropRect = basketVirus.getBoundingClientRect();
+
+                if(dropRect) createStars(dropRect.left + dropRect.width/2, dropRect.top + dropRect.height/2);
+                
+                robotSpeak("Rota Onaylandı! Harika.", false, false);
+                
+                if(draggableItem) {
+                    draggableItem.style.transition = 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                    draggableItem.style.transform = `translate(${currentX}px, ${currentY}px) scale(0) rotate(-15deg)`;
+                    draggableItem.style.opacity = '0';
+                }
+                
+                setTimeout(() => {
+                    currentIndex++;
+                    loadNextItem();
+                }, 1000); 
+
+            } else {
+                playSound('buzzer');
+                lives--;
+                updateLivesUI();
+                
+                if(draggableItem) {
+                    draggableItem.style.transition = 'none'; 
+                    returnToCenter();
+                    draggableItem.style.opacity = '1';
+                    draggableItem.classList.add('shake');
+                }
+                
+                setTimeout(() => { 
+                    if(draggableItem) draggableItem.classList.remove('shake'); 
+                    showLearningModal(currentItem, false);
+                }, 400);
+            }
+        }
+
+        function showLearningModal(item, isTimeout = false) {
+            stopSpeech();
+            const modal = document.getElementById('learning-modal');
+            if(!modal) return;
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex'); // Bunu tekrar ekledik, modalı ortalamak için şart
+            
+            const learnTitle = document.getElementById('learn-title');
+            const learnSubtitle = document.getElementById('learn-subtitle');
+            
+            if(isTimeout && learnTitle && learnSubtitle) {
+                learnTitle.innerText = "SÜRE BİTTİ!";
+                learnSubtitle.innerText = "Çok geç kaldın, parça patladı.";
+            } else if (learnTitle && learnSubtitle) {
+                learnTitle.innerText = "ROTA HATASI!";
+                learnSubtitle.innerText = "Yanlış hedefe gönderim yapıldı.";
+            }
+
+            const learnIcon = document.getElementById('learn-icon');
+            const learnName = document.getElementById('learn-name');
+            if(learnIcon) learnIcon.innerText = item.icon;
+            if(learnName) learnName.innerText = item.name;
+            
+            const typeSpan = document.getElementById('learn-type');
+            if (typeSpan) {
+                if (item.type === 'donanim') {
+                    typeSpan.innerText = '📦 FİZİKSEL DONANIM';
+                    typeSpan.className = 'text-[10px] sm:text-xs font-black px-3 py-1 rounded-full bg-orange-900 text-orange-400 border border-orange-500 tracking-wider';
+                } else if (item.type === 'yazilim') {
+                    typeSpan.innerText = '☁️ DİJİTAL YAZILIM';
+                    typeSpan.className = 'text-[10px] sm:text-xs font-black px-3 py-1 rounded-full bg-indigo-900 text-indigo-400 border border-indigo-500 tracking-wider';
+                } else {
+                    typeSpan.innerText = '🕳️ ZARARLI VİRÜS';
+                    typeSpan.className = 'text-[10px] sm:text-xs font-black px-3 py-1 rounded-full bg-purple-900 text-purple-400 border border-purple-500 tracking-wider';
+                }
+            }
+            
+            const learnDesc = document.getElementById('learn-desc');
+            if(learnDesc) learnDesc.innerText = item.desc;
+            speakText(`Uyarı! ${item.desc}`, null); 
+        }
+
+        function closeLearningModal() {
+            stopSpeech();
+            playSound('pickup');
+            const modal = document.getElementById('learning-modal');
+            if(modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex'); // Gizlerken flex'i de kaldırmak şart
+            }
+            
+            if (lives <= 0) {
+                const gameOverModal = document.getElementById('game-over-modal');
+                if(gameOverModal) {
+                    gameOverModal.classList.remove('hidden');
+                    gameOverModal.classList.add('flex');
+                }
+                playSound('error');
+                speakText("Enerjin bitti. Lütfen baştan başla.");
+            } else {
+                isItemLocked = false;
+                const draggableItem = document.getElementById('draggable-item');
+                if(draggableItem) {
+                    draggableItem.classList.remove('shake');
+                    void draggableItem.offsetWidth;
+                    draggableItem.classList.add('shake');
+                    draggableItem.style.animation = ''; 
+                }
+                
+                if(currentItem) robotSpeak(`Tekrar dene! <b>${currentItem.name}</b>, sence nedir?`, false, true);
+                startItemTimer(); 
+            }
+        }
+
+        function endGame() {
+            stopItemTimer();
+            playSound('win');
+            const progress = document.getElementById('progress');
+            if(progress) progress.style.width = `100%`;
+            robotSpeak("Mükemmel! Tüm donanım ve yazılımları doğru alanlara ulaştırdın.", false, true);
+            
+            const karneList = document.getElementById('karne-list');
+            if(karneList) {
+                karneList.innerHTML = '';
+                
+                gameItems.forEach(item => {
+                    let bgClass, textColor, typeLabel;
+                    
+                    if (item.type === 'donanim') {
+                        bgClass = 'bg-orange-950/40 border-orange-500/50'; textColor = 'text-orange-400'; typeLabel = 'Donanım';
+                    } else if (item.type === 'yazilim') {
+                        bgClass = 'bg-indigo-950/40 border-indigo-500/50'; textColor = 'text-indigo-400'; typeLabel = 'Yazılım';
+                    } else {
+                        bgClass = 'bg-purple-950/40 border-purple-500/50'; textColor = 'text-purple-400'; typeLabel = 'Zararlı (İmha)';
+                    }
+                    
+                    karneList.innerHTML += `
+                        <div class="${bgClass} border rounded-lg p-2 flex items-center gap-2 sm:gap-3">
+                            <span class="text-2xl sm:text-3xl drop-shadow-md">${item.icon}</span>
+                            <div class="flex flex-col text-left">
+                                <span class="font-bold text-white text-xs sm:text-sm leading-tight">${item.name}</span>
+                                <span class="font-black text-[9px] sm:text-[10px] ${textColor} tracking-widest uppercase">${typeLabel}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+
+            setTimeout(() => {
+                const successModal = document.getElementById('success-modal');
+                if(successModal) {
+                    successModal.classList.remove('hidden');
+                    successModal.classList.add('flex');
+                }
+            }, 1500);
+        }
+
+        function restartGame() {
+            returnToMainMenu();
+            setTimeout(() => {
+                startExploration();
+            }, 300);
+        }
+
+        // --- YENİ 3D BİLGİSAYAR KASASI SİMÜLASYONU (Premium Oyuncu Kasası) ---
+        let scene, camera, renderer, caseGroup, raycaster, mouse;
+        let is3DModalOpen = false;
+        let isDragging3D = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let animationFrameId;
+        
+        let animatedFans = [];
+        let rgbLights = [];
+        let interactiveGroups = []; 
+
+        function open3DModal() {
+            playSound('click');
+            const modal = document.getElementById('three-modal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                is3DModalOpen = true;
+                
+                if (!scene) {
+                    setTimeout(() => init3DScene(), 100); 
+                } else {
+                    animate3D();
+                }
+            }
+        }
+
+        function close3DModal() {
+            playSound('click');
+            const modal = document.getElementById('three-modal');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                is3DModalOpen = false;
+                cancelAnimationFrame(animationFrameId);
+            }
+        }
+
+        function setComponentData(group, name, desc) {
+            group.targetScale = 1; 
+            interactiveGroups.push(group);
+            group.traverse((child) => {
+                if (child.isMesh || child.isLineSegments) {
+                    child.userData = { name, desc, parentGroup: group }; 
+                }
+            });
+        }
+
+        function init3DScene() {
+            const container = document.getElementById('three-canvas-container');
+            if (!container) return;
+
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(0, 2, 10);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+            container.appendChild(renderer.domElement);
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+            scene.add(ambientLight);
+            
+            const mainLight = new THREE.PointLight(0x0ea5e9, 2, 50); 
+            mainLight.position.set(5, 5, 5);
+            scene.add(mainLight);
+            
+            const fillLight = new THREE.PointLight(0xa855f7, 1.5, 50); 
+            fillLight.position.set(-5, -5, 2);
+            scene.add(fillLight);
+            
+            const frontLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            frontLight.position.set(0, 0, 10);
+            scene.add(frontLight);
+
+            const gridHelper = new THREE.GridHelper(30, 60, 0x0ea5e9, 0x0ea5e9);
+            gridHelper.position.y = -4.5;
+            gridHelper.material.opacity = 0.2;
+            gridHelper.material.transparent = true;
+            scene.add(gridHelper);
+
+            caseGroup = new THREE.Group();
+            scene.add(caseGroup);
+
+            // 1. KASA DIŞ ÇERÇEVESİ VE CAM PANEL
+            const caseWidth = 6.5, caseHeight = 8, caseDepth = 3.5;
+            
+            const frameGeo = new THREE.BoxGeometry(caseWidth, caseHeight, caseDepth);
+            const edgesGeo = new THREE.EdgesGeometry(frameGeo);
+            const frameMesh = new THREE.LineSegments(edgesGeo, new THREE.LineBasicMaterial({ color: 0x0ea5e9, linewidth: 2 }));
+            caseGroup.add(frameMesh);
+            
+            const glassMat = new THREE.MeshPhysicalMaterial({
+                color: 0x000000, metalness: 0.9, roughness: 0.1,
+                transparent: true, opacity: 0.2, side: THREE.DoubleSide
+            });
+            const glassBox = new THREE.Mesh(frameGeo, glassMat);
+            caseGroup.add(glassBox);
+            
+            glassBox.userData = { name: "Oyuncu Kasası", desc: "Bilgisayarın tüm hayati parçalarını dış etkenlerden koruyan zırh.", isGlass: true };
+            frameMesh.userData = glassBox.userData;
+
+            // 2. ANAKART
+            const mbGroup = new THREE.Group();
+            mbGroup.position.set(0, 0, -1.6);
+            
+            const boardGeo = new THREE.BoxGeometry(6, 7.5, 0.2);
+            const boardMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.8, metalness: 0.5 });
+            const motherboard = new THREE.Mesh(boardGeo, boardMat);
+            mbGroup.add(motherboard);
+
+            for(let i=0; i<30; i++) {
+                let chipGeo = new THREE.BoxGeometry(Math.random()*0.4 + 0.1, Math.random()*0.4 + 0.1, 0.1);
+                let chipMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
+                let chip = new THREE.Mesh(chipGeo, chipMat);
+                chip.position.set((Math.random()-0.5)*5.5, (Math.random()-0.5)*7, 0.15);
+                mbGroup.add(chip);
+            }
+            caseGroup.add(mbGroup);
+            setComponentData(mbGroup, "Anakart (Motherboard)", "Tüm parçaların birbirine bağlandığı ve veri iletişimini sağlayan ana gövde.");
+
+            // 3. İŞLEMCİ VE SOĞUTUCU
+            const cpuGroup = new THREE.Group();
+            cpuGroup.position.set(0, 1.8, -1.0);
+            
+            const heatsink = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.8, 0.8), new THREE.MeshStandardMaterial({color: 0x888888, metalness: 0.7, roughness: 0.3}));
+            cpuGroup.add(heatsink);
+            
+            const cpuFanGroup = new THREE.Group();
+            cpuFanGroup.position.z = 0.5;
+            
+            const fanFrame = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.1, 16, 32), new THREE.MeshStandardMaterial({color: 0x111111}));
+            cpuFanGroup.add(fanFrame);
+            
+            for(let i=0; i<7; i++) {
+                let blade = new THREE.Mesh(
+                    new THREE.BoxGeometry(0.7, 0.05, 0.2), 
+                    new THREE.MeshStandardMaterial({color: 0x0ea5e9, emissive: 0x0ea5e9, emissiveIntensity: 0.8, transparent: true, opacity: 0.9})
+                );
+                blade.position.x = 0.4;
+                blade.rotation.x = Math.PI / 6; 
+                let pivot = new THREE.Group();
+                pivot.rotation.z = (Math.PI * 2 / 7) * i;
+                pivot.add(blade);
+                cpuFanGroup.add(pivot);
+            }
+            cpuGroup.add(cpuFanGroup);
+            animatedFans.push(cpuFanGroup); 
+            
+            caseGroup.add(cpuGroup);
+            setComponentData(cpuGroup, "İşlemci (CPU)", "Bilgisayarın beynidir. Tüm matematiksel hesaplamaları saniyeler içinde o yapar.");
+
+            // 4. EKRAN KARTI
+            const gpuGroup = new THREE.Group();
+            gpuGroup.position.set(0, -1.0, -0.6);
+            
+            const gpuBody = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.8, 1.8), new THREE.MeshStandardMaterial({color: 0x1a1a1a, roughness: 0.9}));
+            gpuGroup.add(gpuBody);
+            
+            const gpuLed = new THREE.Mesh(new THREE.BoxGeometry(5.6, 0.1, 0.1), new THREE.MeshStandardMaterial({color: 0xef4444, emissive: 0xef4444, emissiveIntensity: 2}));
+            gpuLed.position.set(0, 0.2, 0.9);
+            gpuGroup.add(gpuLed);
+            
+            for(let j=-1; j<=1; j+=2) {
+                let gFan = new THREE.Group();
+                gFan.position.set(j*1.4, -0.45, 0);
+                gFan.rotation.x = Math.PI / 2; 
+                
+                for(let i=0; i<5; i++) {
+                    let blade = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.6, 0.05, 0.2), 
+                        new THREE.MeshStandardMaterial({color: 0xef4444, emissive: 0xef4444, emissiveIntensity: 0.5})
+                    );
+                    blade.position.x = 0.3;
+                    blade.rotation.x = Math.PI / 6;
+                    let pivot = new THREE.Group();
+                    pivot.rotation.z = (Math.PI * 2 / 5) * i;
+                    pivot.add(blade);
+                    gFan.add(pivot);
+                }
+                gpuGroup.add(gFan);
+                animatedFans.push({ group: gFan, speed: 0.15 }); 
+            }
+            caseGroup.add(gpuGroup);
+            setComponentData(gpuGroup, "Ekran Kartı (GPU)", "Oyunlardaki muhteşem 3D dünyaları, renkleri ve karakterleri ekrana çizer.");
+
+            // 5. RGB RAM
+            const ramGroup = new THREE.Group();
+            ramGroup.position.set(1.8, 1.8, -1.0);
+            
+            for(let i=0; i<2; i++) {
+                let stick = new THREE.Group();
+                stick.position.x = i * 0.5; 
+                
+                let body = new THREE.Mesh(new THREE.BoxGeometry(0.15, 2.5, 0.5), new THREE.MeshStandardMaterial({color: 0x222222, metalness: 0.5}));
+                
+                let rgbTop = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.5, 0.05), new THREE.MeshStandardMaterial({color: 0xffffff, emissive: 0xff0000, emissiveIntensity: 2}));
+                rgbTop.position.z = 0.26;
+                
+                stick.add(body);
+                stick.add(rgbTop);
+                rgbLights.push(rgbTop); 
+                ramGroup.add(stick);
+            }
+            caseGroup.add(ramGroup);
+            setComponentData(ramGroup, "RAM (Geçici Hafıza)", "Açık olan programları çok hızlı çalıştırmak için bilgileri geçici olarak tutar.");
+
+            // 6. GÜÇ KAYNAĞI VE SSD
+            const psuGroup = new THREE.Group();
+            psuGroup.position.set(-1.5, -3.2, -0.6);
+            
+            const psuBody = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.5, 1.8), new THREE.MeshStandardMaterial({color: 0x111111, metalness: 0.8, roughness: 0.2}));
+            psuGroup.add(psuBody);
+            
+            const psuHole = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 0.05, 32), new THREE.MeshStandardMaterial({color: 0x000000}));
+            psuHole.position.y = 0.76;
+            psuGroup.add(psuHole);
+            
+            caseGroup.add(psuGroup);
+            setComponentData(psuGroup, "Güç Kaynağı (PSU)", "Prize takılıp bilgisayardaki tüm parçalara gereken elektrik enerjisini dağıtır.");
+
+            const ssdGroup = new THREE.Group();
+            ssdGroup.position.set(1.5, -3.2, -0.6);
+            const ssdBody = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.6, 1.5), new THREE.MeshStandardMaterial({color: 0x334155, metalness: 0.6}));
+            const ssdLight = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1), new THREE.MeshStandardMaterial({color: 0x22c55e, emissive: 0x22c55e, emissiveIntensity: 2}));
+            ssdLight.position.set(0.8, 0, 0.76);
+            ssdGroup.add(ssdBody);
+            ssdGroup.add(ssdLight);
+            
+            caseGroup.add(ssdGroup);
+            setComponentData(ssdGroup, "Sabit Disk (SSD/HDD)", "Bilgisayarı kapatsan bile oyunlarını, fotoğraflarını ve dosyalarını kalıcı depolar.");
+
+            raycaster = new THREE.Raycaster();
+            mouse = new THREE.Vector2();
+
+            renderer.domElement.addEventListener('mousedown', () => {
+                isDragging3D = true;
+                container.style.cursor = 'grabbing';
+            });
+            renderer.domElement.addEventListener('mouseup', () => {
+                isDragging3D = false;
+                container.style.cursor = 'grab';
+            });
+            renderer.domElement.addEventListener('mouseleave', () => { 
+                isDragging3D = false; 
+                container.style.cursor = 'grab';
+                const label = document.getElementById('three-label');
+                if(label) label.style.opacity = '0';
+            });
+
+            renderer.domElement.addEventListener('mousemove', (e) => {
+                const rect = renderer.domElement.getBoundingClientRect();
+                
+                if (isDragging3D && caseGroup) {
+                    const deltaMove = {
+                        x: e.offsetX - previousMousePosition.x,
+                        y: e.offsetY - previousMousePosition.y
+                    };
+                    caseGroup.rotation.y += deltaMove.x * 0.01;
+                    caseGroup.rotation.x += deltaMove.y * 0.01;
+                }
+
+                previousMousePosition = { x: e.offsetX, y: e.offsetY };
+
+                mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            });
+
+            window.addEventListener('resize', () => {
+                if(is3DModalOpen && container && camera && renderer) {
+                    camera.aspect = container.clientWidth / container.clientHeight;
+                    camera.updateProjectionMatrix();
+                    renderer.setSize(container.clientWidth, container.clientHeight);
+                }
+            });
+
+            // Başlangıç açısı
+            caseGroup.rotation.y = -0.5;
+            caseGroup.rotation.x = 0.1;
+
+            animate3D();
+        }
+
+        function animate3D() {
+            if (!is3DModalOpen) return;
+            animationFrameId = requestAnimationFrame(animate3D);
+
+            // Fanları Döndür
+            animatedFans.forEach(item => {
+                if(item.group) {
+                    item.group.rotation.z -= item.speed; 
+                } else {
+                    item.rotation.z -= 0.08; 
+                }
+            });
+
+            const time = Date.now() * 0.001;
+            rgbLights.forEach((light, index) => {
+                light.material.emissive.setHSL((time + index * 0.3) % 1, 1, 0.5);
+                light.material.color.setHSL((time + index * 0.3) % 1, 1, 0.5);
+            });
+
+            const container = document.getElementById('three-canvas-container');
+            const label = document.getElementById('three-label');
+            
+            if (raycaster && mouse && camera && caseGroup) {
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObjects(caseGroup.children, true); 
+
+                let hitData = null;
+
+                if (intersects.length > 0 && !isDragging3D) { 
+                    for (let i = 0; i < intersects.length; i++) {
+                        const uData = intersects[i].object.userData;
+                        if (uData && uData.name) {
+                            if (uData.isGlass) {
+                                let foundInner = false;
+                                for (let j = i + 1; j < intersects.length; j++) {
+                                    const innerData = intersects[j].object.userData;
+                                    if (innerData && innerData.name && !innerData.isGlass) {
+                                        hitData = innerData;
+                                        foundInner = true;
+                                        break;
+                                    }
+                                }
+                                if (foundInner) break;
+                                hitData = uData; 
+                                break;
+                            } else {
+                                hitData = uData;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                interactiveGroups.forEach(g => {
+                    if (g) g.targetScale = 1; 
+                });
+                
+                if (hitData && hitData.parentGroup) {
+                    hitData.parentGroup.targetScale = 1.15; 
+                }
+
+                interactiveGroups.forEach(g => {
+                    if (g) {
+                        g.scale.x += (g.targetScale - g.scale.x) * 0.1;
+                        g.scale.y += (g.targetScale - g.scale.y) * 0.1;
+                        g.scale.z += (g.targetScale - g.scale.z) * 0.1;
+                    }
+                });
+
+                if (hitData && label) {
+                    label.innerHTML = `
+                        <div class="text-white text-xl sm:text-2xl font-black mb-1 border-b border-slate-700 pb-1 px-4">${hitData.name}</div>
+                        <div class="text-cyan-400 font-bold text-sm sm:text-base mt-1">GÖREV: <span class="text-slate-300 font-normal">${hitData.desc}</span></div>
+                    `;
+                    label.style.opacity = '1';
+                    if (!isDragging3D && container) container.style.cursor = 'pointer';
+                } else if (label) {
+                    label.style.opacity = '0';
+                    if (!isDragging3D && container) container.style.cursor = 'grab';
+                }
+            }
+
+            if (renderer && scene && camera) {
+                renderer.render(scene, camera);
+            }
+        }
+    </script>
+</body>
+</html>

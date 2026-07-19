@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dijital Dedektif - Güvenli İnternet</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+            color: #f8fafc;
+            min-height: 100dvh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            user-select: none;
+            touch-action: manipulation;
+        }
+
+        .font-fredoka { font-family: 'Fredoka One', cursive; }
+
+        /* Dedektif Temalı Arkaplan Deseni */
+        .detective-bg {
+            position: absolute; inset: 0; z-index: -1;
+            background-image: radial-gradient(rgba(255, 255, 255, 0.05) 2px, transparent 2px);
+            background-size: 30px 30px;
+            opacity: 0.5;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(12px);
+            border: 2px solid rgba(148, 163, 184, 0.2);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* Vaka Kartı Stilleri */
+        #card-container {
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+            height: 400px;
+            perspective: 1000px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 768px) {
+            #card-container { max-width: 450px; height: 480px; }
+        }
+
+        .case-card {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 2rem;
+            border: 6px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 1.5rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.4s;
+            transform-origin: bottom center;
+            z-index: 10;
+        }
+
+        .case-card.next-card {
+            transform: scale(0.95) translateY(20px);
+            opacity: 0.6;
+            z-index: 5;
+            border-color: #cbd5e1;
+        }
+
+        /* Kart Uçma Animasyonları */
+        .swipe-right { animation: flyRight 0.6s forwards; }
+        .swipe-left { animation: flyLeft 0.6s forwards; }
+
+        @keyframes flyRight {
+            to { transform: translateX(150%) rotate(20deg); opacity: 0; }
+        }
+        @keyframes flyLeft {
+            to { transform: translateX(-150%) rotate(-20deg); opacity: 0; }
+        }
+
+        /* Efektler */
+        @keyframes popIn { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+        .anim-pop { animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+        @keyframes pulseAlert { 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 50% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); } }
+        .alert-glow { animation: pulseAlert 1.5s infinite; }
+        
+        @keyframes wiggle { 0%, 100% { transform: rotate(-3deg); } 50% { transform: rotate(3deg); } }
+        .anim-wiggle { animation: wiggle 2s infinite ease-in-out; }
+    </style>
+</head>
+<body class="relative">
+
+    <div class="detective-bg"></div>
+
+    <!-- Başlangıç Ekranı -->
+    <div id="start-screen" class="absolute inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 transition-opacity duration-500">
+        
+        <!-- Ana Sayfa Butonu (Sol Üst) -->
+        <a href="index.html" class="absolute top-4 left-4 bg-slate-800/80 hover:bg-slate-700 text-blue-400 w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center text-2xl md:text-3xl backdrop-blur-md transition-all border border-blue-500/50 hover:scale-110 shadow-[0_0_15px_rgba(96,165,250,0.3)] z-[100]" title="Ana Menüye Dön">🏠</a>
+
+        <div class="glass-panel p-6 md:p-12 max-w-2xl w-full text-center anim-pop rounded-[3rem] border-4 border-blue-400 relative z-10">
+            <div class="text-7xl md:text-9xl mb-4 anim-wiggle drop-shadow-2xl">🕵️‍♂️</div>
+            <h1 class="text-4xl md:text-6xl font-fredoka text-blue-400 mb-4 leading-tight drop-shadow-sm">Dijital Dedektif</h1>
+            <h2 class="text-xl md:text-2xl font-bold text-yellow-400 mb-6 uppercase tracking-wider">Güvenli İnternet Oyunu</h2>
+            
+            <p class="text-slate-300 font-bold text-sm md:text-lg mb-6 bg-slate-800/80 p-4 rounded-2xl border border-slate-600">İnternetteki iyi ve kötü davranışları bulmak senin görevin! Olayları oku, Güvenli mi yoksa Tehlikeli mi olduğuna karar ver!</p>
+            
+            <div class="mb-6">
+                <input type="text" id="player-name" placeholder="Adını Buraya Yaz Dedektif!" class="w-full text-center text-xl md:text-2xl p-4 rounded-xl text-slate-800 font-bold border-4 border-blue-400 focus:outline-none focus:border-yellow-400 transition-colors" autocomplete="off">
+            </div>
+
+            <button onclick="startGame()" class="w-full bg-blue-500 hover:bg-blue-400 text-white font-black text-2xl md:text-3xl py-5 rounded-2xl shadow-[0_8px_0_#1e3a8a] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center gap-3">
+                <span class="text-4xl">🔍</span> DEDEKTİFLİĞE BAŞLA
+            </button>
+            <p class="text-xs text-slate-500 font-bold tracking-widest uppercase mt-8 border-t border-slate-700 pt-4">Geliştirici: Mehmet Baran İKİOK</p>
+        </div>
+    </div>
+
+    <!-- Oyun Ekranı -->
+    <div id="game-screen" class="hidden flex-1 flex flex-col z-10 opacity-0 transition-opacity duration-500 h-full p-2 md:p-4 max-w-5xl mx-auto w-full">
+        
+        <!-- Üst Bar -->
+        <div class="glass-panel px-4 py-3 flex justify-between items-center rounded-2xl shrink-0 gap-2">
+            
+            <!-- Çıkış ve Ana Sayfa Butonları -->
+            <div class="flex items-center gap-2">
+                <a href="index.html" class="bg-slate-700 hover:bg-blue-600 text-white w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold flex items-center justify-center transition-colors shadow-sm" title="Ana Menü">🏠</a>
+                <button onclick="showStartScreen()" class="bg-slate-700 hover:bg-red-500 text-white w-10 h-10 md:w-12 md:h-12 rounded-xl font-bold flex items-center justify-center transition-colors shadow-sm" title="Oyunu Kapat">✖</button>
+            </div>
+            
+            <div class="flex-1 px-2 md:px-4 max-w-md mx-auto">
+                <div class="flex justify-between text-xs md:text-sm font-bold text-blue-300 mb-1">
+                    <span>İlerleme</span>
+                    <span id="progress-text">1 / 20</span>
+                </div>
+                <div class="w-full bg-slate-700 rounded-full h-3 md:h-4 overflow-hidden border border-slate-600">
+                    <div id="progress-bar" class="bg-blue-400 h-full rounded-full transition-all duration-300 w-0 shadow-[0_0_10px_#60a5fa]"></div>
+                </div>
+            </div>
+
+            <button id="sound-btn" onclick="toggleSound()" class="bg-slate-700 hover:bg-slate-600 text-white w-10 h-10 md:w-12 md:h-12 rounded-xl text-xl flex items-center justify-center transition-colors">🔊</button>
+        </div>
+
+        <!-- Kart Alanı -->
+        <div class="flex-1 flex flex-col items-center justify-center w-full relative perspective my-4">
+            <div id="card-container">
+                <!-- Arka (Sıradaki) Kart -->
+                <div class="case-card next-card" id="next-card">
+                    <div class="text-8xl opacity-20">❓</div>
+                </div>
+                <!-- Ön (Aktif) Kart -->
+                <div class="case-card" id="active-card">
+                    <!-- JS ile doldurulacak -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Kontrol Butonları -->
+        <div class="flex justify-center gap-4 md:gap-10 pb-4 shrink-0">
+            <button onclick="handleChoice(false)" class="flex flex-col items-center gap-2 group outline-none">
+                <div class="w-20 h-20 md:w-28 md:h-28 rounded-full bg-red-100 border-8 border-red-500 flex items-center justify-center text-4xl md:text-6xl shadow-xl transition-transform group-hover:scale-110 group-active:scale-95 text-red-600">
+                    ❌
+                </div>
+                <span class="font-black text-red-400 text-sm md:text-xl uppercase tracking-wider bg-slate-900/50 px-4 py-1 rounded-full">TEHLİKELİ</span>
+            </button>
+
+            <button onclick="handleChoice(true)" class="flex flex-col items-center gap-2 group outline-none">
+                <div class="w-20 h-20 md:w-28 md:h-28 rounded-full bg-green-100 border-8 border-green-500 flex items-center justify-center text-4xl md:text-6xl shadow-xl transition-transform group-hover:scale-110 group-active:scale-95 text-green-600">
+                    ✅
+                </div>
+                <span class="font-black text-green-400 text-sm md:text-xl uppercase tracking-wider bg-slate-900/50 px-4 py-1 rounded-full">GÜVENLİ</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Dedektif İpucu (Hata) Modalı -->
+    <div id="tip-modal" class="fixed inset-0 z-50 hidden bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-[2rem] p-6 md:p-10 max-w-md w-full text-center shadow-2xl border-8 border-yellow-400 anim-pop">
+            <div class="text-7xl mb-2">💡</div>
+            <h2 class="text-3xl md:text-4xl font-fredoka text-yellow-500 mb-2 uppercase">Dedektif İpucu!</h2>
+            <div class="bg-slate-100 p-4 rounded-xl border border-slate-200 mb-6">
+                <p id="tip-text" class="text-slate-700 font-bold text-lg md:text-xl">Buraya açıklama gelecek.</p>
+            </div>
+            <button onclick="closeTip()" class="w-full bg-yellow-400 hover:bg-yellow-300 text-slate-800 font-black text-xl md:text-2xl py-4 rounded-2xl shadow-[0_6px_0_#ca8a04] active:translate-y-2 active:shadow-none transition-all">
+                Anladım, Devam Et!
+            </button>
+        </div>
+    </div>
+
+    <!-- Başarı Modalı -->
+    <div id="success-modal" class="fixed inset-0 z-[60] hidden bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white rounded-[3rem] p-8 md:p-12 max-w-lg w-full text-center shadow-2xl border-8 border-blue-500 anim-pop relative overflow-hidden">
+            <div class="absolute -top-10 -right-10 text-9xl opacity-10">🥇</div>
+            <div class="text-8xl mb-4 drop-shadow-xl animate-bounce">🎖️</div>
+            <h2 class="text-4xl md:text-5xl font-fredoka text-blue-600 mb-2 uppercase leading-tight">Baş Dedektif!</h2>
+            
+            <div class="bg-blue-50 p-4 rounded-xl border-4 border-dashed border-blue-300 mb-8 relative">
+                <div class="absolute -top-4 -left-4 text-4xl">🌟</div>
+                <div class="absolute -bottom-4 -right-4 text-4xl">🌟</div>
+                <p class="text-slate-500 font-bold text-sm uppercase tracking-widest mb-1">DİJİTAL DEDEKTİF KİMLİĞİ</p>
+                <h3 id="cert-name" class="text-3xl font-black text-blue-700 uppercase">İSİMSİZ</h3>
+                <p class="text-slate-600 font-bold text-sm mt-2">İnternette nasıl güvende kalacağını çok iyi biliyor!</p>
+            </div>
+
+            <!-- Ana Sayfaya Dön Butonu (Success Modal İçinde) -->
+            <a href="index.html" class="w-full bg-blue-500 hover:bg-blue-400 text-white font-black text-2xl md:text-3xl py-5 rounded-2xl shadow-[0_8px_0_#1e3a8a] active:translate-y-2 active:shadow-none transition-all flex items-center justify-center">
+                Ana Menüye Dön 🏠
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Ses Motoru
+        let audioCtx;
+        let isSoundEnabled = true;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        // --- YENİ: Sesli Okuma (Text-to-Speech) Fonksiyonu ---
+        function speakText(text) {
+            if (!isSoundEnabled || !window.speechSynthesis) return;
+            
+            // Önceki konuşmayı durdur
+            window.speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'tr-TR'; // Türkçe telaffuz
+            utterance.rate = 0.9;     // Çocuklar için biraz daha yavaş
+            utterance.pitch = 1.1;    // Biraz daha sevimli/ince bir ses tonu
+            
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function playSound(type) {
+            if (!isSoundEnabled) return;
+            initAudio();
+            const now = audioCtx.currentTime;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+
+            if (type === 'swipe') {
+                osc.type = 'sine'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(800, now + 0.1);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                osc.start(now); osc.stop(now + 0.1);
+            } else if (type === 'error') {
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(200, now); osc.frequency.exponentialRampToValueAtTime(100, now + 0.3);
+                gain.gain.setValueAtTime(0.1, now); gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now); osc.stop(now + 0.3);
+            } else if (type === 'win') {
+                const notes = [523.25, 659.25, 783.99, 1046.50]; 
+                notes.forEach((freq, i) => {
+                    const o = audioCtx.createOscillator(); const g = audioCtx.createGain();
+                    o.connect(g); g.connect(audioCtx.destination); o.type = 'sine';
+                    o.frequency.setValueAtTime(freq, now + i*0.1);
+                    g.gain.setValueAtTime(0, now); g.gain.setValueAtTime(0.1, now + i*0.1);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + i*0.1 + 0.4);
+                    o.start(now + i*0.1); o.stop(now + i*0.1 + 0.4);
+                });
+            }
+        }
+
+        function toggleSound() {
+            isSoundEnabled = !isSoundEnabled;
+            document.getElementById('sound-btn').innerText = isSoundEnabled ? '🔊' : '🔇';
+            if(isSoundEnabled) {
+                initAudio();
+            } else {
+                window.speechSynthesis.cancel(); // Sesi kapatınca konuşmayı da sustur
+            }
+        }
+
+        // --- 40 GÖREVLİK DEV DİJİTAL VATANDAŞLIK ARŞİVİ ---
+        const SCENARIOS = [
+            // GÜVENLİ DURUMLAR (20 Adet)
+            { emoji: "🎮", text: "Annemden izin alarak yeni bir oyun indirdim.", isSafe: true, tip: "" },
+            { emoji: "🕒", text: "Bilgisayar oynarken sürem dolunca hemen kapattım.", isSafe: true, tip: "" },
+            { emoji: "🤐", text: "Oyun şifremi sadece ailemle paylaştım.", isSafe: true, tip: "" },
+            { emoji: "🙋", text: "İnternette bilmediğim bir şey görünce öğretmenime sordum.", isSafe: true, tip: "" },
+            { emoji: "🪑", text: "Tablete bakarken dik oturdum ve eğilmedim.", isSafe: true, tip: "" },
+            { emoji: "✅", text: "Sadece kendi yaşıma uygun olan oyunları oynadım.", isSafe: true, tip: "" },
+            { emoji: "😊", text: "Arkadaşıma internetten nazik ve güzel sözler yazdım.", isSafe: true, tip: "" },
+            { emoji: "💧", text: "Bilgisayarın yanında su içerken dökülmemesi için dikkatli oldum.", isSafe: true, tip: "" },
+            { emoji: "🚫", text: "İnternette tanımadığım kişilerin mesajlarına cevap vermedim.", isSafe: true, tip: "" },
+            { emoji: "👀", text: "Gözlerimi dinlendirmek için ekran başında molalar verdim.", isSafe: true, tip: "" },
+            { emoji: "🚨", text: "Karşıma korkutucu bir video çıkınca hemen tableti ters çevirip anneme haber verdim.", isSafe: true, tip: "" },
+            { emoji: "🏠", text: "Oyunda tanıştığım birisi 'Nerede yaşıyorsun?' diye sorunca cevap vermedim.", isSafe: true, tip: "" },
+            { emoji: "📚", text: "İnternetten bulduğum bilgilerin doğru olup olmadığını aileme sordum.", isSafe: true, tip: "" },
+            { emoji: "🔐", text: "Yeni bir şifre belirlerken adımı ve doğum yılımı kullanmadım, zor bir şifre seçtim.", isSafe: true, tip: "" },
+            { emoji: "🧼", text: "Tabletimi kullanmadan önce ellerimi yıkadım ve temiz tuttum.", isSafe: true, tip: "" },
+            { emoji: "📸", text: "Arkadaşımın komik bir fotoğrafını internette paylaşmadan önce ondan izin istedim.", isSafe: true, tip: "" },
+            { emoji: "🌙", text: "Uyumadan en az bir saat önce tüm ekranları kapattım.", isSafe: true, tip: "" },
+            { emoji: "📜", text: "Evdeki internet kurallarına ve süre sınırlarına her zaman uydum.", isSafe: true, tip: "" },
+            { emoji: "🛡️", text: "Kötü sözler söyleyen bir oyuncuyu oyundan şikayet ettim ve engelledim.", isSafe: true, tip: "" },
+            { emoji: "🎁", text: "İnternette gördüğüm her çekilişe veya 'Hediye kazandın' yazısına tıklamadım.", isSafe: true, tip: "" },
+
+            // TEHLİKELİ DURUMLAR (20 Adet)
+            { emoji: "🏠", text: "İnternette tanıştığım birine ev adresimi ve adımı söyledim.", isSafe: false, tip: "Kişisel bilgilerimiz (adres, telefon, isim) yabancılarla asla paylaşılmaz!" },
+            { emoji: "🎁", text: "'Bedava Tablet Kazandın' yazan yanıp sönen reklama tıkladım.", isSafe: false, tip: "İnternetteki her reklama inanmamalıyız. Çoğu zaman bunlar tuzaktır." },
+            { emoji: "🦉", text: "Gece geç saatlere kadar gizlice tablet oynadım.", isSafe: false, tip: "Uykusuz kalmak sağlığımıza ve büyümemize zarar verir. Ekranı vaktinde kapatmalıyız." },
+            { emoji: "🔑", text: "En yakın arkadaşıma gizli şifremi verdim.", isSafe: false, tip: "Şifreler diş fırçamız gibidir! Ailemiz hariç en yakın arkadaşımızla bile paylaşılmaz." },
+            { emoji: "😡", text: "Oyunda kaybettiğim için takım arkadaşıma 'Ezik, noob' gibi kötü sözler yazdım.", isSafe: false, tip: "Gerçek hayatta nasıl kibarsak, internette de kibar olmalıyız. Siber zorbalık yapmamalıyız." },
+            { emoji: "💳", text: "Anneme sormadan paralı bir oyun veya oyun içi elmas satın aldım.", isSafe: false, tip: "İndirme yaparken veya bir şey satın alırken mutlaka ailemize danışmalıyız." },
+            { emoji: "🔍", text: "Tablete burnum değecek kadar çok yakından baktım.", isSafe: false, tip: "Ekrana çok yakından bakmak gözlerimizi yorar ve bozabilir. Uzaktan bakmalıyız." },
+            { emoji: "🤥", text: "İnternette bulduğum her bilginin kesinlikle doğru olduğuna inandım.", isSafe: false, tip: "İnternetteki her bilgi doğru olmayabilir. Şüphelendiğimiz şeyleri büyüklere sormalıyız." },
+            { emoji: "📸", text: "Arkadaşımın düşerken çekilmiş gizli fotoğrafını ondan izinsiz WhatsApp'ta paylaştım.", isSafe: false, tip: "Başkalarının fotoğraflarını onlardan veya ailelerinden izinsiz paylaşamayız." },
+            { emoji: "🍽️", text: "Yemek yerken masada tabletten gözümü hiç ayırmadım.", isSafe: false, tip: "Yemek yerken ekranlara değil, yemeğimize ve ailemize odaklanmalıyız." },
+            { emoji: "🚶", text: "Oyunda tanıştığım ve sadece sesini duyduğum biriyle gerçek hayatta parkta buluşmaya karar verdim.", isSafe: false, tip: "İnternette tanıştığımız kişiler gerçekte söyledikleri kişi olmayabilir. Asla onlarla buluşmamalıyız!" },
+            { emoji: "👤", text: "İnternetteki herkese açık profilime kendi yüzümün olduğu fotoğrafı ve tam adımı koydum.", isSafe: false, tip: "Tanımadığımız kişilerin görebileceği yerlere gerçek fotoğrafımızı ve tam adımızı koymamalıyız." },
+            { emoji: "👻", text: "YouTube'da karşıma çıkan korkunç görünümlü bir videoyu izlemeye devam ettim.", isSafe: false, tip: "Bizi korkutan veya rahatsız eden videoları hemen kapatıp bir büyüğümüze haber vermeliyiz." },
+            { emoji: "🔗", text: "Tanımadığım birinden gelen 'Bana tıkla oyun oyna' linkine hemen bastım.", isSafe: false, tip: "Tanımadığımız kişilerden gelen linkler virüslü olabilir, asla tıklamamalıyız." },
+            { emoji: "🐢", text: "Bilgisayar karşısında kambur bir şekilde saatlerce hiç kalkmadan oturdum.", isSafe: false, tip: "Uzun süre kambur oturmak belimize zarar verir. Dik oturmalı ve molalar vermeliyiz." },
+            { emoji: "😭", text: "Annem 'Oyun süren bitti' dediğinde ağlayıp tableti fırlattım.", isSafe: false, tip: "Teknoloji bizi sinirlendirmemeli. Süremiz bitince kurallara uyup cihazı sakince bırakmalıyız." },
+            { emoji: "🎂", text: "Bir web sitesine veya oyuna kayıt olurken gerçek yaşımı büyük gösterdim.", isSafe: false, tip: "İnternette yaş sınırları bizi korumak içindir. Yaşımız tutmuyorsa o siteye girmemeliyiz." },
+            { emoji: "📱", text: "Oyunda çok iyi oynayan yabancı birine babamın telefon numarasını verdim.", isSafe: false, tip: "Ailemizin telefon numarası çok gizli bir bilgidir ve internette paylaşılmaz." },
+            { emoji: "🚶‍♂️", text: "Yolda yürürken ve karşıdan karşıya geçerken kafamı telefondan hiç kaldırmadım.", isSafe: false, tip: "Yürürken ekrana bakmak kazalara sebep olabilir. Etrafımıza dikkat etmeliyiz." },
+            { emoji: "🤬", text: "Oyunda benimle dalga geçen birine ben de daha kötü sözler söyleyerek karşılık verdim.", isSafe: false, tip: "Kötülüğe kötülükle cevap verilmez. Bizi rahatsız edenleri sadece engellemeliyiz." }
+        ];
+
+        let gameDeck = [];
+        let currentIndex = 0;
+        let isAnimating = false;
+        let playerName = "İsimsiz Kahraman";
+
+        function showStartScreen() {
+            document.getElementById('game-screen').classList.add('hidden');
+            document.getElementById('game-screen').classList.remove('opacity-100');
+            const startScreen = document.getElementById('start-screen');
+            startScreen.classList.remove('hidden');
+            document.getElementById('player-name').value = ""; // İsmi temizle
+            setTimeout(() => startScreen.classList.remove('opacity-0'), 50);
+        }
+
+        function startGame() {
+            // İsmi al, boşsa Minik Dedektif yap
+            const nameInput = document.getElementById('player-name').value.trim();
+            playerName = nameInput.length > 0 ? nameInput : "İsimsiz Kahraman";
+
+            initAudio();
+            document.getElementById('success-modal').classList.add('hidden');
+            
+            // 20 rastgele soru seç (oyun süresi çok uzamasın diye hepsini sormuyoruz)
+            gameDeck = [...SCENARIOS].sort(() => Math.random() - 0.5).slice(0, 20);
+            currentIndex = 0;
+            
+            updateProgressUI();
+            renderCard();
+
+            const startScreen = document.getElementById('start-screen');
+            startScreen.classList.add('opacity-0');
+            setTimeout(() => {
+                startScreen.classList.add('hidden');
+                document.getElementById('game-screen').classList.remove('hidden');
+                setTimeout(() => document.getElementById('game-screen').classList.add('opacity-100'), 50);
+            }, 500);
+        }
+
+        function renderCard() {
+            const activeCard = document.getElementById('active-card');
+            
+            // Animasyon sınıflarını temizle
+            activeCard.className = 'case-card';
+            
+            const currentScenario = gameDeck[currentIndex];
+            
+            activeCard.innerHTML = `
+                <button onclick="speakText('${currentScenario.text}')" class="absolute top-4 right-4 bg-blue-100 text-blue-600 w-12 h-12 rounded-full hover:bg-blue-200 transition-colors shadow-sm flex items-center justify-center text-2xl border-2 border-blue-200 active:scale-95" title="Sesli Oku">
+                    📢
+                </button>
+                <div class="text-[5rem] md:text-[7rem] leading-none mb-2 md:mb-6 filter drop-shadow-lg">${currentScenario.emoji}</div>
+                <p class="text-slate-700 font-bold text-xl md:text-3xl leading-snug px-2 md:px-4">${currentScenario.text}</p>
+            `;
+
+            // Kart ekrana geldiğinde otomatik olarak oku
+            speakText(currentScenario.text);
+        }
+
+        function updateProgressUI() {
+            document.getElementById('progress-text').innerText = `${currentIndex + 1} / ${gameDeck.length}`;
+            const percentage = ((currentIndex) / gameDeck.length) * 100;
+            document.getElementById('progress-bar').style.width = `${percentage}%`;
+        }
+
+        function handleChoice(userChoiceIsSafe) {
+            if (isAnimating) return;
+            isAnimating = true;
+
+            const currentScenario = gameDeck[currentIndex];
+            const activeCard = document.getElementById('active-card');
+
+            if (userChoiceIsSafe === currentScenario.isSafe) {
+                // DOĞRU BİLDİ
+                playSound('swipe');
+                
+                // Kartı yana uçur (Doğru bildiyse, kartı seçtiği yöne uçurabiliriz. Yeşil=Sağ, Kırmızı=Sol)
+                if (userChoiceIsSafe) {
+                    activeCard.classList.add('swipe-right');
+                } else {
+                    activeCard.classList.add('swipe-left');
+                }
+
+                setTimeout(() => {
+                    currentIndex++;
+                    if (currentIndex >= gameDeck.length) {
+                        handleWin();
+                    } else {
+                        updateProgressUI();
+                        renderCard();
+                        isAnimating = false;
+                    }
+                }, 500);
+
+            } else {
+                // YANLIŞ BİLDİ
+                playSound('error');
+                
+                // Kartı sars
+                activeCard.style.transform = 'scale(0.95)';
+                activeCard.style.borderColor = '#ef4444';
+                setTimeout(() => {
+                    activeCard.style.transform = 'scale(1)';
+                    activeCard.style.borderColor = '#e2e8f0';
+                }, 200);
+
+                // Modalı aç ve ipucunu sesli oku
+                const tipMessage = currentScenario.tip || "Bu davranış tehlikeli olabilir, bir daha düşün!";
+                document.getElementById('tip-text').innerText = tipMessage;
+                document.getElementById('tip-modal').classList.remove('hidden');
+                
+                // Hata sesinin bitmesini çok az bekleyip konuşmaya başla
+                setTimeout(() => speakText(tipMessage), 300);
+            }
+        }
+
+        function closeTip() {
+            playSound('swipe');
+            window.speechSynthesis.cancel(); // Kapatınca okumayı kes
+            document.getElementById('tip-modal').classList.add('hidden');
+            isAnimating = false;
+            
+            // İpucu kapanınca asıl soruyu tekrar hatırlatmak için oku
+            setTimeout(() => {
+                speakText(gameDeck[currentIndex].text);
+            }, 200);
+        }
+
+        function handleWin() {
+            playSound('win');
+            document.getElementById('progress-bar').style.width = `100%`;
+            document.getElementById('progress-text').innerText = `${gameDeck.length} / ${gameDeck.length}`;
+
+            // Sertifika İsmini Yazdır
+            document.getElementById('cert-name').innerText = playerName;
+
+            if (window.confetti) {
+                confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 }, colors: ['#60a5fa', '#3b82f6', '#facc15', '#f8fafc'] });
+            }
+
+            setTimeout(() => {
+                document.getElementById('success-modal').classList.remove('hidden');
+                isAnimating = false;
+            }, 800);
+        }
+
+    </script>
+</body>
+</html>

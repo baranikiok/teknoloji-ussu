@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bilgi Avcısı - Profesyonel Arama Motoru Simülasyonu</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Product+Sans:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #ffffff;
+            color: #202124;
+            min-height: 100dvh;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Özel Logo Fontu */
+        .font-logo { font-family: 'Nunito', sans-serif; letter-spacing: -2px; }
+
+        .search-container { position: relative; width: 100%; max-w: 600px; z-index: 100; }
+        
+        .search-box {
+            border: 1px solid #dfe1e5;
+            border-radius: 24px;
+            transition: box-shadow 0.2s, border-color 0.2s, border-radius 0.2s;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            padding: 10px 16px;
+            width: 100%;
+        }
+        .search-box:hover, .search-container.active .search-box {
+            box-shadow: 0 1px 6px rgba(32,33,36,.28);
+            border-color: rgba(223,225,229,0);
+        }
+        .search-container.active .search-box {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-bottom: 1px solid #e8eaed;
+            box-shadow: 0 4px 6px rgba(32,33,36,.28);
+        }
+
+        .search-input { outline: none; border: none; background: transparent; width: 100%; font-size: 16px; }
+
+        /* Otomatik Tamamlama (Arama Önerileri) */
+        .autocomplete-list {
+            position: absolute; top: 100%; left: 0; right: 0;
+            background: #fff; border: 1px solid transparent;
+            border-bottom-left-radius: 24px; border-bottom-right-radius: 24px;
+            box-shadow: 0 4px 6px rgba(32,33,36,.28);
+            display: none; flex-direction: column; padding-bottom: 12px;
+        }
+        .search-container.active .autocomplete-list { display: flex; }
+        
+        .suggestion-item {
+            padding: 8px 16px; display: flex; align-items: center; gap: 12px;
+            cursor: pointer; font-size: 15px; color: #202124;
+        }
+        .suggestion-item:hover { background-color: #f1f3f4; }
+        .suggestion-icon { color: #9aa0a6; font-size: 14px; }
+
+        /* Arama Butonları */
+        .btn-search {
+            background-color: #f8f9fa; border: 1px solid #f8f9fa; border-radius: 4px;
+            color: #3c4043; font-size: 14px; margin: 11px 4px; padding: 0 16px;
+            height: 36px; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-search:hover { box-shadow: 0 1px 1px rgba(0,0,0,.1); background-color: #f8f9fa; border: 1px solid #dadce0; color: #202124; }
+
+        .result-item { margin-bottom: 28px; max-width: 650px; }
+        .result-url { color: #202124; font-size: 14px; margin-bottom: 4px; display: flex; align-items: center; gap: 8px; }
+        .result-title { color: #1a0dab; font-size: 20px; font-weight: 400; text-decoration: none; display: inline-block; margin-bottom: 4px; line-height: 1.2; }
+        .result-title:hover { text-decoration: underline; }
+        .result-desc { color: #4d5156; font-size: 14px; line-height: 1.58; }
+        
+        /* Sponsorlu (Reklam) Etiketi */
+        .sponsored-tag { font-size: 12px; font-weight: 700; color: #202124; margin-right: 8px; }
+        
+        /* Bilgi Panosu (Sağ Kısım) */
+        .knowledge-panel {
+            border: 1px solid #ebebeb; border-radius: 16px; padding: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); width: 100%; max-width: 350px;
+            align-self: flex-start; display: none;
+        }
+
+        /* Yükleme Animasyonu */
+        .loader {
+            border: 4px solid #f3f3f3; border-top: 4px solid #4285f4;
+            border-radius: 50%; width: 40px; height: 40px;
+            animation: spin 1s linear infinite; margin: 40px auto;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Sekmeler (Tümü, Görseller vb.) */
+        .nav-tabs { border-bottom: 1px solid #ebebeb; padding-left: 160px; display: flex; gap: 24px; margin-top: 8px; }
+        @media (max-width: 768px) { .nav-tabs { padding-left: 16px; overflow-x: auto; } }
+        .tab-item { padding: 10px 0; font-size: 14px; color: #5f6368; cursor: pointer; border-bottom: 3px solid transparent; white-space: nowrap; }
+        .tab-item.active { color: #1a73e8; border-bottom-color: #1a73e8; font-weight: bold; }
+
+        /* Görev Paneli */
+        .task-panel { background: #fff; border-bottom: 1px solid #ebebeb; box-shadow: 0 2px 4px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 200; }
+        
+        /* Renkler */
+        .logo-c1 { color: #4285f4; } .logo-c2 { color: #ea4335; } .logo-c3 { color: #fbbc05; }
+        .logo-c4 { color: #4285f4; } .logo-c5 { color: #34a853; } .logo-c6 { color: #ea4335; } .logo-c7 { color: #fbbc05; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .anim-fade { animation: fadeIn 0.4s ease-out forwards; }
+    </style>
+</head>
+<body>
+
+    <!-- Üst Görev Paneli -->
+    <div class="task-panel w-full px-4 md:px-8 py-3 flex flex-col md:flex-row justify-between items-center gap-3">
+        <div class="flex items-center gap-3">
+            <!-- Ana Sayfaya Dön Butonu Eklendi -->
+            <a href="index.html" class="bg-slate-100 hover:bg-slate-200 text-slate-700 w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center text-lg transition-colors border border-slate-300" title="Ana Menüye Dön">🏠</a>
+            
+            <span class="bg-blue-600 text-white font-black px-3 py-1 rounded-md text-sm whitespace-nowrap">SEVİYE <span id="level-display">1</span></span>
+            <h2 id="task-title" class="font-bold text-slate-800 text-sm md:text-lg">Görev Başlığı</h2>
+        </div>
+        <div class="flex gap-2">
+            <button onclick="showTaskDetail()" class="text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors border border-slate-300 px-4 py-1.5 rounded-full bg-slate-50 flex items-center gap-2">
+                <span>📋</span> Görevi Oku
+            </button>
+        </div>
+    </div>
+
+    <!-- Görev Detay Modalı -->
+    <div id="task-modal" class="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white p-6 md:p-8 rounded-3xl max-w-lg w-full text-center shadow-2xl anim-fade border-t-8 border-blue-500">
+            <div class="text-6xl mb-4">🕵️‍♂️</div>
+            <h2 class="text-2xl font-black text-slate-800 mb-4" id="modal-title">Görevin</h2>
+            <div class="bg-blue-50 p-4 rounded-xl border border-blue-100 text-left mb-6">
+                <p id="modal-desc" class="text-slate-700 text-lg font-medium leading-relaxed">Görev açıklaması.</p>
+            </div>
+            <button onclick="document.getElementById('task-modal').classList.add('hidden')" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-colors text-lg">
+                Araştırmaya Başla 🔍
+            </button>
+        </div>
+    </div>
+
+    <!-- ANA ARAMA EKRANI -->
+    <div id="search-view" class="flex-1 flex flex-col items-center justify-center p-4 min-h-[60vh] mt-[-5vh]">
+        
+        <div class="font-logo font-bold text-7xl md:text-[90px] mb-8 select-none tracking-tighter">
+            <span class="logo-c1">B</span><span class="logo-c2">i</span><span class="logo-c3">l</span><span class="logo-c4">g</span><span class="logo-c5">i</span><span class="logo-c6">B</span><span class="logo-c7">u</span><span class="logo-c5">l</span>
+        </div>
+
+        <div class="search-container" id="search-container-main">
+            <div class="search-box">
+                <span class="text-slate-400 text-xl mr-3">🔍</span>
+                <input type="text" id="search-input" class="search-input text-slate-800" placeholder="İnternette arama yapın" autocomplete="off">
+                <button id="clear-btn" onclick="clearSearch()" class="text-slate-400 hover:text-slate-600 text-xl ml-2 hidden">✖</button>
+            </div>
+            <!-- Otomatik Tamamlama Menüsü -->
+            <div class="autocomplete-list" id="autocomplete-list">
+                <!-- JS ile dolacak -->
+            </div>
+        </div>
+
+        <div class="flex gap-3 mt-6">
+            <button onclick="performSearch()" class="btn-search font-bold">BilgiBul'da Ara</button>
+            <button onclick="document.getElementById('task-modal').classList.remove('hidden')" class="btn-search">Görevi Hatırlat</button>
+        </div>
+
+        <!-- Geliştirici İmzası Eklendi -->
+        <div class="mt-16 text-slate-400 font-bold text-xs tracking-widest uppercase">
+            Geliştirici: Mehmet Baran İKİOK
+        </div>
+    </div>
+
+    <!-- YÜKLEME EKRANI (Gerçekçilik için) -->
+    <div id="loading-view" class="hidden flex-1 flex flex-col items-center justify-center p-4">
+        <div class="loader"></div>
+        <p class="text-slate-500 font-bold mt-4 animate-pulse">Sunucularda aranıyor...</p>
+    </div>
+
+    <!-- SONUÇ EKRANI -->
+    <div id="results-view" class="hidden flex-1 flex flex-col w-full">
+        
+        <!-- Üst Bar (Küçük Arama) -->
+        <div class="flex items-center gap-4 md:gap-8 pt-4 pb-2 px-4 md:px-8 w-full border-b border-transparent">
+            <div class="font-logo font-bold text-3xl select-none cursor-pointer" onclick="backToSearch()">
+                <span class="logo-c1">B</span><span class="logo-c2">i</span><span class="logo-c3">l</span><span class="logo-c4">g</span><span class="logo-c5">i</span><span class="logo-c6">B</span><span class="logo-c7">u</span><span class="logo-c5">l</span>
+            </div>
+            <div class="search-box flex-1 max-w-2xl px-4 py-2" style="border-radius: 24px; box-shadow: 0 1px 6px rgba(32,33,36,.28);">
+                <input type="text" id="result-search-input" class="search-input text-slate-800" readonly>
+                <button onclick="backToSearch()" class="text-blue-500 hover:text-blue-700 text-xl font-bold ml-2">✖</button>
+            </div>
+        </div>
+
+        <!-- Sekmeler -->
+        <div class="nav-tabs">
+            <div class="tab-item active">🔍 Tümü</div>
+            <div class="tab-item">🖼️ Görseller</div>
+            <div class="tab-item">▶️ Videolar</div>
+            <div class="tab-item">📰 Haberler</div>
+            <div class="tab-item hidden md:block">📚 Kitaplar</div>
+        </div>
+
+        <!-- Sonuç Alanı -->
+        <div class="flex flex-col lg:flex-row w-full max-w-6xl mx-auto px-4 md:px-8 py-4 gap-12 pb-20">
+            
+            <!-- Sol: Linkler -->
+            <div class="flex-1 max-w-2xl">
+                <div class="text-slate-500 text-sm mb-6">Yaklaşık <span id="result-count">0</span> sonuç bulundu (0.34 saniye)</div>
+                
+                <!-- Did you mean? -->
+                <div id="did-you-mean" class="hidden mb-6 text-red-600 font-medium italic text-lg">
+                    Bunu mu demek istediniz: <a href="javascript:void(0)" class="text-blue-600 font-bold hover:underline" id="correction-text" onclick="applyCorrection()">Düzeltme</a>
+                </div>
+
+                <div id="results-list" class="flex flex-col w-full">
+                    <!-- Sonuçlar JS ile gelecek -->
+                </div>
+            </div>
+
+            <!-- Sağ: Bilgi Panosu (Knowledge Panel) SADECE DOĞRUYSA AÇILIR -->
+            <div id="knowledge-panel" class="knowledge-panel anim-fade">
+                <!-- JS ile dolacak -->
+            </div>
+            
+        </div>
+    </div>
+
+    <!-- Başarı Modalı -->
+    <div id="success-modal" class="fixed inset-0 z-[400] hidden bg-slate-900/80 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-white p-8 md:p-10 rounded-3xl max-w-md w-full text-center shadow-2xl border-t-8 border-green-500 anim-fade">
+            <div class="text-7xl mb-4 animate-bounce">🥇</div>
+            <h2 class="text-3xl font-black text-slate-800 mb-2">Doğru Sonuç!</h2>
+            <p class="text-slate-600 mb-6 font-bold" id="success-desc">Arama operatörünü doğru kullandın ve bilgi kirliliğini filtreleyerek en temiz bilgiye ulaştın.</p>
+            <button onclick="nextLevel()" class="w-full bg-green-600 hover:bg-green-700 text-white font-black py-4 rounded-xl transition-colors text-xl shadow-lg">
+                Sıradaki Görev ➡️
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const TASKS = [
+            {
+                title: "Tam Eşleşme Bulma",
+                desc: "İnternette sadece <b>Uzay Kampı</b> kelimelerini yan yana aratmak istiyorsun. Ancak sadece 'Uzay' yazarsan karşına uzaylılar, sadece 'Kamp' yazarsan çadır satan yerler çıkar.<br><br><b>Görev:</b> Kelime grubunun parçalanmaması için onu <b>Tırnak İşareti (\" \")</b> içine alarak arat.<br><i>Örnek: \"Hedef Kelime\"</i>",
+                targetQuery: '"uzay kampı"',
+                suggestions: ["uzay kampı fiyatları", "uzay kampı nerede", "uzay çadırı", "kamp malzemeleri"],
+                check: (q) => q.toLowerCase().trim().includes('"uzay kampı"'),
+                correction: '"Uzay Kampı"',
+                successData: {
+                    results: [
+                        { url: "https://www.uzaykampi.edu.tr › anasayfa", title: "Türkiye Uzay Kampı - Resmi Web Sitesi", desc: "Çocuklar ve gençler için hazırlanan <b>Uzay Kampı</b> eğitim programları, astronot simülatörleri ve kayıt bilgileri." },
+                        { url: "https://bilimcocuk.org › uzay-kampi", title: "Bir Uzay Kampı Macerası - Bilim Çocuk", desc: "Geçen yaz katıldığımız <b>Uzay Kampı</b> gezisinde yerçekimsiz ortamın nasıl hissettirdiğini öğrendik." }
+                    ],
+                    panel: {
+                        title: "Uzay Kampı", image: "🚀",
+                        desc: "Gençlere astronomi ve uzay bilimleri alanında uygulamalı eğitimler veren uluslararası tesislerdir. Dünyada sadece birkaç ülkede bulunur."
+                    },
+                    msg: "Harika! Tırnak işareti kullanarak arama motoruna 'Bu kelimeleri asla ayırma' dedin ve gereksiz kamp reklamlarından kurtuldun."
+                },
+                failData: [
+                    { isAd: true, url: "https://www.kampciyiz.com", title: "En İyi Kamp Çadırları - %50 İndirim", desc: "Ailenizle doğada kuracağınız çadır ve kamp malzemeleri. Uzay genişliğinde çadırlar stokta!" },
+                    { isAd: true, url: "https://www.uzayoyuncak.com", title: "Uzay Temalı Oyuncaklar", desc: "Çocuklar için uzay gemisi maketleri. Hemen satın al." },
+                    { isAd: false, url: "https://www.haberler.com", title: "Uzayda Yeni Gezegen Bulundu", desc: "Bilim insanları yeni bir uzay keşfine imza attı." }
+                ]
+            },
+            {
+                title: "Kelime Çıkarma (Filtreleme)",
+                desc: "Meyve olan <b>Elma</b> hakkında araştırma yapıyorsun ama sürekli karşına teknoloji markası olan bilgisayar/telefon firması çıkıyor.<br><br><b>Görev:</b> İstemediğin bir kelimeyi çıkarmak için başına <b>Eksi (-)</b> işareti koy. 'Elma' arat ama 'telefon' kelimesini çıkar.<br><i>Örnek: Kelime -istenmeyen</i>",
+                targetQuery: 'elma -telefon',
+                suggestions: ["elma faydaları", "elma telefon fiyatları", "ikinci el elma", "elma ağacı"],
+                check: (q) => {
+                    const str = q.toLowerCase().trim();
+                    return str.includes('elma') && (str.includes('-telefon') || str.includes('-apple'));
+                },
+                correction: 'Elma -telefon',
+                successData: {
+                    results: [
+                        { url: "https://www.tarim.gov.tr › elma", title: "Elma Yetiştiriciliği ve Çeşitleri", desc: "Amasya elması, Starking ve Granny Smith gibi tarımsal <b>elma</b> türlerinin yetiştirilme koşulları ve gübreleme." },
+                        { url: "https://www.saglikliyasam.com › meyveler", title: "Günde Bir Elma Yemenin Faydaları", desc: "İçerdiği vitaminler sayesinde taze <b>elma</b> tüketimi bağışıklığı güçlendirir, diş sağlığına iyi gelir." }
+                    ],
+                    panel: {
+                        title: "Elma (Meyve)", image: "🍎",
+                        desc: "Gülgiller familyasından kültürü yapılan bir meyve türüdür. Besin değeri yüksek, vitamin açısından zengindir."
+                    },
+                    msg: "Süper! Eksi (-) işareti sayesinde arama motoruna 'Bana teknoloji markasını gösterme' dedin ve bilgi kirliliğini önledin."
+                },
+                failData: [
+                    { isAd: true, url: "https://www.teknoloji.com › elma", title: "Yeni Elma Pro Max İncelemesi", desc: "Bu yıl çıkan yeni elma logolu telefonun özellikleri, kamerası ve fiyatı." },
+                    { isAd: true, url: "https://www.ikincieltelefon.net", title: "Satılık İkinci El Elma Telefonlar", desc: "Uygun fiyata, garantili ve çiziksiz akıllı telefonlar burada." },
+                    { isAd: false, url: "https://www.forum.com", title: "Elma telefonum açılmıyor, ne yapmalıyım?", desc: "Cihazın şarjı bittiyse logoda kalabilir." }
+                ]
+            },
+            {
+                title: "Site İçi Arama",
+                desc: "<b>Mars</b> gezegeni hakkında bir okul ödevi yapıyorsun. Ancak internetteki her siteye (forumlar, filmler, sahte haberler) güvenemeyiz.<br><br><b>Görev:</b> Sadece üniversite sitelerinde (edu.tr) arama yapmak için kelimenin yanına <b>site:edu.tr</b> kodunu ekle.<br><i>Örnek: Mars site:edu.tr</i>",
+                targetQuery: 'mars site:edu.tr',
+                suggestions: ["mars filmi izle", "marsta uzaylılar", "mars gezegeni özellikleri", "mars üniversite araştırması"],
+                check: (q) => {
+                    const str = q.toLowerCase().trim();
+                    return str.includes('mars') && (str.includes('site:edu.tr') || str.includes('site:.edu.tr'));
+                },
+                correction: 'Mars site:edu.tr',
+                successData: {
+                    results: [
+                        { url: "https://astronomi.ankara.edu.tr › mars", title: "Kızıl Gezegen: Mars'ın Yüzey Yapısı", desc: "Ankara Üniversitesi Astronomi bölümünün makalesine göre <b>Mars</b> yüzeyinde yoğun demir oksit bulunur." },
+                        { url: "https://uzay.itu.edu.tr › arastirmalar", title: "Mars'a Yapılan Uzay Görevleri", desc: "İTÜ Enstitüsü: Tarih boyunca <b>Mars</b>'a gönderilen rover ve uyduların elde ettiği jeolojik veriler." }
+                    ],
+                    panel: {
+                        title: "Güvenilir Kaynak (EDU)", image: "🏛️",
+                        desc: "site:edu.tr uzantısı sadece onaylanmış üniversite ve yükseköğretim kurumlarına verilir. Bu sitelerdeki bilgiler genellikle bilimsel ve güvenilirdir."
+                    },
+                    msg: "Mükemmel Dedektiflik! 'site:' koduyla sahte bilim sitelerini ve filmleri filtreleyerek doğrudan üniversitelerin bilimsel kaynaklarına eriştin."
+                },
+                failData: [
+                    { isAd: true, url: "https://www.marsfilmizle.com", title: "Marslı (The Martian) Full HD İzle", desc: "Mars'ta mahsur kalan bir astronotun kurtulma mücadelesi. Popcorn alın ve izleyin!" },
+                    { isAd: false, url: "https://www.uzaykomplo.net", title: "Mars'ta Uzaylı Şehri Bulundu!", desc: "Geçen gün çekilen fotoğraflarda Mars'ta bina bulundu! Gerçekleri sizden saklıyorlar, tıkla öğren." },
+                    { isAd: false, url: "https://www.cerezlikbilgi.com", title: "Mars Hakkında 10 İlginç Bilgi", desc: "Mars kırmızıdır. Nedenini kimse bilmiyor." }
+                ]
+            },
+            {
+                title: "Dosya Türü Arama",
+                desc: "Bilgisayarına indirmek ve yazıcıdan çıkarmak için <b>Güneş Sistemi</b> hakkında bir test kağıdı (belge) arıyorsun. Videolar veya uzun ansiklopediler işine yaramaz.<br><br><b>Görev:</b> Sadece yazdırılabilir belge (PDF) bulmak için aramana <b>filetype:pdf</b> kodunu ekle.<br><i>Örnek: Güneş Sistemi filetype:pdf</i>",
+                targetQuery: 'güneş sistemi filetype:pdf',
+                suggestions: ["güneş sistemi şarkısı", "güneş sistemi gezegenleri", "güneş sistemi pdf test", "güneş sistemi vikipedi"],
+                check: (q) => {
+                    const str = q.toLowerCase().trim();
+                    return str.includes('güneş') && (str.includes('filetype:pdf') || str.includes('ext:pdf'));
+                },
+                correction: 'Güneş Sistemi filetype:pdf',
+                successData: {
+                    results: [
+                        { url: "https://www.eba.gov.tr › gunes_sistemi_test.pdf", title: "[PDF] Güneş Sistemi Değerlendirme Testi", desc: "Fen Bilimleri dersi <b>Güneş Sistemi</b> konusu kavrama testi ve cevap anahtarı. İndirip yazdırabilirsiniz." },
+                        { url: "https://www.meb.gov.tr › gunes_posteri.pdf", title: "[PDF] Güneş Sistemi Sınıf Posteri", desc: "Sınıf panoları için yüksek çözünürlüklü ve yazdırılabilir <b>Güneş Sistemi</b> gezegenleri sıralaması." }
+                    ],
+                    panel: {
+                        title: "Belge Arama (PDF)", image: "📄",
+                        desc: "filetype: operatörü sadece belirttiğiniz dosya formatındaki (pdf, doc, ppt) belgeleri arar. Ödev veya yazdırılacak test ararken çok faydalıdır."
+                    },
+                    msg: "Çok pratik! 'filetype:pdf' yazarak web sitelerinde kaybolmadan doğrudan yazıcıya gönderebileceğin belgelere ulaştın."
+                },
+                failData: [
+                    { isAd: false, url: "https://www.wikipedia.org › Gunes_Sistemi", title: "Güneş Sistemi - Wikipedia", desc: "Güneş Sistemi, Güneş ve onun çekim etkisi altında kalan sekiz gezegen ile bilinen uydularından oluşur." },
+                    { isAd: true, url: "https://www.youtube.com › watch", title: "Güneş Sistemi Şarkısı (Animasyonlu) - Video", desc: "Çocuklar için hazırladığımız hareketli ve eğlenceli gezegenler şarkısını dinleyin." },
+                    { isAd: false, url: "https://www.oyunlar.com", title: "Güneş Sistemi Oyunu Oyna", desc: "Gezegenleri sırasına göre yerleştirerek puan kazan." }
+                ]
+            },
+            {
+                title: "Oltalama (Phishing) Tuzağı",
+                desc: "İnternette gezinirken aniden karşına şöyle bir ekran çıktı:<br><br><i>'Tebrikler, 100.000 Ziyaretçimizsiniz! Hemen Yeni Nesil Tablet Kazandınız! Adresinizi ve şifrenizi girin.'</i><br><br><b>Görev:</b> İnternetteki bu tür bedava ödül vaatlerine inanmalı ve tıklamalı mıyız? Arama çubuğuna sadece SADECE <b>HAYIR</b> yazarak cevabını ver.",
+                targetQuery: 'hayır',
+                suggestions: ["evet", "hayır", "nasıl tablet kazanırım", "bedava tablet"],
+                check: (q) => {
+                    const str = q.toLowerCase().trim();
+                    return str === 'hayır' || str === 'hayir';
+                },
+                correction: 'Hayır',
+                successData: {
+                    results: [
+                        { url: "https://www.guvenliweb.org.tr › uyari", title: "Siber Tuzaklardan Kurtuldunuz!", desc: "İnternette hiçbir şey durduk yere bedava değildir. Bu tür tuzaklar <b>Oltalama (Phishing)</b> saldırılarıdır. Kişisel bilgilerinizi veya şifrelerinizi çalmayı hedefler." }
+                    ],
+                    panel: {
+                        title: "Oltalama (Phishing)", image: "🎣",
+                        desc: "Siber suçluların, kurbanları kandırarak (hediye, tehdit, banka uyarısı) şifrelerini veya özel bilgilerini ele geçirme yöntemidir. Asla tıklanmamalıdır."
+                    },
+                    msg: "Büyük bir tehlikeyi atlattın! İnternette tanımadığın kişilerin bedava ödüllerine asla kanmamalısın. Sen gerçek bir Siber Dedektifsin!"
+                },
+                failData: [
+                    { isAd: true, url: "https://www.hata.com › virus", title: "EMİN MİSİN? HEDİYE KAÇIYOR!", desc: "İnternette tanımadığın kişilerin sana durduk yere bedava hediyeler vereceğine gerçekten inanıyor musun? Güvenliğimiz için cevabın farklı olmalıydı." }
+                ]
+            }
+        ];
+
+        let currentLevel = 0;
+        const searchInput = document.getElementById('search-input');
+        const clearBtn = document.getElementById('clear-btn');
+        const autocompleteList = document.getElementById('autocomplete-list');
+        const searchContainer = document.getElementById('search-container-main');
+
+        searchInput.addEventListener('input', () => {
+            const val = searchInput.value.trim();
+            if(val.length > 0) {
+                clearBtn.classList.remove('hidden');
+                showSuggestions(val);
+            } else {
+                clearBtn.classList.add('hidden');
+                searchContainer.classList.remove('active');
+            }
+        });
+
+        searchInput.addEventListener('focus', () => {
+            if(searchInput.value.trim().length > 0) showSuggestions(searchInput.value);
+        });
+
+        document.addEventListener('click', (e) => {
+            if(!searchContainer.contains(e.target)) {
+                searchContainer.classList.remove('active');
+            }
+        });
+
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performSearch();
+        });
+
+        function clearSearch() {
+            searchInput.value = '';
+            clearBtn.classList.add('hidden');
+            searchContainer.classList.remove('active');
+            searchInput.focus();
+        }
+
+        function showSuggestions(query) {
+            const task = TASKS[currentLevel];
+            autocompleteList.innerHTML = '';
+            
+            // Gerçekçi olması için yazılana benzer öneriler
+            const matchedSuggestions = task.suggestions.filter(s => s.toLowerCase().includes(query.toLowerCase()));
+            const toShow = matchedSuggestions.length > 0 ? matchedSuggestions : task.suggestions.slice(0,3);
+
+            toShow.forEach(s => {
+                const div = document.createElement('div');
+                div.className = 'suggestion-item';
+                div.innerHTML = `<span class="suggestion-icon">🔍</span> <span class="font-bold">${query}</span><span>${s.replace(query.toLowerCase(), '')}</span>`;
+                div.onclick = () => {
+                    searchInput.value = s;
+                    searchContainer.classList.remove('active');
+                    performSearch();
+                };
+                autocompleteList.appendChild(div);
+            });
+
+            if(toShow.length > 0) {
+                searchContainer.classList.add('active');
+            } else {
+                searchContainer.classList.remove('active');
+            }
+        }
+
+        function loadLevel() {
+            const task = TASKS[currentLevel];
+            document.getElementById('level-display').innerText = currentLevel + 1;
+            document.getElementById('task-title').innerText = task.title;
+            document.getElementById('modal-title').innerText = `Görev ${currentLevel + 1}: ${task.title}`;
+            document.getElementById('modal-desc').innerHTML = task.desc;
+            
+            document.getElementById('results-view').classList.add('hidden');
+            document.getElementById('search-view').classList.remove('hidden');
+            document.getElementById('search-view').classList.add('flex');
+            
+            clearSearch();
+            
+            // İlk açılışta görevi göster
+            document.getElementById('task-modal').classList.remove('hidden');
+        }
+
+        function showTaskDetail() {
+            document.getElementById('task-modal').classList.remove('hidden');
+        }
+
+        function performSearch() {
+            const query = searchInput.value.trim();
+            if (query === '') return;
+
+            searchContainer.classList.remove('active');
+            document.getElementById('search-view').classList.add('hidden');
+            document.getElementById('search-view').classList.remove('flex');
+            
+            // Fake Loading
+            const loader = document.getElementById('loading-view');
+            loader.classList.remove('hidden');
+            loader.classList.add('flex');
+
+            setTimeout(() => {
+                loader.classList.add('hidden');
+                loader.classList.remove('flex');
+                
+                const resultsView = document.getElementById('results-view');
+                resultsView.classList.remove('hidden');
+                resultsView.classList.add('flex');
+                
+                document.getElementById('result-search-input').value = query;
+                
+                evaluateQuery(query);
+            }, 800); // 800ms loading effect
+        }
+
+        function evaluateQuery(query) {
+            const task = TASKS[currentLevel];
+            const isSuccess = task.check(query);
+            
+            const listEl = document.getElementById('results-list');
+            const kpEl = document.getElementById('knowledge-panel');
+            const didYouMeanEl = document.getElementById('did-you-mean');
+            
+            listEl.innerHTML = '';
+            
+            // Sonuç Sayısı
+            const count = isSuccess ? Math.floor(Math.random() * 500) + 120 : Math.floor(Math.random() * 9000000) + 1000000;
+            document.getElementById('result-count').innerText = count.toLocaleString('tr-TR');
+
+            if (isSuccess) {
+                // BAŞARILI DURUM
+                didYouMeanEl.classList.add('hidden');
+                
+                // Bilgi Panosunu Doldur
+                kpEl.style.display = 'block';
+                kpEl.innerHTML = `
+                    <div class="flex items-center gap-4 mb-4">
+                        <div class="text-4xl p-4 bg-blue-50 rounded-2xl">${task.successData.panel.image}</div>
+                        <h2 class="text-xl font-bold text-slate-800">${task.successData.panel.title}</h2>
+                    </div>
+                    <p class="text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-4">${task.successData.panel.desc}</p>
+                `;
+
+                // Linkleri Bas
+                task.successData.results.forEach((item, i) => {
+                    listEl.innerHTML += `
+                        <div class="result-item anim-fade" style="animation-delay: ${i * 0.1}s">
+                            <div class="result-url">
+                                <span class="bg-slate-100 w-6 h-6 rounded-full flex items-center justify-center text-[10px]">🌐</span>
+                                ${item.url}
+                            </div>
+                            <a href="javascript:void(0)" class="result-title">${item.title}</a>
+                            <div class="result-desc">${item.desc}</div>
+                        </div>
+                    `;
+                });
+
+                // Başarı Modalı
+                document.getElementById('success-desc').innerText = task.successData.msg;
+                if (window.confetti) confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+                
+                setTimeout(() => {
+                    document.getElementById('success-modal').classList.remove('hidden');
+                }, 1500);
+
+            } else {
+                // BAŞARISIZ DURUM (BİLGİ KİRLİLİĞİ)
+                kpEl.style.display = 'none';
+                
+                // Bunu mu demek istediniz? (Eğer tamamen yanlış bir şey yazmadıysa)
+                if(query.toLowerCase() !== 'hayır' && currentLevel !== 4) {
+                    didYouMeanEl.classList.remove('hidden');
+                    document.getElementById('correction-text').innerText = task.correction;
+                }
+
+                // Uyarı
+                if (currentLevel !== 4) {
+                    listEl.innerHTML += `
+                        <div class="bg-red-50 border border-red-200 p-4 rounded-xl mb-8">
+                            <p class="text-red-700 font-bold mb-1 flex items-center gap-2"><span>⚠️</span> Çok fazla alakasız sonuç bulundu!</p>
+                            <p class="text-red-600 text-sm">Görevi tekrar oku ve arama operatörlerini (- , "" , site:, filetype:) doğru kullan.</p>
+                        </div>
+                    `;
+                }
+
+                // Linkleri Bas (Sponsorlularla)
+                task.failData.forEach((item, i) => {
+                    listEl.innerHTML += `
+                        <div class="result-item anim-fade" style="animation-delay: ${i * 0.1}s">
+                            <div class="result-url">
+                                ${item.isAd ? '<span class="sponsored-tag">Sponsorlu</span>' : '<span class="bg-slate-100 w-6 h-6 rounded-full flex items-center justify-center text-[10px]">🌐</span>'}
+                                ${item.url}
+                            </div>
+                            <a href="javascript:void(0)" class="result-title">${item.title}</a>
+                            <div class="result-desc">${item.desc}</div>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        function applyCorrection() {
+            const correction = TASKS[currentLevel].correction;
+            searchInput.value = correction;
+            document.getElementById('result-search-input').value = correction;
+            performSearch();
+        }
+
+        function backToSearch() {
+            document.getElementById('results-view').classList.add('hidden');
+            document.getElementById('results-view').classList.remove('flex');
+            document.getElementById('search-view').classList.remove('hidden');
+            document.getElementById('search-view').classList.add('flex');
+            clearSearch();
+        }
+
+        function nextLevel() {
+            document.getElementById('success-modal').classList.add('hidden');
+            currentLevel++;
+            
+            if (currentLevel >= TASKS.length) {
+                alert("Tebrikler! Gerçek bir 'Arama Motoru Uzmanı' oldun. İnternetteki bilgi kirliliğine takılmadan doğru ve güvenilir bilgiye nasıl ulaşacağını çok iyi biliyorsun!");
+                currentLevel = 0;
+            }
+            
+            loadLevel();
+        }
+
+        // Oyunu Başlat
+        loadLevel();
+
+    </script>
+</body>
+</html>

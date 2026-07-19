@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Algoritma Gezgini - Kodlama Macerası</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;800;900&display=swap');
+        
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #e5e7eb; 
+            user-select: none;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        #start-screen { backdrop-filter: blur(8px); }
+
+        .header-bar {
+            background-color: #14b8a6; 
+            color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            z-index: 10;
+        }
+
+        .level-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 0.65rem;
+            color: white;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        @media (min-width: 640px) {
+            .level-dot { width: 26px; height: 26px; font-size: 0.8rem; }
+        }
+
+        .level-dot.active {
+            background-color: white;
+            color: #14b8a6;
+            border-color: #0d9488;
+            transform: scale(1.1);
+        }
+
+        .level-dot.completed {
+            background-color: #22c55e;
+            color: white;
+            border-color: #16a34a;
+        }
+
+        #game-board {
+            border-width: 4px;
+            border-style: solid;
+            border-radius: 8px;
+            background-image: 
+                linear-gradient(rgba(255,255,255,.4) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,.4) 1px, transparent 1px);
+            background-size: 20% 20%; 
+            transition: background-color 0.5s, border-color 0.5s;
+        }
+
+        .grid-cell { display: flex; align-items: center; justify-content: center; position: relative; }
+
+        .block-container { display: flex; flex-direction: column; align-items: flex-start; }
+
+        .block {
+            padding: 12px 16px;
+            border-radius: 6px;
+            color: white;
+            font-weight: 800;
+            font-size: 1.15rem;
+            cursor: pointer;
+            position: relative;
+            margin-bottom: -4px; 
+            min-width: 140px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 1;
+            transition: transform 0.1s;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .block:active { transform: scale(0.98); }
+
+        .block::before {
+            content: ''; position: absolute; top: -6px; left: 16px; width: 20px; height: 6px;
+            background-color: inherit; border-radius: 4px 4px 0 0; z-index: 2;
+        }
+        .block::after {
+            content: ''; position: absolute; bottom: -6px; left: 16px; width: 20px; height: 6px;
+            background-color: inherit; border-radius: 0 0 4px 4px; box-shadow: inherit; z-index: 2;
+        }
+
+        .block-when-run { background-color: #f59e0b; box-shadow: 0 4px 0 #d97706; cursor: default; z-index: 10; }
+        .block-when-run::before { display: none; } 
+        
+        .block-move { background-color: #3b82f6; box-shadow: 0 4px 0 #2563eb; }
+        .block-move:hover { filter: brightness(1.1); }
+
+        .toolbox-block { margin-bottom: 8px; min-width: 120px; }
+        .toolbox-block::before, .toolbox-block::after { display: none; }
+
+        .executing {
+            box-shadow: 0 0 0 4px #fbbf24, 0 4px 0 #2563eb !important;
+            filter: brightness(1.2);
+            z-index: 20;
+        }
+
+        .character-move { transition: all 0.4s ease-in-out; }
+
+        .target-pulse { animation: target-pulse-anim 1.5s infinite ease-in-out; }
+        @keyframes target-pulse-anim {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255,255,255,0.4)); }
+            50% { transform: scale(1.15); filter: drop-shadow(0 0 15px rgba(255,255,255,0.9)); }
+        }
+
+        .shake { animation: shake-anim 0.4s; }
+        @keyframes shake-anim {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .run-button { background-color: #f59e0b; box-shadow: 0 4px 0 #d97706; transition: all 0.1s; }
+        .run-button:active:not(:disabled) { transform: translateY(4px); box-shadow: none; }
+        .run-button:disabled { background-color: #9ca3af; box-shadow: 0 4px 0 #6b7280; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <!-- Başlangıç Ekranı -->
+    <div id="start-screen" class="fixed inset-0 bg-slate-800 bg-opacity-90 flex flex-col items-center justify-center z-50 transition-opacity duration-500">
+        <!-- SOL ÜST ANA SAYFA BUTONU EKLENDİ -->
+        <a href="index.html" class="absolute top-4 left-4 md:top-6 md:left-6 bg-white/70 hover:bg-white text-slate-800 w-12 h-12 md:w-14 md:h-14 rounded-2xl text-2xl md:text-3xl flex items-center justify-center transition-all shadow-lg backdrop-blur-md hover:scale-110 z-10" title="Ana Sayfaya Dön">
+            🏠
+        </a>
+
+        <div class="bg-white p-8 sm:p-12 rounded-3xl shadow-2xl flex flex-col items-center max-w-lg text-center mx-4 border-b-8 border-slate-500 relative">
+            <div class="text-7xl sm:text-8xl mb-6 animate-bounce drop-shadow-md">🚀</div>
+            <h1 class="text-3xl sm:text-4xl font-black text-slate-700 mb-2">Algoritma Gezgini</h1>
+            <p class="text-lg sm:text-xl text-gray-600 font-bold mb-4">Tam 100 bölüm! Farklı diyarlara seyahat et ve karakterleri hedeflerine ulaştırmak için blokları diz!</p>
+            <p id="save-info" class="text-sm font-bold text-teal-600 bg-teal-50 px-4 py-2 rounded-lg mb-8 border border-teal-200 hidden">
+                Kaldığın yerden devam ediyorsun.
+            </p>
+            <button onclick="startGame()" class="bg-orange-500 hover:bg-orange-600 text-white font-black text-2xl py-4 px-10 rounded-2xl shadow-[0_6px_0_#c2410c] active:translate-y-2 active:shadow-none transition w-full flex items-center justify-center gap-3">
+                <span class="text-3xl">▶️</span> OYUNA BAŞLA
+            </button>
+            
+            <!-- GELİŞTİRİCİ İMZASI GÜNCELLENDİ (Tasarım ve Geliştirme -> Geliştirici) -->
+            <div class="mt-6 text-gray-400 font-bold text-sm bg-gray-100 px-4 py-2 rounded-full w-full border border-gray-200">
+                👨‍💻 Geliştirici: <span class="text-gray-500">Mehmet Baran İKİOK</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Üst Bar -->
+    <div class="header-bar w-full min-h-[4rem] flex flex-col md:flex-row justify-between items-center py-2 md:py-0 gap-2 md:gap-0">
+        <div class="font-black text-lg md:text-2xl tracking-wide flex items-center gap-2">
+            <span>🗺️</span> Kod Kâşifleri
+        </div>
+        
+        <!-- Dünyalar Arası Navigasyon -->
+        <div class="flex items-center gap-1 sm:gap-2 px-2 max-w-[70%]">
+            <button onclick="changeStage(-1)" class="text-white hover:text-yellow-300 text-2xl font-bold transition-transform active:scale-90 drop-shadow-md">◀</button>
+            <div class="flex flex-wrap justify-center gap-1 sm:gap-2" id="level-dots">
+                <!-- Seviye noktaları JS ile eklenecek -->
+            </div>
+            <button onclick="changeStage(1)" class="text-white hover:text-yellow-300 text-2xl font-bold transition-transform active:scale-90 drop-shadow-md">▶</button>
+        </div>
+
+        <div class="font-bold bg-white text-teal-600 px-3 py-1 rounded-full text-xs sm:text-sm hidden md:block flex-shrink-0" id="stage-title">
+            Ders 1: Algoritma
+        </div>
+    </div>
+
+    <!-- Ana İçerik -->
+    <div class="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden">
+        
+        <!-- SOL PANEL: Oyun ve Araç Kutusu -->
+        <div class="w-full md:w-5/12 lg:w-4/12 flex flex-col bg-white border-b-4 md:border-b-0 md:border-r border-gray-300 z-10 flex-shrink-0">
+            
+            <!-- Oyun Ekranı -->
+            <div class="p-2 sm:p-4 flex flex-col items-center border-b border-gray-200">
+                <div id="instruction-text" class="w-full text-center font-bold text-gray-700 mb-2 text-base sm:text-lg min-h-[3.5rem] flex items-center justify-center px-2 leading-tight">
+                    Beni hedefe ulaştır!
+                </div>
+                
+                <div id="game-board" class="w-full max-w-[280px] sm:max-w-[350px] aspect-square relative grid grid-cols-5 grid-rows-5 overflow-hidden shadow-inner">
+                    <!-- Hücreler ve Karakter JS ile çizilecek -->
+                </div>
+                
+                <!-- Çalıştır ve Geri Al Butonları -->
+                <div class="flex w-full max-w-[280px] sm:max-w-[350px] gap-2 mt-4">
+                    <button id="run-btn" onclick="runAlgorithm()" class="run-button flex-[3] py-3 rounded-full text-white font-black text-lg sm:text-xl flex items-center justify-center gap-2">
+                        <span class="text-xl sm:text-2xl">▶️</span> ÇALIŞTIR
+                    </button>
+                    <button onclick="removeLastCommand()" class="bg-orange-400 hover:bg-orange-500 text-white font-bold py-3 px-4 rounded-full shadow-[0_4px_0_#c2410c] active:translate-y-1 active:shadow-none transition flex-1 flex justify-center items-center text-2xl" title="Son Bloğu Sil">
+                        🔙
+                    </button>
+                </div>
+            </div>
+
+            <!-- Blok Araç Kutusu (Toolbox) -->
+            <div class="bg-gray-50 p-3 sm:p-4 overflow-x-auto md:overflow-y-auto border-t-4 border-gray-200 md:flex-1">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 class="text-gray-500 font-bold uppercase text-xs sm:text-sm">Bloklar (Araç Kutusu)</h3>
+                    <span class="text-xs text-gray-400 font-bold block md:hidden">Sola Kaydır 👉</span>
+                </div>
+                
+                <div class="flex flex-row md:flex-col gap-3 items-center md:items-start w-max md:w-full pb-2 md:pb-0">
+                    <div class="block block-move toolbox-block shadow-md" onclick="addCommand('up')">
+                        <span class="text-xl sm:text-2xl">⬆️</span> Kuzey (Y)
+                    </div>
+                    <div class="block block-move toolbox-block shadow-md" onclick="addCommand('down')">
+                        <span class="text-xl sm:text-2xl">⬇️</span> Güney (A)
+                    </div>
+                    <div class="block block-move toolbox-block shadow-md" onclick="addCommand('left')">
+                        <span class="text-xl sm:text-2xl">⬅️</span> Batı (S)
+                    </div>
+                    <div class="block block-move toolbox-block shadow-md" onclick="addCommand('right')">
+                        <span class="text-xl sm:text-2xl">➡️</span> Doğu (S)
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SAĞ PANEL: Çalışma Alanı (Workspace) -->
+        <div id="workspace-container" class="w-full md:flex-1 bg-[url('https://studio.code.org/blockly/media/1x1.gif')] bg-gray-200 p-4 relative overflow-y-auto flex flex-col min-h-[400px] md:min-h-0">
+            
+            <div class="flex justify-between items-center mb-6 sticky top-0 bg-gray-200/90 py-2 z-10 backdrop-blur-sm rounded-lg px-2">
+                <h2 class="text-lg sm:text-xl font-black text-gray-600 uppercase tracking-widest">Çalışma Alanı</h2>
+                <button onclick="clearWorkspace()" class="bg-gray-300 hover:bg-red-400 hover:text-white text-gray-700 font-bold py-2 px-3 sm:px-4 rounded shadow-sm text-xs sm:text-sm flex items-center gap-2 transition">
+                    🗑️ Hepsini Sil
+                </button>
+            </div>
+
+            <div class="block-container pl-2 sm:pl-10" id="workspace">
+                <div class="block block-when-run shadow-md" id="block-start">
+                    ▶️ Çalıştığı Zaman
+                </div>
+                <div id="blocks-list" class="block-container w-full pb-10"></div>
+            </div>
+            
+            <!-- GELİŞTİRİCİ İMZASI GÜNCELLENDİ (ÇALIŞMA ALANI ALTI) -->
+            <div class="mt-auto pt-8 flex flex-col justify-center items-center opacity-70 text-gray-500 font-bold text-xs sm:text-sm pointer-events-none text-center gap-1">
+                <span>Silmek için çalışma alanındaki bir bloğa veya 🔙 butonuna tıkla.</span>
+                <span class="text-[10px] text-gray-400 mt-2 tracking-wide uppercase">© Geliştirici: <span class="text-gray-500 font-black">Mehmet Baran İKİOK</span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Başarı Modalı -->
+    <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-50">
+        <div class="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-md w-full mx-4 border-t-8 border-green-500">
+            <div class="text-6xl mb-4">🏆</div>
+            <h2 class="text-3xl font-black text-gray-800 mb-2 text-center">Tebrikler!</h2>
+            <p class="text-gray-600 text-center font-bold text-lg mb-2">Bölüm <span id="modal-level">1</span>'i tamamladın.</p>
+            <p class="text-green-600 text-center font-bold text-md mb-8 bg-green-50 px-4 py-2 rounded-lg border border-green-200">
+                Az önce <span id="line-count" class="text-xl">0</span> satır kod yazdın!
+            </p>
+            
+            <div class="flex gap-4 w-full">
+                <button onclick="replayLevel()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 px-4 rounded-xl transition">
+                    🔄 Tekrar
+                </button>
+                <button onclick="nextLevel()" class="flex-[2] bg-green-500 hover:bg-green-600 text-white font-black py-3 px-4 rounded-xl text-lg shadow-[0_4px_0_#16a34a] active:translate-y-1 active:shadow-none transition">
+                    Devam Et ➡️
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- SES MOTORU ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            
+            if (type === 'click') { 
+                osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if (type === 'move') { 
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            } else if (type === 'error') { 
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'win') { 
+                const notes = [523.25, 659.25, 783.99, 1046.50]; 
+                notes.forEach((freq, i) => {
+                    const oscW = audioCtx.createOscillator();
+                    const gainW = audioCtx.createGain();
+                    oscW.connect(gainW); gainW.connect(audioCtx.destination);
+                    oscW.type = 'sine';
+                    oscW.frequency.setValueAtTime(freq, audioCtx.currentTime + i*0.1);
+                    gainW.gain.setValueAtTime(0, audioCtx.currentTime);
+                    gainW.gain.setValueAtTime(0.1, audioCtx.currentTime + i*0.1);
+                    gainW.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + i*0.1 + 0.4);
+                    oscW.start(audioCtx.currentTime + i*0.1);
+                    oscW.stop(audioCtx.currentTime + i*0.1 + 0.4);
+                });
+            }
+        }
+
+        // --- OYUN DEĞİŞKENLERİ VE YAPISI ---
+        const GRID_SIZE = 5;
+        let robotPos = { x: 0, y: 0 };
+        let startPos = { x: 0, y: 0 };
+        let targetPos = { x: 4, y: 4 };
+        let commands = [];
+        let isRunning = false;
+        let currentLevelIndex = 0;
+        
+        // --- KAYIT SİSTEMİ ---
+        let maxUnlockedLevel = localStorage.getItem('algoritma_max_level') ? parseInt(localStorage.getItem('algoritma_max_level')) : 0;
+
+        // Ekrana girildiğinde kayıt varsa uyarı göster
+        if(maxUnlockedLevel > 0) {
+            document.getElementById('save-info').classList.remove('hidden');
+        }
+
+        // 10 Dünya
+        const stages = [
+            { name: "Aşama 1: Robot ve Batarya", player: "🤖", target: "🔋", obstacle: "🧱", bg: "#cbd5e1", border: "#94a3b8" },
+            { name: "Aşama 2: Sevimli Dostumuz", player: "🐶", target: "🦴", obstacle: "🌳", bg: "#a3e635", border: "#84cc16" },
+            { name: "Aşama 3: Uzay Keşfi", player: "🧑‍🚀", target: "🌟", obstacle: "☄️", bg: "#64748b", border: "#334155" },
+            { name: "Aşama 4: Orman Macerası", player: "🐵", target: "🍌", obstacle: "🌿", bg: "#86efac", border: "#22c55e" },
+            { name: "Aşama 5: Büyülü Labirent", player: "🧙‍♂️", target: "🧪", obstacle: "🪨", bg: "#d8b4fe", border: "#a855f7" },
+            { name: "Aşama 6: Korsan Hazinesi", player: "🏴‍☠️", target: "💎", obstacle: "🌴", bg: "#fde047", border: "#eab308" },
+            { name: "Aşama 7: Uzaylı İstilası", player: "👽", target: "🛸", obstacle: "🪐", bg: "#a7f3d0", border: "#10b981" },
+            { name: "Aşama 8: Şövalye Görevi", player: "🤺", target: "🏰", obstacle: "🛡️", bg: "#e5e7eb", border: "#6b7280" },
+            { name: "Aşama 9: Derin Deniz", player: "🤿", target: "🐚", obstacle: "🦈", bg: "#bae6fd", border: "#0ea5e9" },
+            { name: "Aşama 10: Ninja Ustası", player: "🥷", target: "📜", obstacle: "⛩️", bg: "#fecaca", border: "#ef4444" }
+        ];
+
+        let PLAYER = stages[0].player; 
+        let TARGET = stages[0].target; 
+        let OBSTACLE = stages[0].obstacle; 
+        
+        const ARROWS = { 
+            'up': { icon: '⬆️', text: 'Kuzey' }, 
+            'down': { icon: '⬇️', text: 'Güney' }, 
+            'left': { icon: '⬅️', text: 'Batı' }, 
+            'right': { icon: '➡️', text: 'Doğu' } 
+        };
+
+        // --- TAM 100 BÖLÜM ---
+        const levels = [
+            // AŞAMA 1: Temeller (0-9)
+            { stageIndex: 0, instruction: "Hedefe ulaş! Sadece Doğu'ya (Sağa) git.", start: {x:0, y:2}, target: {x:2, y:2}, obstacles: [] },
+            { stageIndex: 0, instruction: "Daha uzağa gitmeliyim.", start: {x:0, y:3}, target: {x:4, y:3}, obstacles: [] },
+            { stageIndex: 0, instruction: "Şimdi de Güney'e (Aşağıya) in.", start: {x:2, y:0}, target: {x:2, y:3}, obstacles: [] },
+            { stageIndex: 0, instruction: "Kuzey'e (Yukarıya) tırman.", start: {x:4, y:4}, target: {x:4, y:1}, obstacles: [] },
+            { stageIndex: 0, instruction: "Batı'ya (Sola) doğru ilerle.", start: {x:4, y:0}, target: {x:1, y:0}, obstacles: [] },
+            { stageIndex: 0, instruction: "Biraz sağa, biraz aşağıya...", start: {x:1, y:1}, target: {x:2, y:2}, obstacles: [] },
+            { stageIndex: 0, instruction: "Önce yukarı, sonra sağa.", start: {x:0, y:4}, target: {x:2, y:2}, obstacles: [] },
+            { stageIndex: 0, instruction: "Uzun bir yolculuk.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [] },
+            { stageIndex: 0, instruction: "Haritanın diğer ucuna git.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [] },
+            { stageIndex: 0, instruction: "Zikzak çizerek ulaş.", start: {x:1, y:1}, target: {x:3, y:3}, obstacles: [] },
+
+            // AŞAMA 2: Sevimli Dostumuz (10-19)
+            { stageIndex: 1, instruction: "Ağacın etrafından dolaş.", start: {x:0, y:2}, target: {x:2, y:2}, obstacles: [{x:1, y:2}] },
+            { stageIndex: 1, instruction: "Yolu kapatmışlar, yukarıdan dolaş.", start: {x:1, y:3}, target: {x:3, y:3}, obstacles: [{x:2, y:3}] },
+            { stageIndex: 1, instruction: "İki ağacın arasından geç.", start: {x:0, y:1}, target: {x:4, y:1}, obstacles: [{x:2, y:0}, {x:2, y:2}] },
+            { stageIndex: 1, instruction: "Ormanın içine gir.", start: {x:2, y:4}, target: {x:2, y:0}, obstacles: [{x:1, y:2}, {x:3, y:2}] },
+            { stageIndex: 1, instruction: "Köşeden dön.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:2, y:0}, {x:0, y:2}] },
+            { stageIndex: 1, instruction: "Duvarı aş.", start: {x:1, y:1}, target: {x:3, y:1}, obstacles: [{x:2, y:1}, {x:2, y:2}] },
+            { stageIndex: 1, instruction: "Aşağıdan dolan.", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:2, y:2}, {x:2, y:1}] },
+            { stageIndex: 1, instruction: "Engelleri geçerek hedefe var.", start: {x:0, y:4}, target: {x:4, y:0}, obstacles: [{x:1, y:3}, {x:3, y:1}, {x:2, y:2}] },
+            { stageIndex: 1, instruction: "Ters 'U' çiz.", start: {x:1, y:3}, target: {x:3, y:3}, obstacles: [{x:2, y:3}, {x:2, y:2}] },
+            { stageIndex: 1, instruction: "Ağaçlara dikkat et!", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:1, y:1}, {x:2, y:2}, {x:3, y:3}] },
+
+            // AŞAMA 3: Uzay Keşfi (20-29)
+            { stageIndex: 2, instruction: "Meteorların arasındaki dar boşluktan geç!", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:2, y:0}, {x:2, y:1}, {x:2, y:3}, {x:2, y:4}] },
+            { stageIndex: 2, instruction: "Güvenli yoldan ilerle.", start: {x:0, y:0}, target: {x:4, y:0}, obstacles: [{x:1, y:1}, {x:2, y:1}, {x:3, y:1}] },
+            { stageIndex: 2, instruction: "Zikzak çizerek git!", start: {x:0, y:4}, target: {x:4, y:0}, obstacles: [{x:1, y:4}, {x:2, y:3}, {x:3, y:2}, {x:4, y:1}] },
+            { stageIndex: 2, instruction: "Büyük bir L harfi.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:1, y:2}, {x:2, y:2}, {x:3, y:2}] },
+            { stageIndex: 2, instruction: "Merdiven çık.", start: {x:0, y:4}, target: {x:4, y:0}, obstacles: [{x:0, y:3}, {x:1, y:2}, {x:2, y:1}, {x:3, y:0}] },
+            { stageIndex: 2, instruction: "Meteor duvarı.", start: {x:2, y:4}, target: {x:2, y:0}, obstacles: [{x:0, y:2}, {x:1, y:2}, {x:3, y:2}, {x:4, y:2}] },
+            { stageIndex: 2, instruction: "Yalnızca dış kenarlardan gidebilirsin.", start: {x:0, y:0}, target: {x:2, y:2}, obstacles: [{x:1, y:1}, {x:1, y:2}, {x:1, y:3}, {x:2, y:1}, {x:2, y:3}, {x:3, y:1}, {x:3, y:2}, {x:3, y:3}] },
+            { stageIndex: 2, instruction: "Etrafından dolaş.", start: {x:1, y:1}, target: {x:3, y:3}, obstacles: [{x:2, y:1}, {x:3, y:1}, {x:3, y:2}] },
+            { stageIndex: 2, instruction: "Aşağıya inip sağa dön.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:2, y:0}, {x:2, y:1}, {x:2, y:2}] },
+            { stageIndex: 2, instruction: "Sıkışık yol.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [{x:2, y:0}, {x:2, y:1}, {x:2, y:3}, {x:2, y:4}] },
+
+            // AŞAMA 4: Orman Macerası (30-39)
+            { stageIndex: 3, instruction: "Doğru yolu seç, çıkmaza girme.", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:1, y:2}, {x:1, y:3}, {x:1, y:4}] },
+            { stageIndex: 3, instruction: "Sarmaşıkların etrafından dolan.", start: {x:2, y:4}, target: {x:2, y:0}, obstacles: [{x:2, y:2}, {x:3, y:2}, {x:4, y:2}] },
+            { stageIndex: 3, instruction: "S harfi çiz.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [{x:3, y:0}, {x:3, y:1}, {x:1, y:3}, {x:1, y:4}] },
+            { stageIndex: 3, instruction: "İçeri sız.", start: {x:0, y:0}, target: {x:2, y:2}, obstacles: [{x:1, y:0}, {x:1, y:1}, {x:1, y:2}, {x:1, y:3}, {x:3, y:1}, {x:3, y:2}, {x:3, y:3}] },
+            { stageIndex: 3, instruction: "Köşeleri dönerek ilerle.", start: {x:0, y:0}, target: {x:4, y:0}, obstacles: [{x:1, y:0}, {x:3, y:0}, {x:1, y:2}, {x:3, y:2}] },
+            { stageIndex: 3, instruction: "İki farklı yol var.", start: {x:2, y:4}, target: {x:2, y:0}, obstacles: [{x:2, y:3}, {x:2, y:2}, {x:2, y:1}, {x:1, y:2}, {x:3, y:2}] },
+            { stageIndex: 3, instruction: "Çok uzun bir 'U'.", start: {x:0, y:0}, target: {x:4, y:0}, obstacles: [{x:1, y:0}, {x:1, y:1}, {x:1, y:2}, {x:3, y:0}, {x:3, y:1}, {x:3, y:2}] },
+            { stageIndex: 3, instruction: "Muz nerede?", start: {x:4, y:4}, target: {x:0, y:0}, obstacles: [{x:3, y:4}, {x:3, y:3}, {x:3, y:2}, {x:1, y:0}, {x:1, y:1}, {x:1, y:2}] },
+            { stageIndex: 3, instruction: "Büyük bir C harfi çizmen gerekecek.", start: {x:4, y:1}, target: {x:4, y:3}, obstacles: [{x:3, y:1}, {x:3, y:2}, {x:3, y:3}, {x:4, y:2}] },
+            { stageIndex: 3, instruction: "Ormanın ortası.", start: {x:0, y:4}, target: {x:4, y:0}, obstacles: [{x:2, y:2}, {x:2, y:3}, {x:2, y:1}] },
+
+            // AŞAMA 5: Büyülü Labirent (40-49)
+            { stageIndex: 4, instruction: "Sarmal bir yol! Başım dönmeden hedefe var.", start: {x:0, y:0}, target: {x:2, y:2}, obstacles: [{x:1, y:1}, {x:1, y:2}, {x:1, y:3}, {x:2, y:3}, {x:3, y:3}, {x:3, y:2}, {x:3, y:1}] },
+            { stageIndex: 4, instruction: "Ters sarmal! Dışarıdan içeri doğru kıvrıl.", start: {x:4, y:4}, target: {x:2, y:2}, obstacles: [{x:3, y:4}, {x:3, y:3}, {x:3, y:2}, {x:3, y:1}, {x:4, y:1}, {x:1, y:1}, {x:1, y:2}, {x:1, y:3}] },
+            { stageIndex: 4, instruction: "Dar koridorlar...", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:1, y:1}, {x:1, y:2}, {x:1, y:3}, {x:3, y:1}, {x:3, y:2}, {x:3, y:3}] },
+            { stageIndex: 4, instruction: "Zorlu labirent! Adımlarını sayarak ilerle.", start: {x:0, y:4}, target: {x:4, y:0}, obstacles: [{x:0, y:3}, {x:1, y:3}, {x:2, y:4}, {x:2, y:3}, {x:2, y:2}, {x:4, y:2}, {x:4, y:1}] },
+            { stageIndex: 4, instruction: "Sihirli taşlara dikkat.", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:1, y:1}, {x:1, y:3}, {x:3, y:1}, {x:3, y:3}] },
+            { stageIndex: 4, instruction: "Tam bir dönüş.", start: {x:2, y:0}, target: {x:2, y:1}, obstacles: [{x:1, y:0}, {x:1, y:1}, {x:1, y:2}, {x:2, y:2}, {x:3, y:2}, {x:3, y:1}, {x:3, y:0}] },
+            { stageIndex: 4, instruction: "Zikzak büyü.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:0, y:1}, {x:2, y:1}, {x:2, y:0}, {x:4, y:1}, {x:4, y:2}, {x:2, y:3}, {x:2, y:4}, {x:0, y:3}, {x:0, y:4}] },
+            { stageIndex: 4, instruction: "Yalnızca bir doğru yol var.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:0, y:1}, {x:1, y:1}, {x:2, y:1}, {x:1, y:3}, {x:2, y:3}, {x:3, y:3}, {x:4, y:3}] },
+            { stageIndex: 4, instruction: "Duvarları dolaş.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [{x:2, y:0}, {x:2, y:1}, {x:2, y:2}, {x:0, y:2}, {x:1, y:2}] },
+            { stageIndex: 4, instruction: "Büyük 'S'.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:0, y:1}, {x:1, y:1}, {x:2, y:1}, {x:3, y:1}, {x:1, y:3}, {x:2, y:3}, {x:3, y:3}, {x:4, y:3}] },
+
+            // AŞAMA 6: Korsan Hazinesi (50-59)
+            { stageIndex: 5, instruction: "Hazineye ulaşmak için uzun yoldan git.", start: {x:0, y:0}, target: {x:0, y:1}, obstacles: [{x:0, y:2}, {x:1, y:0}, {x:1, y:1}] },
+            { stageIndex: 5, instruction: "Palmiyeleri geç.", start: {x:2, y:4}, target: {x:2, y:0}, obstacles: [{x:1, y:1}, {x:2, y:1}, {x:3, y:1}, {x:1, y:3}, {x:2, y:3}, {x:3, y:3}] },
+            { stageIndex: 5, instruction: "Korsan köşesi.", start: {x:0, y:4}, target: {x:4, y:0}, obstacles: [{x:1, y:3}, {x:2, y:2}, {x:3, y:1}] },
+            { stageIndex: 5, instruction: "Gizli kumsal.", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:1, y:1}, {x:1, y:2}, {x:3, y:2}, {x:3, y:3}] },
+            { stageIndex: 5, instruction: "Gemiye dön.", start: {x:4, y:4}, target: {x:0, y:0}, obstacles: [{x:1, y:4}, {x:2, y:3}, {x:3, y:2}, {x:4, y:1}] },
+            { stageIndex: 5, instruction: "İkiz adalar.", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:2, y:0}, {x:2, y:1}, {x:2, y:3}, {x:2, y:4}] },
+            { stageIndex: 5, instruction: "Dalgalı yol.", start: {x:1, y:0}, target: {x:3, y:4}, obstacles: [{x:1, y:1}, {x:2, y:1}, {x:2, y:2}, {x:2, y:3}, {x:3, y:3}] },
+            { stageIndex: 5, instruction: "Kıyı şeridi.", start: {x:0, y:0}, target: {x:4, y:0}, obstacles: [{x:1, y:1}, {x:3, y:1}] },
+            { stageIndex: 5, instruction: "Hazine haritası.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:0, y:2}, {x:1, y:2}, {x:2, y:2}, {x:2, y:3}, {x:2, y:4}] },
+            { stageIndex: 5, instruction: "Zorlu kumlar.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [{x:2, y:0}, {x:3, y:2}, {x:1, y:2}, {x:2, y:4}] },
+
+            // AŞAMA 7: Uzaylı İstilası (60-69)
+            { stageIndex: 6, instruction: "UFO'ya bin.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:1, y:0}, {x:1, y:1}, {x:3, y:3}, {x:3, y:4}] },
+            { stageIndex: 6, instruction: "Gezegenleri atlat.", start: {x:2, y:0}, target: {x:2, y:4}, obstacles: [{x:1, y:2}, {x:2, y:2}, {x:3, y:2}] },
+            { stageIndex: 6, instruction: "Uzay boşluğu.", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:1, y:1}, {x:2, y:2}, {x:3, y:3}] },
+            { stageIndex: 6, instruction: "Yıldız geçidi.", start: {x:4, y:4}, target: {x:0, y:0}, obstacles: [{x:2, y:4}, {x:2, y:3}, {x:2, y:1}, {x:2, y:0}] },
+            { stageIndex: 6, instruction: "Kaçış rotası.", start: {x:0, y:4}, target: {x:4, y:0}, obstacles: [{x:1, y:4}, {x:1, y:3}, {x:3, y:1}, {x:3, y:0}] },
+            { stageIndex: 6, instruction: "Süper zikzak.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:0, y:1}, {x:1, y:2}, {x:2, y:3}, {x:3, y:4}] },
+            { stageIndex: 6, instruction: "Uzaylı tuzağı.", start: {x:1, y:1}, target: {x:3, y:3}, obstacles: [{x:2, y:1}, {x:3, y:2}, {x:1, y:2}, {x:2, y:3}] },
+            { stageIndex: 6, instruction: "Güvenli yörünge.", start: {x:0, y:0}, target: {x:4, y:0}, obstacles: [{x:1, y:0}, {x:2, y:1}, {x:3, y:0}] },
+            { stageIndex: 6, instruction: "Derin uzay.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [{x:3, y:0}, {x:2, y:1}, {x:1, y:2}, {x:0, y:3}] },
+            { stageIndex: 6, instruction: "Meteor fırtınası.", start: {x:2, y:4}, target: {x:2, y:0}, obstacles: [{x:1, y:3}, {x:3, y:3}, {x:1, y:1}, {x:3, y:1}] },
+
+            // AŞAMA 8: Şövalye Görevi (70-79)
+            { stageIndex: 7, instruction: "Kaleye gir.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:2, y:1}, {x:2, y:2}, {x:2, y:3}] },
+            { stageIndex: 7, instruction: "Sur diplerinden git.", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:1, y:1}, {x:2, y:1}, {x:3, y:1}] },
+            { stageIndex: 7, instruction: "Kapıyı bul.", start: {x:2, y:4}, target: {x:2, y:0}, obstacles: [{x:1, y:2}, {x:2, y:2}, {x:3, y:2}] },
+            { stageIndex: 7, instruction: "Şövalye hamlesi.", start: {x:0, y:4}, target: {x:4, y:0}, obstacles: [{x:1, y:2}, {x:2, y:2}, {x:3, y:2}] },
+            { stageIndex: 7, instruction: "Hendekleri geç.", start: {x:4, y:4}, target: {x:0, y:0}, obstacles: [{x:2, y:4}, {x:2, y:3}, {x:2, y:2}, {x:2, y:1}] },
+            { stageIndex: 7, instruction: "Kule tırmanışı.", start: {x:0, y:0}, target: {x:2, y:4}, obstacles: [{x:1, y:1}, {x:1, y:2}, {x:1, y:3}] },
+            { stageIndex: 7, instruction: "Dar köprü.", start: {x:4, y:2}, target: {x:0, y:2}, obstacles: [{x:2, y:1}, {x:2, y:3}] },
+            { stageIndex: 7, instruction: "Gizli geçit.", start: {x:0, y:4}, target: {x:4, y:4}, obstacles: [{x:2, y:3}, {x:3, y:3}, {x:4, y:3}] },
+            { stageIndex: 7, instruction: "Muhafızları atlat.", start: {x:1, y:0}, target: {x:3, y:4}, obstacles: [{x:2, y:1}, {x:2, y:2}, {x:2, y:3}] },
+            { stageIndex: 7, instruction: "Zindan çıkışı.", start: {x:0, y:0}, target: {x:4, y:0}, obstacles: [{x:1, y:1}, {x:2, y:1}, {x:3, y:1}] },
+
+            // AŞAMA 9: Derin Deniz (80-89)
+            { stageIndex: 8, instruction: "İnciyi bul.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:1, y:1}, {x:2, y:2}, {x:3, y:3}] },
+            { stageIndex: 8, instruction: "Köpekbalıklarından kaç.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [{x:3, y:1}, {x:2, y:2}, {x:1, y:3}] },
+            { stageIndex: 8, instruction: "Mercan resifi.", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:2, y:1}, {x:2, y:3}] },
+            { stageIndex: 8, instruction: "Okyanus dibi.", start: {x:2, y:4}, target: {x:2, y:0}, obstacles: [{x:1, y:2}, {x:3, y:2}] },
+            { stageIndex: 8, instruction: "Batık gemi.", start: {x:0, y:4}, target: {x:4, y:0}, obstacles: [{x:0, y:2}, {x:1, y:2}, {x:2, y:2}] },
+            { stageIndex: 8, instruction: "Su altı mağarası.", start: {x:4, y:4}, target: {x:0, y:0}, obstacles: [{x:2, y:4}, {x:2, y:3}, {x:2, y:2}] },
+            { stageIndex: 8, instruction: "Yosunlara dolanma.", start: {x:1, y:0}, target: {x:3, y:4}, obstacles: [{x:2, y:1}, {x:2, y:2}, {x:2, y:3}] },
+            { stageIndex: 8, instruction: "Denizaltı rotası.", start: {x:0, y:0}, target: {x:4, y:0}, obstacles: [{x:1, y:1}, {x:2, y:1}, {x:3, y:1}] },
+            { stageIndex: 8, instruction: "Girdap.", start: {x:0, y:0}, target: {x:2, y:2}, obstacles: [{x:1, y:0}, {x:1, y:1}, {x:1, y:2}] },
+            { stageIndex: 8, instruction: "Derin uçurum.", start: {x:4, y:2}, target: {x:0, y:2}, obstacles: [{x:2, y:1}, {x:2, y:2}, {x:2, y:3}] },
+
+            // AŞAMA 10: Ninja Ustası (90-99) - En Zor Seviyeler
+            { stageIndex: 9, instruction: "Ninja ustalığını kanıtla.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:1, y:0}, {x:1, y:2}, {x:3, y:2}, {x:3, y:4}] },
+            { stageIndex: 9, instruction: "Gölgelerde ilerle.", start: {x:4, y:0}, target: {x:0, y:4}, obstacles: [{x:3, y:0}, {x:3, y:2}, {x:1, y:2}, {x:1, y:4}] },
+            { stageIndex: 9, instruction: "Tapınağa sız.", start: {x:0, y:2}, target: {x:4, y:2}, obstacles: [{x:1, y:1}, {x:1, y:2}, {x:3, y:2}, {x:3, y:3}] },
+            { stageIndex: 9, instruction: "Sessiz adımlar.", start: {x:2, y:4}, target: {x:2, y:0}, obstacles: [{x:1, y:3}, {x:2, y:3}, {x:2, y:1}, {x:3, y:1}] },
+            { stageIndex: 9, instruction: "Usta tuzağı.", start: {x:0, y:4}, target: {x:4, y:0}, obstacles: [{x:0, y:2}, {x:1, y:2}, {x:2, y:2}, {x:3, y:2}, {x:4, y:2}] },
+            { stageIndex: 9, instruction: "Labirentin kalbi.", start: {x:4, y:4}, target: {x:0, y:0}, obstacles: [{x:2, y:4}, {x:2, y:3}, {x:2, y:2}, {x:2, y:1}, {x:2, y:0}] },
+            { stageIndex: 9, instruction: "Hızlı düşün.", start: {x:0, y:0}, target: {x:4, y:4}, obstacles: [{x:1, y:1}, {x:2, y:1}, {x:3, y:1}, {x:1, y:3}, {x:2, y:3}, {x:3, y:3}] },
+            { stageIndex: 9, instruction: "Tek doğru yol.", start: {x:0, y:0}, target: {x:4, y:0}, obstacles: [{x:1, y:0}, {x:1, y:1}, {x:3, y:0}, {x:3, y:1}] },
+            { stageIndex: 9, instruction: "Son engel.", start: {x:0, y:4}, target: {x:4, y:4}, obstacles: [{x:1, y:4}, {x:1, y:3}, {x:3, y:4}, {x:3, y:3}] },
+            { stageIndex: 9, instruction: "BÜYÜK FİNAL! Efsanevi Parşömen!", start: {x:0, y:4}, target: {x:4, y:0}, obstacles: [{x:0, y:3}, {x:1, y:3}, {x:2, y:3}, {x:2, y:2}, {x:2, y:1}, {x:3, y:1}, {x:4, y:1}] }
+        ];
+
+        // --- BAŞLATMA VE ÇİZİM ---
+        function startGame() {
+            try { audioCtx.resume(); } catch(e){}
+            playSound('click');
+            
+            const startScreen = document.getElementById('start-screen');
+            startScreen.classList.add('opacity-0');
+            
+            setTimeout(() => {
+                startScreen.classList.add('hidden');
+                initLevel(maxUnlockedLevel < levels.length ? maxUnlockedLevel : 0); 
+            }, 500);
+        }
+
+        // Dünya değiştirme (Ok tuşları için)
+        function changeStage(dir) {
+            if(isRunning) return;
+            playSound('click');
+            const currentStageIndex = levels[currentLevelIndex].stageIndex;
+            const newStage = currentStageIndex + dir;
+            
+            if (newStage >= 0 && newStage < stages.length) {
+                const stageFirstLevel = levels.findIndex(l => l.stageIndex === newStage);
+                if (stageFirstLevel <= maxUnlockedLevel) {
+                    let levelToGo = stageFirstLevel;
+                    for(let i = stageFirstLevel; i < stageFirstLevel + 10; i++) {
+                        if (i <= maxUnlockedLevel) levelToGo = i;
+                        else break;
+                    }
+                    initLevel(levelToGo);
+                } else {
+                    alert("Bu dünyanın kilidi henüz açılmadı! Önceki bölümleri geçmelisin.");
+                }
+            }
+        }
+
+        function initLevel(index) {
+            if (index >= levels.length) {
+                alert("İNANILMAZ! TAM 100 GÖREVİ BİTİRDİN! SEN BİR KODLAMA EFSANESİSİN! 🎉🏆🚀");
+                index = 0;
+            }
+            
+            currentLevelIndex = index;
+            const levelData = levels[currentLevelIndex];
+            const currentStage = stages[levelData.stageIndex];
+            
+            // Temayı Ayarla
+            PLAYER = currentStage.player;
+            TARGET = currentStage.target;
+            OBSTACLE = currentStage.obstacle;
+            
+            document.getElementById('game-board').style.backgroundColor = currentStage.bg;
+            document.getElementById('game-board').style.borderColor = currentStage.border;
+            document.getElementById('stage-title').innerText = currentStage.name;
+            
+            startPos = { ...levelData.start };
+            robotPos = { ...startPos };
+            targetPos = { ...levelData.target };
+            
+            document.getElementById('instruction-text').innerText = levelData.instruction;
+            
+            updateLevelDots();
+            clearWorkspace(true); 
+            drawBoard();
+            
+            const runBtn = document.getElementById('run-btn');
+            runBtn.disabled = false;
+            runBtn.innerHTML = '<span class="text-xl sm:text-2xl">▶️</span> ÇALIŞTIR';
+            runBtn.className = "run-button flex-[3] py-3 rounded-full text-white font-black text-lg sm:text-xl flex items-center justify-center gap-2";
+        }
+
+        function updateLevelDots() {
+            const dotsContainer = document.getElementById('level-dots');
+            dotsContainer.innerHTML = '';
+            
+            // Sadece aktif aşamanın (stage) seviyelerini göster
+            const currentStageIndex = levels[currentLevelIndex].stageIndex;
+            const stageLevels = levels.map((l, idx) => ({...l, globalIndex: idx})).filter(l => l.stageIndex === currentStageIndex);
+
+            for (let i = 0; i < stageLevels.length; i++) {
+                const globalIdx = stageLevels[i].globalIndex;
+                const dot = document.createElement('div');
+                
+                const isLocked = globalIdx > maxUnlockedLevel;
+                
+                dot.className = `level-dot ${globalIdx === currentLevelIndex ? 'active' : ''} ${globalIdx < currentLevelIndex ? 'completed' : ''} ${isLocked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`;
+                dot.innerText = i + 1;
+                
+                if(!isLocked) {
+                    dot.onclick = () => { if(!isRunning) initLevel(globalIdx); };
+                }
+                dotsContainer.appendChild(dot);
+            }
+        }
+
+        function drawBoard() {
+            const board = document.getElementById('game-board');
+            board.innerHTML = ''; 
+            
+            const levelData = levels[currentLevelIndex];
+
+            for (let y = 0; y < GRID_SIZE; y++) {
+                for (let x = 0; x < GRID_SIZE; x++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'grid-cell';
+                    cell.id = `cell-${x}-${y}`;
+                    
+                    const isObstacle = levelData.obstacles.some(obs => obs.x === x && obs.y === y);
+                    
+                    if (isObstacle) {
+                        cell.innerHTML = `<span class="drop-shadow-lg text-4xl sm:text-5xl">${OBSTACLE}</span>`;
+                    }
+                    
+                    if (x === targetPos.x && y === targetPos.y) {
+                        if (!(x === robotPos.x && y === robotPos.y)) {
+                            cell.innerHTML = `<span class="target-pulse text-4xl sm:text-5xl">${TARGET}</span>`;
+                        }
+                    }
+
+                    board.appendChild(cell);
+                }
+            }
+            drawPlayer();
+        }
+
+        function drawPlayer() {
+            const oldPlayer = document.getElementById('player-char');
+            if(oldPlayer) oldPlayer.remove();
+
+            const board = document.getElementById('game-board');
+            const player = document.createElement('div');
+            player.id = 'player-char';
+            player.className = 'absolute text-4xl sm:text-5xl flex items-center justify-center character-move z-10 drop-shadow-lg';
+            player.innerHTML = PLAYER;
+            
+            player.style.width = '20%';
+            player.style.height = '20%';
+            player.style.left = `${robotPos.x * 20}%`;
+            player.style.top = `${robotPos.y * 20}%`;
+            
+            board.appendChild(player);
+        }
+
+        // --- BLOK / ÇALIŞMA ALANI MANTIĞI ---
+        function addCommand(direction) {
+            if (isRunning) return;
+            try { audioCtx.resume(); } catch(e){}
+            playSound('click');
+            
+            if (commands.length >= 40) {
+                alert("Çalışma alanın doldu! Önce yazdıklarını çalıştırıp test et.");
+                return;
+            }
+
+            commands.push(direction);
+            renderWorkspace();
+        }
+
+        function removeCommand(index) {
+            if (isRunning) return;
+            playSound('click');
+            commands.splice(index, 1);
+            renderWorkspace();
+        }
+
+        function removeLastCommand() {
+            if (isRunning || commands.length === 0) return;
+            playSound('click');
+            commands.pop();
+            renderWorkspace();
+        }
+
+        function clearWorkspace(silent = false) {
+            if (isRunning) return;
+            if(!silent) playSound('click');
+            commands = [];
+            robotPos = { ...startPos };
+            drawBoard();
+            renderWorkspace();
+            
+            const runBtn = document.getElementById('run-btn');
+            runBtn.innerHTML = '<span class="text-xl sm:text-2xl">▶️</span> ÇALIŞTIR';
+            runBtn.classList.remove('bg-red-500', 'hover:bg-red-600');
+            runBtn.disabled = false;
+        }
+
+        function renderWorkspace() {
+            const list = document.getElementById('blocks-list');
+            list.innerHTML = '';
+            
+            commands.forEach((cmd, index) => {
+                const blockDiv = document.createElement('div');
+                blockDiv.id = `ws-cmd-${index}`;
+                blockDiv.className = 'block block-move';
+                blockDiv.innerHTML = `<span class="text-2xl">${ARROWS[cmd].icon}</span> ${ARROWS[cmd].text}`;
+                
+                blockDiv.onclick = () => removeCommand(index);
+                list.appendChild(blockDiv);
+            });
+            
+            const workspace = document.getElementById('workspace-container');
+            if(workspace) workspace.scrollTop = workspace.scrollHeight;
+        }
+
+        // --- OYUN (ALGORİTMA) ÇALIŞTIRMA ---
+        async function runAlgorithm() {
+            if (isRunning) return;
+            
+            if (commands.length === 0) {
+                const startBlock = document.getElementById('block-start');
+                startBlock.classList.add('shake');
+                setTimeout(() => startBlock.classList.remove('shake'), 400);
+                playSound('error');
+                return;
+            }
+            
+            isRunning = true;
+            
+            const runBtn = document.getElementById('run-btn');
+            runBtn.disabled = true;
+            runBtn.innerHTML = 'ÇALIŞIYOR...';
+            
+            robotPos = { ...startPos }; 
+            drawBoard();
+            
+            const levelData = levels[currentLevelIndex];
+
+            for (let i = 0; i < commands.length; i++) {
+                document.querySelectorAll('.block-move').forEach(el => el.classList.remove('executing'));
+                const currentBlock = document.getElementById(`ws-cmd-${i}`);
+                if(currentBlock) {
+                    currentBlock.classList.add('executing');
+                    currentBlock.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+
+                await sleep(350); 
+
+                const cmd = commands[i];
+                let nextX = robotPos.x;
+                let nextY = robotPos.y;
+
+                if (cmd === 'up') nextY--;
+                if (cmd === 'down') nextY++;
+                if (cmd === 'left') nextX--;
+                if (cmd === 'right') nextX++;
+
+                if (nextX < 0 || nextX >= GRID_SIZE || nextY < 0 || nextY >= GRID_SIZE) {
+                    handleError("Sistem Hatası: Alan dışına çıktın!");
+                    return;
+                }
+
+                const hitObstacle = levelData.obstacles.some(obs => obs.x === nextX && obs.y === nextY);
+                if (hitObstacle) {
+                    document.getElementById(`cell-${nextX}-${nextY}`).classList.add('shake');
+                    handleError("Çarpışma! Engele çarptın, kodunu düzelt.");
+                    return;
+                }
+
+                robotPos.x = nextX;
+                robotPos.y = nextY;
+                playSound('move');
+                drawPlayer(); 
+
+                if (robotPos.x === targetPos.x && robotPos.y === targetPos.y) {
+                    await sleep(300);
+                    handleSuccess();
+                    return;
+                }
+            }
+
+            if (robotPos.x !== targetPos.x || robotPos.y !== targetPos.y) {
+                handleError("Komutlar bitti ama hedefe ulaşamadık.");
+                document.querySelectorAll('.block-move').forEach(el => el.classList.remove('executing'));
+            }
+        }
+
+        function handleError(msg) {
+            playSound('error');
+            const player = document.getElementById('player-char');
+            if(player) player.classList.add('shake');
+            
+            const runBtn = document.getElementById('run-btn');
+            runBtn.disabled = false;
+            runBtn.classList.add('bg-red-500', 'hover:bg-red-600');
+            runBtn.style.boxShadow = "0 4px 0 #b91c1c";
+            runBtn.innerHTML = '🔄 VAZGEÇME, TEKRAR DENE';
+            
+            document.getElementById('instruction-text').innerText = msg;
+            document.getElementById('instruction-text').classList.add('text-red-600');
+            
+            isRunning = false;
+        }
+
+        function handleSuccess() {
+            playSound('win');
+            isRunning = false;
+            document.querySelectorAll('.block-move').forEach(el => el.classList.remove('executing'));
+            
+            const nextLevelIndex = currentLevelIndex + 1;
+            const currentStageIndex = levels[currentLevelIndex].stageIndex;
+            
+            // Kayıt Sistemini Güncelle
+            if (nextLevelIndex > maxUnlockedLevel && nextLevelIndex < levels.length) {
+                maxUnlockedLevel = nextLevelIndex;
+                localStorage.setItem('algoritma_max_level', maxUnlockedLevel);
+            }
+            
+            if (levels[nextLevelIndex] && levels[nextLevelIndex].stageIndex > currentStageIndex) {
+                document.getElementById('modal-level').innerText = (currentLevelIndex + 1) + " (Aşama Tamamlandı! Yeni Dünya Açıldı 🎉)";
+            } else {
+                document.getElementById('modal-level').innerText = currentLevelIndex + 1;
+            }
+            
+            document.getElementById('line-count').innerText = commands.length;
+            
+            setTimeout(() => {
+                document.getElementById('success-modal').classList.remove('hidden');
+                document.getElementById('success-modal').classList.add('flex');
+            }, 500);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function replayLevel() {
+            playSound('click');
+            document.getElementById('success-modal').classList.add('hidden');
+            document.getElementById('success-modal').classList.remove('flex');
+            initLevel(currentLevelIndex);
+        }
+
+        function nextLevel() {
+            playSound('click');
+            document.getElementById('success-modal').classList.add('hidden');
+            document.getElementById('success-modal').classList.remove('flex');
+            initLevel(currentLevelIndex + 1);
+        }
+
+    </script>
+</body>
+</html>
